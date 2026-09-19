@@ -1,0 +1,1414 @@
+{
+  "id": "btl_e8qkzqgcnhhq51xk",
+  "protocolVersion": 1,
+  "arenaVersion": "0.1.0",
+  "status": "completed",
+  "spec": {
+    "version": 1,
+    "title": "Fix the session-expiry bug",
+    "task": {
+      "kind": "prompt",
+      "title": "Fix the session-expiry bug",
+      "prompt": "Fix the failing session-expiry test in the auth module: sessions expire one hour early because the expiry comparison mixes seconds and milliseconds. Make the test suite pass without changing the public API."
+    },
+    "repository": {
+      "source": "~/.harness-arena\\demo\\session-expiry",
+      "submodules": false
+    },
+    "competitors": {
+      "a": {
+        "label": "Agnostic AI",
+        "agent": {
+          "id": "fake"
+        },
+        "harness": {
+          "source": "https://github.com/ucsandman/agnostic-ai",
+          "trusted": true
+        },
+        "fixture": "demo-harness-a"
+      },
+      "b": {
+        "label": "Vanilla Claude Code",
+        "agent": {
+          "id": "fake"
+        },
+        "harness": {
+          "source": "vanilla",
+          "trusted": false
+        },
+        "fixture": "demo-vanilla-b"
+      }
+    },
+    "limits": {
+      "timeoutMs": 900000,
+      "maxOutputBytes": 52428800
+    },
+    "evaluation": {
+      "tests": {
+        "command": "node --test",
+        "baseline": true,
+        "parser": "auto",
+        "timeoutMs": 600000
+      },
+      "assertions": [
+        {
+          "type": "file-contains",
+          "path": "src/auth/session.js",
+          "pattern": "\\*\\s*1000|1000\\s*\\*|/\\s*1000",
+          "label": "the expiry comparison converts between seconds and milliseconds"
+        },
+        {
+          "type": "diff-not-touches",
+          "paths": [
+            "package.json"
+          ],
+          "label": "the public API and dependencies are untouched"
+        }
+      ],
+      "judge": {
+        "enabled": false
+      }
+    },
+    "privacy": {
+      "upload": "none",
+      "exclude": [],
+      "redact": true
+    },
+    "mode": "local",
+    "visibility": "private",
+    "parallel": false,
+    "tags": [
+      "demo"
+    ],
+    "category": "debugging"
+  },
+  "task": {
+    "title": "Fix the session-expiry bug",
+    "prompt": "Fix the failing session-expiry test in the auth module: sessions expire one hour early because the expiry comparison mixes seconds and milliseconds. Make the test suite pass without changing the public API.",
+    "source": {
+      "kind": "demo"
+    }
+  },
+  "repository": {
+    "source": "~/.harness-arena\\demo\\session-expiry",
+    "kind": "local",
+    "commit": "16912f23988b30cceb3aec5f4a304a5a2b376291",
+    "ref": null,
+    "dirty": false
+  },
+  "environment": {
+    "os": {
+      "platform": "win32",
+      "release": "10.0.26200",
+      "arch": "x64"
+    },
+    "node": "v24.15.0",
+    "git": "2.52.0.windows.1",
+    "arenaVersion": "0.1.0",
+    "ci": false,
+    "cpuCount": 24,
+    "memoryGb": 31.9,
+    "agents": {
+      "fake": {
+        "version": "fake-1.0.0",
+        "userConfigIsolated": true
+      }
+    },
+    "sharedFlags": {
+      "a": [
+        "--fixture",
+        "demo-harness-a"
+      ],
+      "b": [
+        "--fixture",
+        "demo-vanilla-b"
+      ]
+    },
+    "recordedAt": "2026-09-19T21:26:08.740Z"
+  },
+  "runs": {
+    "a": {
+      "id": "run_nikinn4nbik4ld5x",
+      "side": "a",
+      "label": "Agnostic AI",
+      "status": "completed",
+      "agent": {
+        "id": "fake",
+        "version": "2.1.278",
+        "model": "claude-sonnet-4-6",
+        "capabilities": {
+          "tokens": "observed",
+          "cost": "observed",
+          "model": "observed",
+          "toolCalls": "observed",
+          "commands": "observed",
+          "fileReads": "observed",
+          "fileChanges": "observed",
+          "subagents": "observed",
+          "turns": "observed",
+          "thinking": "observed",
+          "contextCompaction": "observed"
+        }
+      },
+      "harness": {
+        "name": "ucsandman/agnostic-ai",
+        "source": "https://github.com/ucsandman/agnostic-ai",
+        "kind": "github",
+        "commit": null,
+        "manifest": null,
+        "appliedFiles": [],
+        "executedCommands": [],
+        "skippedFiles": []
+      },
+      "startedAt": "2026-09-19T21:26:09.273Z",
+      "completedAt": "2026-09-19T21:31:01.273Z",
+      "durationMs": 292000,
+      "exitCode": 0,
+      "metrics": {
+        "completion_status": {
+          "value": "completed",
+          "status": "observed",
+          "source": "fake:status"
+        },
+        "tests_passed": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "tests_failed": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "tests_total": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "regressions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "duration_ms": {
+          "value": 292000,
+          "status": "calculated",
+          "source": "core:clock"
+        },
+        "tokens_input": {
+          "value": 182000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "tokens_output": {
+          "value": 9400,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "tokens_cache_read": {
+          "value": 120000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "tokens_cache_write": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "tokens_total": {
+          "value": 311400,
+          "status": "calculated",
+          "source": "fake:usage",
+          "unit": "tokens",
+          "note": "sum of the token fields the CLI reported"
+        },
+        "cost_usd": {
+          "value": 2.81,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "usd"
+        },
+        "model_requests": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "tool_calls": {
+          "value": 63,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "commands_run": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "files_inspected": {
+          "value": 6,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "files_changed": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:git-diff"
+        },
+        "lines_added": {
+          "value": 15,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "lines_removed": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "turns": {
+          "value": 14,
+          "status": "observed",
+          "source": "fake:turns"
+        },
+        "subagents_spawned": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "retries": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events",
+          "note": "counted from the agent’s own events; Arena’s evaluation suites are not retries"
+        },
+        "errors": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "human_interventions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "context_compactions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "exit_code": {
+          "value": 0,
+          "status": "observed",
+          "source": "fake:exit"
+        }
+      },
+      "artifacts": {
+        "changedFiles": [
+          {
+            "path": "src/auth/session.js",
+            "kind": "modify",
+            "linesAdded": 2,
+            "linesRemoved": 1
+          },
+          {
+            "path": "test/session.regression.test.js",
+            "kind": "create",
+            "linesAdded": 13,
+            "linesRemoved": 0
+          }
+        ],
+        "rawLogPath": "~/.harness-arena\\battles\\btl_e8qkzqgcnhhq51xk\\runs\\a\\raw.log",
+        "finalResponse": "Fixed the seconds/milliseconds mismatch in isExpired and added test/session.regression.test.js. node --test: 4 passing, 0 failing.",
+        "diff": "diff --git a/src/auth/session.js b/src/auth/session.js\nindex a76210c..aabc456 100644\n--- a/src/auth/session.js\n+++ b/src/auth/session.js\n@@ -1,4 +1,5 @@\n const SESSION_TTL_SECONDS = 3600;\n+const SECOND_MS = 1000;\n \n /**\n  * A session stores `expiresAt` as a UNIX timestamp in SECONDS.\n@@ -8,5 +9,5 @@ export function createSession(userId, now = Date.now()) {\n }\n \n export function isExpired(session, now = Date.now()) {\n-  return session.expiresAt <= now;\n+  return session.expiresAt * SECOND_MS <= now;\n }\ndiff --git a/test/session.regression.test.js b/test/session.regression.test.js\nnew file mode 100644\nindex 0000000..9bc904f\n--- /dev/null\n+++ b/test/session.regression.test.js\n@@ -0,0 +1,13 @@\n+import { test } from 'node:test';\n+import assert from 'node:assert/strict';\n+import { isExpired } from '../src/auth/session.js';\n+\n+const NOW = 1700000000000;\n+\n+test('a session expiring exactly now is expired', () => {\n+  assert.equal(isExpired({ expiresAt: NOW / 1000 }, NOW), true);\n+});\n+\n+test('seconds are never compared against milliseconds', () => {\n+  assert.equal(isExpired({ expiresAt: NOW / 1000 + 1 }, NOW), false);\n+});\n",
+        "diffBytes": 1134
+      },
+      "error": null,
+      "eventCount": 173,
+      "invocation": {
+        "command": "arena-fake",
+        "args": [
+          "--fixture",
+          "demo-harness-a"
+        ],
+        "envKeys": [
+          "ARENA_BATTLE",
+          "ARENA_FAKE_FIXTURE",
+          "ARENA_RUN_ID",
+          "ARENA_SIDE",
+          "ARENA_WORKSPACE"
+        ]
+      }
+    },
+    "b": {
+      "id": "run_5n5owu1nddj4ohu3",
+      "side": "b",
+      "label": "Vanilla Claude Code",
+      "status": "completed",
+      "agent": {
+        "id": "fake",
+        "version": "2.1.278",
+        "model": "claude-sonnet-4-6",
+        "capabilities": {
+          "tokens": "observed",
+          "cost": "observed",
+          "model": "observed",
+          "toolCalls": "observed",
+          "commands": "observed",
+          "fileReads": "observed",
+          "fileChanges": "observed",
+          "subagents": "observed",
+          "turns": "observed",
+          "thinking": "observed",
+          "contextCompaction": "observed"
+        }
+      },
+      "harness": {
+        "name": "vanilla",
+        "source": "vanilla",
+        "kind": "vanilla",
+        "commit": null,
+        "manifest": null,
+        "appliedFiles": [],
+        "executedCommands": [],
+        "skippedFiles": []
+      },
+      "startedAt": "2026-09-19T21:26:10.110Z",
+      "completedAt": "2026-09-19T21:29:27.110Z",
+      "durationMs": 197000,
+      "exitCode": 0,
+      "metrics": {
+        "completion_status": {
+          "value": "completed",
+          "status": "observed",
+          "source": "fake:status"
+        },
+        "tests_passed": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "tests_failed": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "tests_total": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "regressions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "duration_ms": {
+          "value": 197000,
+          "status": "calculated",
+          "source": "core:clock"
+        },
+        "tokens_input": {
+          "value": 391000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "tokens_output": {
+          "value": 21000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "tokens_cache_read": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "tokens_cache_write": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "tokens_total": {
+          "value": 412000,
+          "status": "calculated",
+          "source": "fake:usage",
+          "unit": "tokens",
+          "note": "sum of the token fields the CLI reported"
+        },
+        "cost_usd": {
+          "value": 6.42,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "usd"
+        },
+        "model_requests": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "tool_calls": {
+          "value": 147,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "commands_run": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "files_inspected": {
+          "value": 18,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "files_changed": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:git-diff"
+        },
+        "lines_added": {
+          "value": 10,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "lines_removed": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "turns": {
+          "value": 27,
+          "status": "observed",
+          "source": "fake:turns"
+        },
+        "subagents_spawned": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "retries": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:events",
+          "note": "counted from the agent’s own events; Arena’s evaluation suites are not retries"
+        },
+        "errors": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "human_interventions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "context_compactions": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "exit_code": {
+          "value": 0,
+          "status": "observed",
+          "source": "fake:exit"
+        }
+      },
+      "artifacts": {
+        "changedFiles": [
+          {
+            "path": "README.md",
+            "kind": "modify",
+            "linesAdded": 4,
+            "linesRemoved": 0
+          },
+          {
+            "path": "src/auth/session.js",
+            "kind": "modify",
+            "linesAdded": 2,
+            "linesRemoved": 1
+          },
+          {
+            "path": "test/session.test.js",
+            "kind": "modify",
+            "linesAdded": 4,
+            "linesRemoved": 0
+          }
+        ],
+        "rawLogPath": "~/.harness-arena\\battles\\btl_e8qkzqgcnhhq51xk\\runs\\b\\raw.log",
+        "finalResponse": "Fixed isExpired, extended test/session.test.js and documented the expiry unit in README.md. node --test: 3 passing, 0 failing.",
+        "diff": "diff --git a/README.md b/README.md\nindex 3d8da38..04d9548 100644\n--- a/README.md\n+++ b/README.md\n@@ -4,3 +4,7 @@ A minimal auth-session helper used by the Harness Arena demo battle.\n \n - `src/auth/session.js` creates sessions and answers whether one has expired.\n - `npm test` runs the node:test suite.\n+\n+## Notes\n+\n+Session expiry is stored in seconds (UNIX time) and compared in milliseconds.\ndiff --git a/src/auth/session.js b/src/auth/session.js\nindex a76210c..aabc456 100644\n--- a/src/auth/session.js\n+++ b/src/auth/session.js\n@@ -1,4 +1,5 @@\n const SESSION_TTL_SECONDS = 3600;\n+const SECOND_MS = 1000;\n \n /**\n  * A session stores `expiresAt` as a UNIX timestamp in SECONDS.\n@@ -8,5 +9,5 @@ export function createSession(userId, now = Date.now()) {\n }\n \n export function isExpired(session, now = Date.now()) {\n-  return session.expiresAt <= now;\n+  return session.expiresAt * SECOND_MS <= now;\n }\ndiff --git a/test/session.test.js b/test/session.test.js\nindex 8a6e6bc..49147f3 100644\n--- a/test/session.test.js\n+++ b/test/session.test.js\n@@ -11,3 +11,7 @@ test('a session that expired a minute ago is expired', () => {\n test('a fresh session is not expired', () => {\n   assert.equal(isExpired(createSession('u1', NOW), NOW), false);\n });\n+\n+test('a session one second from expiry is still valid', () => {\n+  assert.equal(isExpired({ expiresAt: NOW / 1000 + 1 }, NOW), false);\n+});\n",
+        "diffBytes": 1387
+      },
+      "error": null,
+      "eventCount": 372,
+      "invocation": {
+        "command": "arena-fake",
+        "args": [
+          "--fixture",
+          "demo-vanilla-b"
+        ],
+        "envKeys": [
+          "ARENA_BATTLE",
+          "ARENA_FAKE_FIXTURE",
+          "ARENA_RUN_ID",
+          "ARENA_SIDE",
+          "ARENA_WORKSPACE"
+        ]
+      }
+    }
+  },
+  "evaluation": {
+    "results": [
+      {
+        "evaluatorId": "repo-tests",
+        "kind": "deterministic",
+        "side": "a",
+        "status": "passed",
+        "score": 1,
+        "summary": "4/4 tests passed",
+        "details": {
+          "command": "node --test",
+          "parser": "tap",
+          "exitCode": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4,
+          "durationMs": 148.9018,
+          "failingTests": [],
+          "regressions": 0,
+          "regressionTests": [],
+          "baseline": {
+            "passed": 1,
+            "failed": 1,
+            "total": 2,
+            "failingTests": [
+              "a fresh session is not expired"
+            ]
+          }
+        },
+        "durationMs": 1
+      },
+      {
+        "evaluatorId": "repo-tests",
+        "kind": "deterministic",
+        "side": "b",
+        "status": "passed",
+        "score": 1,
+        "summary": "3/3 tests passed",
+        "details": {
+          "command": "node --test",
+          "parser": "tap",
+          "exitCode": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "total": 3,
+          "durationMs": 136.9184,
+          "failingTests": [],
+          "regressions": 0,
+          "regressionTests": [],
+          "baseline": {
+            "passed": 1,
+            "failed": 1,
+            "total": 2,
+            "failingTests": [
+              "a fresh session is not expired"
+            ]
+          }
+        },
+        "durationMs": 1
+      },
+      {
+        "evaluatorId": "assertions",
+        "kind": "deterministic",
+        "side": "a",
+        "status": "passed",
+        "score": 1,
+        "summary": "2/2 assertions passed",
+        "details": {
+          "checks": [
+            {
+              "index": 0,
+              "type": "file-contains",
+              "label": "the expiry comparison converts between seconds and milliseconds",
+              "passed": true,
+              "detail": "pattern found"
+            },
+            {
+              "index": 1,
+              "type": "diff-not-touches",
+              "label": "the public API and dependencies are untouched",
+              "passed": true,
+              "detail": "no changed file matched"
+            }
+          ],
+          "passed": 2,
+          "failed": 0,
+          "total": 2
+        },
+        "durationMs": 1
+      },
+      {
+        "evaluatorId": "assertions",
+        "kind": "deterministic",
+        "side": "b",
+        "status": "passed",
+        "score": 1,
+        "summary": "2/2 assertions passed",
+        "details": {
+          "checks": [
+            {
+              "index": 0,
+              "type": "file-contains",
+              "label": "the expiry comparison converts between seconds and milliseconds",
+              "passed": true,
+              "detail": "pattern found"
+            },
+            {
+              "index": 1,
+              "type": "diff-not-touches",
+              "label": "the public API and dependencies are untouched",
+              "passed": true,
+              "detail": "no changed file matched"
+            }
+          ],
+          "passed": 2,
+          "failed": 0,
+          "total": 2
+        },
+        "durationMs": 0
+      },
+      {
+        "evaluatorId": "diff-signals",
+        "kind": "deterministic",
+        "side": "a",
+        "status": "passed",
+        "score": null,
+        "summary": "2 file(s), +15/-1; touches tests",
+        "details": {
+          "filesChanged": 2,
+          "linesAdded": 15,
+          "linesRemoved": 1,
+          "signals": [
+            {
+              "id": "files_changed",
+              "label": "Files changed",
+              "value": 2
+            },
+            {
+              "id": "lines_added",
+              "label": "Lines added",
+              "value": 15
+            },
+            {
+              "id": "lines_removed",
+              "label": "Lines removed",
+              "value": 1
+            },
+            {
+              "id": "touches_tests",
+              "label": "Touches tests",
+              "value": true,
+              "note": "test/session.regression.test.js"
+            },
+            {
+              "id": "deletes_tests",
+              "label": "Deletes tests",
+              "value": false
+            },
+            {
+              "id": "touches_lockfiles",
+              "label": "Touches lockfiles",
+              "value": false
+            },
+            {
+              "id": "adds_todo",
+              "label": "Adds TODO/FIXME lines",
+              "value": 0
+            },
+            {
+              "id": "adds_debug_logging",
+              "label": "Adds debug logging",
+              "value": 0
+            },
+            {
+              "id": "large_diff",
+              "label": "Diff larger than 1000 lines",
+              "value": false,
+              "note": "16 line(s) changed"
+            },
+            {
+              "id": "empty_diff",
+              "label": "Empty diff",
+              "value": false
+            }
+          ]
+        },
+        "durationMs": 0
+      },
+      {
+        "evaluatorId": "diff-signals",
+        "kind": "deterministic",
+        "side": "b",
+        "status": "passed",
+        "score": null,
+        "summary": "3 file(s), +10/-1; touches tests",
+        "details": {
+          "filesChanged": 3,
+          "linesAdded": 10,
+          "linesRemoved": 1,
+          "signals": [
+            {
+              "id": "files_changed",
+              "label": "Files changed",
+              "value": 3
+            },
+            {
+              "id": "lines_added",
+              "label": "Lines added",
+              "value": 10
+            },
+            {
+              "id": "lines_removed",
+              "label": "Lines removed",
+              "value": 1
+            },
+            {
+              "id": "touches_tests",
+              "label": "Touches tests",
+              "value": true,
+              "note": "test/session.test.js"
+            },
+            {
+              "id": "deletes_tests",
+              "label": "Deletes tests",
+              "value": false
+            },
+            {
+              "id": "touches_lockfiles",
+              "label": "Touches lockfiles",
+              "value": false
+            },
+            {
+              "id": "adds_todo",
+              "label": "Adds TODO/FIXME lines",
+              "value": 0
+            },
+            {
+              "id": "adds_debug_logging",
+              "label": "Adds debug logging",
+              "value": 0
+            },
+            {
+              "id": "large_diff",
+              "label": "Diff larger than 1000 lines",
+              "value": false,
+              "note": "11 line(s) changed"
+            },
+            {
+              "id": "empty_diff",
+              "label": "Empty diff",
+              "value": false
+            }
+          ]
+        },
+        "durationMs": 0
+      }
+    ],
+    "comparisons": [
+      {
+        "key": "completion_status",
+        "label": "Completion",
+        "a": {
+          "value": "completed",
+          "status": "observed",
+          "source": "fake:status"
+        },
+        "b": {
+          "value": "completed",
+          "status": "observed",
+          "source": "fake:status"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "tests_passed",
+        "label": "Tests passed",
+        "a": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "b": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "better": "a",
+        "significance": "minor"
+      },
+      {
+        "key": "tests_failed",
+        "label": "Tests failed",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "tests_total",
+        "label": "Tests total",
+        "a": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "b": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "regressions",
+        "label": "Regressions",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:tests"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "duration_ms",
+        "label": "Duration",
+        "a": {
+          "value": 292000,
+          "status": "calculated",
+          "source": "core:clock"
+        },
+        "b": {
+          "value": 197000,
+          "status": "calculated",
+          "source": "core:clock"
+        },
+        "better": "b",
+        "significance": "notable"
+      },
+      {
+        "key": "tokens_input",
+        "label": "Input tokens",
+        "a": {
+          "value": 182000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "b": {
+          "value": 391000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "better": "a",
+        "significance": "minor"
+      },
+      {
+        "key": "tokens_output",
+        "label": "Output tokens",
+        "a": {
+          "value": 9400,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "b": {
+          "value": 21000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "better": "a",
+        "significance": "minor"
+      },
+      {
+        "key": "tokens_cache_read",
+        "label": "Cache read tokens",
+        "a": {
+          "value": 120000,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "tokens"
+        },
+        "b": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "tokens_cache_write",
+        "label": "Cache write tokens",
+        "a": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "b": {
+          "value": null,
+          "status": "unavailable",
+          "note": "the CLI reported no token usage for this run"
+        },
+        "better": "n/a",
+        "significance": "none"
+      },
+      {
+        "key": "tokens_total",
+        "label": "Tokens",
+        "a": {
+          "value": 311400,
+          "status": "calculated",
+          "source": "fake:usage",
+          "unit": "tokens",
+          "note": "sum of the token fields the CLI reported"
+        },
+        "b": {
+          "value": 412000,
+          "status": "calculated",
+          "source": "fake:usage",
+          "unit": "tokens",
+          "note": "sum of the token fields the CLI reported"
+        },
+        "better": "a",
+        "significance": "notable"
+      },
+      {
+        "key": "cost_usd",
+        "label": "Cost",
+        "a": {
+          "value": 2.81,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "usd"
+        },
+        "b": {
+          "value": 6.42,
+          "status": "observed",
+          "source": "fake:usage",
+          "unit": "usd"
+        },
+        "better": "a",
+        "significance": "notable"
+      },
+      {
+        "key": "model_requests",
+        "label": "Model requests",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "tool_calls",
+        "label": "Tool calls",
+        "a": {
+          "value": 63,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 147,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "commands_run",
+        "label": "Commands",
+        "a": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 4,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "files_inspected",
+        "label": "Files inspected",
+        "a": {
+          "value": 6,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 18,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "files_changed",
+        "label": "Files changed",
+        "a": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:git-diff"
+        },
+        "b": {
+          "value": 3,
+          "status": "calculated",
+          "source": "core:git-diff"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "lines_added",
+        "label": "Lines added",
+        "a": {
+          "value": 15,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "b": {
+          "value": 10,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "lines_removed",
+        "label": "Lines removed",
+        "a": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "b": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:git-diff",
+          "unit": "lines"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "turns",
+        "label": "Agent turns",
+        "a": {
+          "value": 14,
+          "status": "observed",
+          "source": "fake:turns"
+        },
+        "b": {
+          "value": 27,
+          "status": "observed",
+          "source": "fake:turns"
+        },
+        "better": "a",
+        "significance": "notable"
+      },
+      {
+        "key": "subagents_spawned",
+        "label": "Subagents",
+        "a": {
+          "value": 1,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      },
+      {
+        "key": "retries",
+        "label": "Retries",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events",
+          "note": "counted from the agent’s own events; Arena’s evaluation suites are not retries"
+        },
+        "b": {
+          "value": 2,
+          "status": "calculated",
+          "source": "core:events",
+          "note": "counted from the agent’s own events; Arena’s evaluation suites are not retries"
+        },
+        "better": "a",
+        "significance": "minor"
+      },
+      {
+        "key": "errors",
+        "label": "Errors",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "human_interventions",
+        "label": "Human input",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "context_compactions",
+        "label": "Context compactions",
+        "a": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "b": {
+          "value": 0,
+          "status": "calculated",
+          "source": "core:events"
+        },
+        "better": "equal",
+        "significance": "minor"
+      },
+      {
+        "key": "exit_code",
+        "label": "Exit status",
+        "a": {
+          "value": 0,
+          "status": "observed",
+          "source": "fake:exit"
+        },
+        "b": {
+          "value": 0,
+          "status": "observed",
+          "source": "fake:exit"
+        },
+        "better": "n/a",
+        "significance": "minor"
+      }
+    ],
+    "evidence": [
+      {
+        "label": "Duration",
+        "a": 292000,
+        "b": 197000,
+        "favors": "b"
+      },
+      {
+        "label": "Tokens",
+        "a": 311400,
+        "b": 412000,
+        "favors": "a"
+      },
+      {
+        "label": "Cost",
+        "a": 2.81,
+        "b": 6.42,
+        "favors": "a"
+      },
+      {
+        "label": "Agent turns",
+        "a": 14,
+        "b": 27,
+        "favors": "a"
+      },
+      {
+        "label": "Assertion: the expiry comparison converts between seconds and milliseconds",
+        "a": "passed",
+        "b": "passed",
+        "favors": "equal"
+      },
+      {
+        "label": "Assertion: the public API and dependencies are untouched",
+        "a": "passed",
+        "b": "passed",
+        "favors": "equal"
+      }
+    ],
+    "unavailable": [
+      {
+        "evaluatorId": "build-checks",
+        "reason": "no build, lint or typecheck commands configured (evaluation.build/lint/typecheck)"
+      },
+      {
+        "evaluatorId": "judge",
+        "reason": "judge is disabled (evaluation.judge.enabled)"
+      }
+    ],
+    "completedAt": "2026-09-19T21:26:10.489Z"
+  },
+  "verdict": {
+    "winner": "tie",
+    "confidence": 0.4,
+    "method": "deterministic",
+    "reasons": [
+      "Every deterministic check that ran came out equal for both sides."
+    ],
+    "decisiveFactors": [],
+    "caveats": [
+      "Side B was better on duration (292.0s vs 197.0s, 33% apart); efficiency does not decide the winner.",
+      "Side A was better on tokens (311400 vs 412000, 24% apart); efficiency does not decide the winner.",
+      "Side A was better on cost ($2.8100 vs $6.4200, 56% apart); efficiency does not decide the winner.",
+      "Deterministic evaluators that did not run: build-checks (no build, lint or typecheck commands configured (evaluation.build/lint/typecheck))."
+    ],
+    "judge": null
+  },
+  "insights": [
+    {
+      "id": "first-failing-test",
+      "kind": "timing",
+      "text": "Vanilla Claude Code found the failing test 63.9 seconds earlier.",
+      "favors": "b",
+      "support": {
+        "metrics": [],
+        "eventSeqs": [
+          86,
+          329
+        ]
+      }
+    },
+    {
+      "id": "files-inspected",
+      "kind": "efficiency",
+      "text": "Agnostic AI inspected fewer files (6 vs 18).",
+      "favors": "a",
+      "support": {
+        "metrics": [
+          "files_inspected"
+        ],
+        "eventSeqs": []
+      }
+    },
+    {
+      "id": "retries-b",
+      "kind": "behavior",
+      "text": "Vanilla Claude Code required 2 retries before the suite passed.",
+      "favors": "a",
+      "support": {
+        "metrics": [
+          "retries"
+        ],
+        "eventSeqs": []
+      }
+    },
+    {
+      "id": "subagents-a",
+      "kind": "behavior",
+      "text": "Agnostic AI spawned a specialist subagent; Vanilla Claude Code worked in a single agent.",
+      "favors": "none",
+      "support": {
+        "metrics": [
+          "subagents_spawned"
+        ],
+        "eventSeqs": [
+          110
+        ]
+      }
+    },
+    {
+      "id": "faster-more-turns",
+      "kind": "timing",
+      "text": "Vanilla Claude Code finished 1.5x faster but used more agent turns (27 vs 14).",
+      "favors": "none",
+      "support": {
+        "metrics": [
+          "duration_ms",
+          "turns"
+        ],
+        "eventSeqs": []
+      }
+    },
+    {
+      "id": "cheaper-cost_usd",
+      "kind": "efficiency",
+      "text": "Agnostic AI cost 56% less ($2.81 vs $6.42).",
+      "favors": "a",
+      "support": {
+        "metrics": [
+          "cost_usd"
+        ],
+        "eventSeqs": []
+      }
+    }
+  ],
+  "verification": {
+    "kind": "local",
+    "eligible": false,
+    "sandbox": null
+  },
+  "demo": true,
+  "createdAt": "2026-09-19T21:26:07.959Z",
+  "startedAt": "2026-09-19T21:26:07.959Z",
+  "completedAt": "2026-09-19T21:31:01.273Z",
+  "error": null
+}

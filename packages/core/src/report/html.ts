@@ -325,8 +325,10 @@ function environmentSection(record: BattleRecord, bundle: ReportBundle): string 
             : 'NOT excluded'),
     ]);
   }
-  for (const [agent, flags] of Object.entries(env.sharedFlags)) {
-    rows.push(['Shared flags (' + agent + ')', flags.join(' ')]);
+  for (const [key, flags] of Object.entries(env.sharedFlags)) {
+    // Keyed by side since the engine started recording both sides separately; older records used the agent id.
+    const label = key === 'a' || key === 'b' ? 'side ' + key : key;
+    rows.push(['Flags (' + label + ')', flags.join(' ')]);
   }
   return (
     '<table class="kv">' +
@@ -360,7 +362,13 @@ function invocationSection(record: BattleRecord): string {
         escapeHtml(run.harness.commit ?? 'n/a') +
         '</td></tr><tr><th>Applied files</th><td>' +
         escapeHtml(run.harness.appliedFiles.length > 0 ? run.harness.appliedFiles.join(', ') : 'none') +
-        '</td></tr><tr><th>Executed commands</th><td>' +
+        '</td></tr>' +
+        (run.harness.skippedFiles.length > 0
+          ? '<tr><th>Skipped files</th><td>' +
+            escapeHtml(run.harness.skippedFiles.join(', ')) +
+            ' (already in the repository)</td></tr>'
+          : '') +
+        '<tr><th>Executed commands</th><td>' +
         escapeHtml(
           run.harness.executedCommands.length > 0 ? run.harness.executedCommands.join(' && ') : 'none',
         ) +

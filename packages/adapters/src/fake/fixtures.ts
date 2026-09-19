@@ -82,11 +82,12 @@ export type FakeScript = z.infer<typeof fakeScriptSchema>;
  * Builtin fixtures ship with the package. `../../fixtures/fake/` resolves identically from `src`
  * (vitest) and from `dist` (published build), because dist mirrors src one level deep.
  */
-export const FAKE_FIXTURE_DIR = fileURLToPath(new URL('../../fixtures/fake/', import.meta.url));
+// path.resolve rather than new URL(): a bundler (Turbopack in apps/web) treats new URL(x, import.meta.url)
+// as a static asset to resolve at build time and fails on a directory.
+const here = path.dirname(fileURLToPath(import.meta.url));
+export const FAKE_FIXTURE_DIR = path.resolve(here, '..', '..', 'fixtures', 'fake') + path.sep;
 /** The initial project the demo fixtures start from (committed into a throwaway repo by `arena demo`). */
-export const FAKE_DEMO_PROJECT_DIR = fileURLToPath(
-  new URL('../../fixtures/fake/demo-project/', import.meta.url),
-);
+export const FAKE_DEMO_PROJECT_DIR = path.resolve(FAKE_FIXTURE_DIR, 'demo-project') + path.sep;
 
 const BUILTIN_NAME = /^[a-z0-9][a-z0-9-]*$/;
 

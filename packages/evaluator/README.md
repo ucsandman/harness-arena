@@ -35,10 +35,19 @@ never `0`.
 ## Why test commands run through a shell
 
 `evaluation.tests.command`, the build/lint/typecheck commands and `command` assertions are single
-user-authored shell lines (`npm test -- --run`, `pytest -q && echo done`). They are executed as
-`cmd.exe /d /s /c <line>` on Windows and `sh -c <line>` elsewhere, with the line passed as one argument
-and nothing interpolated into it by Arena. Agent CLIs are never started this way: adapters build a fixed
-argv and pass the prompt over stdin.
+user-authored shell lines (`npm test -- --run`, `pytest -q && echo done`). The invocation comes from
+`shellInvocation()` in `@harness-arena/adapters`, so this package and the harness runner quote
+identically: `cmd.exe /d /s /c "<line>"` with `windowsVerbatimArguments` on Windows (without it Node
+re-escapes the line and a command containing a double quote — `node -e "..."`, `jest -t "name"` — runs
+something else and can still exit 0), and `/bin/sh -c <line>` elsewhere. Arena interpolates nothing into
+the line. Agent CLIs are never started this way: adapters build a fixed argv and pass the prompt over
+stdin.
+
+## Who runs the tests
+
+`repo-tests` prefers the outcome the engine already measured: when `SideContext.postTests` is set the
+evaluator reuses it (no second suite execution, no duplicate `test.completed` event, since the engine
+already emitted one) and only runs `evaluation.tests.command` itself when `postTests` is `null`.
 
 ## Local development
 

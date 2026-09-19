@@ -77,12 +77,22 @@ export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   });
 }
 
-/** Create a symlink, returning false when the platform refuses (Windows without the privilege). */
+/**
+ * Create a symlink, returning false when the platform refuses (Windows without the privilege). A
+ * directory link falls back to a junction, which Windows allows without any privilege and which
+ * `lstat` also reports as a symbolic link, so the guards under test are exercised there too.
+ */
 export async function trySymlink(target: string, linkPath: string, type: 'file' | 'dir'): Promise<boolean> {
   try {
     await fs.symlink(target, linkPath, type === 'dir' ? 'dir' : 'file');
     return true;
   } catch {
-    return false;
+    if (type !== 'dir') return false;
+    try {
+      await fs.symlink(target, linkPath, 'junction');
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

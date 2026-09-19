@@ -22,13 +22,7 @@ export type {
 export { silentLogger, TEST_PARSERS } from './types.js';
 
 export { parseTestOutput } from './test-parsers.js';
-export {
-  createOutputCollector,
-  runTests,
-  shellInvocation,
-  OUTPUT_CAP_BYTES,
-  PROCESS_OUTPUT_CAP_BYTES,
-} from './run-tests.js';
+export { createOutputCollector, runTests, OUTPUT_CAP_BYTES, PROCESS_OUTPUT_CAP_BYTES } from './run-tests.js';
 export type { OutputCollector, RunTestsOptions } from './run-tests.js';
 
 export { matchesAnyGlob, matchesGlob, normalizePath } from './glob.js';

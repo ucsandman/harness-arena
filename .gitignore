@@ -16,3 +16,4 @@ Thumbs.db
 .dashclaw-local/
 .agents/
 .vitest/
+.playwright-mcp/

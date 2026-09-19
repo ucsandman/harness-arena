@@ -11,7 +11,6 @@ interface TestTotals {
   failed: number | null;
   total: number | null;
   durationMs: number | null;
-  command: string | null;
 }
 
 function numberOf(metric: MetricValue | undefined): number | null {
@@ -29,7 +28,6 @@ function baselineFor(events: readonly ArenaEvent[], side: Side | null): TestTota
       failed: event.payload.failed,
       total: event.payload.total,
       durationMs: event.payload.durationMs,
-      command: event.payload.command,
     };
   }
   return null;
@@ -63,7 +61,6 @@ export function TestResults({
   events: ArenaEvent[];
   className?: string;
 }) {
-  const baseline = baselineFor(events, null);
   const sides: Side[] = ['a', 'b'];
 
   const testsConfigured = !!record.spec.evaluation.tests;
@@ -79,39 +76,14 @@ export function TestResults({
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Baseline (before either run)</CardTitle>
-          <span className="font-mono text-2xs text-fg-muted">
-            {baseline?.command ?? record.spec.evaluation.tests?.command}
-          </span>
-        </CardHeader>
-        <CardBody>
-          {baseline ? (
-            <div className="flex flex-wrap items-end gap-6">
-              <Count label="Passed" value={baseline.passed} />
-              <Count label="Failed" value={baseline.failed} tone="bad" />
-              <Count label="Total" value={baseline.total} />
-              <div className="flex flex-col">
-                <span className="text-2xs uppercase tracking-wide text-fg-subtle">Duration</span>
-                <span className="font-mono text-base font-semibold tabular-nums">
-                  {formatDurationShort(baseline.durationMs)}
-                </span>
-              </div>
-              <p className="max-w-md text-2xs text-fg-subtle">
-                The baseline ran on the untouched workspace. Anything failing here is not a regression.
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-fg-muted">
-              No baseline run was recorded, so regressions cannot be separated from pre-existing failures.
-            </p>
-          )}
-        </CardBody>
-      </Card>
+      <p className="font-mono text-2xs text-fg-muted">{record.spec.evaluation.tests?.command}</p>
 
       <div className="grid gap-3 md:grid-cols-2">
         {sides.map((side) => {
+          // The engine runs a baseline per side, in that side's own workspace, and emits it with that
+          // side (engine.ts test.completed, phase 'baseline'); a battle-level baseline (side null)
+          // belongs to both sides.
+          const baseline = baselineFor(events, side);
           const run = record.runs[side];
           const passed = numberOf(run.metrics.tests_passed);
           const failed = numberOf(run.metrics.tests_failed);
@@ -155,6 +127,33 @@ export function TestResults({
                     </span>
                   </p>
                 ) : null}
+                <div className="flex flex-col gap-1 border-t border-border pt-2">
+                  <span className="text-2xs uppercase tracking-wide text-fg-subtle">
+                    Baseline (before this run)
+                  </span>
+                  {baseline ? (
+                    <div className="flex flex-wrap items-end gap-6">
+                      <Count label="Passed" value={baseline.passed} />
+                      <Count label="Failed" value={baseline.failed} tone="bad" />
+                      <Count label="Total" value={baseline.total} />
+                      <div className="flex flex-col">
+                        <span className="text-2xs uppercase tracking-wide text-fg-subtle">Duration</span>
+                        <span className="font-mono text-base font-semibold tabular-nums">
+                          {formatDurationShort(baseline.durationMs)}
+                        </span>
+                      </div>
+                      <p className="max-w-md text-2xs text-fg-subtle">
+                        The baseline ran on the untouched workspace. Anything failing here is not a
+                        regression.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-fg-muted">
+                      No baseline run was recorded for this side, so regressions cannot be separated from
+                      pre-existing failures.
+                    </p>
+                  )}
+                </div>
               </CardBody>
             </Card>
           );

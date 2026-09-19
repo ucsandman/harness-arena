@@ -23,7 +23,19 @@ export interface AggregateMetricsInput {
   durationMs: number | null;
   /** adapter id used in metric sources and notes, e.g. "codex" */
   agentId?: string;
+  /**
+   * Who decided `status`: the CLI itself ('adapter'), or Arena because it timed the run out, the user
+   * aborted it, or the process never started ('core'). Defaults to 'adapter'; only an `observed`
+   * completion status may claim the CLI reported it.
+   */
+  statusDecidedBy?: 'adapter' | 'core';
 }
+
+/** Events Arena itself emitted (`source.adapter === 'arena'`): baseline/post tests, diff, warnings. */
+const ARENA_SOURCE = 'arena';
+
+/** Shell commands that look like a test run, for the retry heuristic. */
+const TEST_COMMAND_RE = /(^|\s|\/|\\)(test|tests|vitest|jest|pytest|mocha|tap|go\s+test|cargo\s+test)\b/i;
 
 function countType(events: readonly ArenaEvent[], type: ArenaEvent['type']): number {
   let n = 0;
@@ -49,9 +61,16 @@ export function aggregateRunMetrics(input: AggregateMetricsInput): RunMetrics {
   };
 
   // ---- completion ------------------------------------------------------------------------------
-  m.completion_status = input.adapterResult
-    ? observed(input.status, agent + ':status')
-    : calculated(input.status, 'core:run');
+  // A timeout, an abort or a spawn failure is Arena's verdict, not the CLI's; saying `observed` there
+  // would credit the CLI with a report it never made.
+  const statusFromCore = input.statusDecidedBy === 'core' || !input.adapterResult;
+  m.completion_status = statusFromCore
+    ? calculated(input.status, 'core:engine', {
+        note: input.adapterResult
+          ? 'Arena ended the run (timeout, abort or spawn failure); the CLI did not report this status'
+          : 'the CLI produced no result for this run',
+      })
+    : observed(input.status, agent + ':status');
   m.exit_code =
     input.exitCode === null
       ? unavailable('the process did not report an exit code')
@@ -144,16 +163,34 @@ export function aggregateRunMetrics(input: AggregateMetricsInput): RunMetrics {
   m.errors = calculated(countType(input.events, 'error'), 'core:events');
   m.human_interventions = calculated(countType(input.events, 'human.intervention'), 'core:events');
 
-  // Retries: post-phase test runs that failed before the first passing one, plus explicit retry warnings.
-  const postRuns = input.events.filter((e) => e.type === 'test.completed' && e.payload.phase === 'post');
-  const firstPass = postRuns.findIndex((e) => e.type === 'test.completed' && e.payload.failed === 0);
-  const failedBeforePass = (firstPass === -1 ? postRuns : postRuns.slice(0, firstPass)).filter(
+  // Retries: only what the AGENT did. Arena's own baseline/post suites run exactly once each and are
+  // emitted with source.adapter 'arena'; counting them made every red suite look like an agent retry.
+  const agentEvents = input.events.filter((e) => e.source.adapter !== ARENA_SOURCE);
+  const testRuns = agentEvents.filter((e) => e.type === 'test.completed');
+  const firstTestPass = testRuns.findIndex((e) => e.type === 'test.completed' && e.payload.failed === 0);
+  const failedBeforePass = (firstTestPass === -1 ? testRuns : testRuns.slice(0, firstTestPass)).filter(
     (e) => e.type === 'test.completed' && (e.payload.failed ?? 0) > 0,
   ).length;
-  const retryWarnings = input.events.filter(
+  // The same shape for shell test commands: a failing test command followed by a later passing one.
+  const testCommandIds = new Set<string>();
+  for (const e of agentEvents) {
+    if (e.type === 'command.started' && TEST_COMMAND_RE.test(e.payload.command)) {
+      testCommandIds.add(e.payload.commandId);
+    }
+  }
+  const commandExits = agentEvents
+    .filter((e) => e.type === 'command.completed' && testCommandIds.has(e.payload.commandId))
+    .map((e) => (e.type === 'command.completed' ? e.payload.exitCode : null));
+  const firstCommandPass = commandExits.indexOf(0);
+  const failedCommandsBeforePass = (
+    firstCommandPass === -1 ? commandExits : commandExits.slice(0, firstCommandPass)
+  ).filter((code) => typeof code === 'number' && code !== 0).length;
+  const retryWarnings = agentEvents.filter(
     (e) => e.type === 'warning' && /retry/i.test(e.payload.code ?? ''),
   ).length;
-  m.retries = calculated(failedBeforePass + retryWarnings, 'core:events');
+  m.retries = calculated(failedBeforePass + failedCommandsBeforePass + retryWarnings, 'core:events', {
+    note: 'counted from the agent’s own events; Arena’s evaluation suites are not retries',
+  });
 
   // ---- git-derived change size ----------------------------------------------------------------
   if (input.diff) {

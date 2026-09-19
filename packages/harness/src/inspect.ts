@@ -299,11 +299,10 @@ export async function inspectHarness(
       ? [...manifestAgents]
       : [...agentsWithFeatures].sort();
 
-  const manifestCommands = [
-    manifest.manifest?.install?.command,
-    manifest.manifest?.prepare?.command,
-    manifest.manifest?.cleanup?.command,
-  ].filter((c): c is string => typeof c === 'string' && c.length > 0);
+  // cleanup is reserved (never executed in v1), so it is not disclosed as a command that would run
+  const manifestCommands = [manifest.manifest?.install?.command, manifest.manifest?.prepare?.command].filter(
+    (c): c is string => typeof c === 'string' && c.length > 0,
+  );
   const install = detectInstall(ix, manifestCommands);
 
   const declaredFiles = manifest.manifest?.files;

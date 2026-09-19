@@ -45,7 +45,7 @@ install: # runs in the harness checkout before the battle
   platforms: [darwin, linux] # optional gate
 prepare: # runs in the WORKSPACE after files are applied
   command: node scripts/arena-prepare.mjs
-cleanup: # runs in the workspace after the run
+cleanup: # RESERVED: accepted by the schema, not executed in v1 (the worktree is simply removed)
   command: node scripts/arena-cleanup.mjs
 
 # Per-agent configuration applied when the harness runs under that agent.
@@ -79,28 +79,46 @@ Unknown top-level keys are rejected so typos are caught early. The Zod source of
 ## Lifecycle
 
 ```
-resolve   clone the harness repository (or use a local path read-only), record the exact commit
+resolve   clone the harness repository (or use a local path read-only), record the exact commit. A
+          `/tree/<ref>/<subdir>` subdirectory is realpath-checked against the checkout: a committed
+          symlink (or junction) there is refused, it never becomes the harness root
 inspect   detect features, read arena.yaml, produce a compatibility report
-trust     the CLI prints every install/prepare/cleanup command verbatim and asks for approval
+trust     the CLI prints every install/prepare command verbatim and asks for approval
           (non-interactive: --trust). Untrusted harnesses with commands do not run.
 install   `install.command` in the harness checkout (env: ARENA_HARNESS_DIR, ARENA_WORKSPACE, ARENA_AGENT)
-apply     copy `files` into the workspace (path-contained, symlinks skipped, no overwrite of repository
-          files: a harness CLAUDE.md lands in .claude/CLAUDE.md when the repository has its own)
+apply     copy `files` into the workspace (path-contained, symlinks skipped on both sides — a
+          destination path that crosses a link in the repository is refused, files are opened with
+          `wx` and never followed, and a file that cannot be written is skipped with a warning and
+          reported in `skippedFiles` — no overwrite of repository files: a harness CLAUDE.md lands in
+          .claude/CLAUDE.md when the repository has its own)
 prepare   `prepare.command` inside the workspace
 run       the agent CLI starts in the workspace with agentConfig applied
-cleanup   `cleanup.command`, then the workspace (a git worktree) is removed
+cleanup   reserved: `cleanup.command` is validated but not executed in v1; the workspace (a git
+          worktree) is removed as-is
 ```
 
-Environment variables available to every command and to the agent process:
+Environment variables Arena injects. The two sets are not the same.
 
-| Variable            | Value                                                      |
-| ------------------- | ---------------------------------------------------------- |
-| `ARENA_BATTLE`      | `1`                                                        |
-| `ARENA_RUN_ID`      | the run id                                                 |
-| `ARENA_SIDE`        | `a` or `b`                                                 |
-| `ARENA_WORKSPACE`   | absolute path of the workspace                             |
-| `ARENA_HARNESS_DIR` | absolute path of the harness checkout (absent for vanilla) |
-| `ARENA_AGENT`       | agent id                                                   |
+Harness commands (`install`, `prepare`) receive:
+
+| Variable            | Value                                                     |
+| ------------------- | --------------------------------------------------------- |
+| `ARENA_WORKSPACE`   | absolute path of the workspace                            |
+| `ARENA_HARNESS_DIR` | absolute path of the harness checkout (empty for vanilla) |
+| `ARENA_AGENT`       | agent id                                                  |
+
+The agent process receives:
+
+| Variable          | Value                          |
+| ----------------- | ------------------------------ |
+| `ARENA_BATTLE`    | `1`                            |
+| `ARENA_RUN_ID`    | the run id                     |
+| `ARENA_SIDE`      | `a` or `b`                     |
+| `ARENA_WORKSPACE` | absolute path of the workspace |
+
+The agent process does not get `ARENA_HARNESS_DIR` or `ARENA_AGENT`, and harness commands do not get
+`ARENA_RUN_ID`, `ARENA_SIDE` or `ARENA_BATTLE`. A harness that needs the checkout path inside the agent
+process passes it itself through `agentConfig.<agent>.env` with `${ARENA_HARNESS_DIR}`.
 
 ## Fairness notes
 
@@ -110,7 +128,7 @@ Environment variables available to every command and to the agent process:
 
 ## Auto-detection without a manifest
 
-`arena harness inspect <url|path>` (and the web import page) report:
+`arena harnesses inspect <url|path>` (and the web import page) report:
 
 | Feature            | Looks for                                                                                                                |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------ |

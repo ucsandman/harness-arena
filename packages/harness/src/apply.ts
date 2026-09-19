@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { shellInvocation } from '@harness-arena/adapters';
 import type { AgentConfig } from '@harness-arena/protocol';
-import { resolveInside, toPosix } from './file-source.js';
+import { firstSymlinkComponent, realpathInside, resolveInside, toPosix } from './file-source.js';
 import type { ResolvedHarness } from './resolve.js';
 import type { Logger, ProcessRunner } from './types.js';
 
@@ -28,6 +29,11 @@ export interface ApplyOptions {
 export interface ApplyResult {
   /** workspace-relative paths written by the harness */
   appliedFiles: string[];
+  /**
+   * harness-declared paths that were refused or could not be written (a symlinked destination, a name
+   * the filesystem rejects, an I/O error). One bad file never aborts the apply.
+   */
+  skippedFiles: string[];
   executedCommands: string[];
   agentConfig: AgentConfig | null;
 }
@@ -74,7 +80,9 @@ export function plannedCommands(h: ResolvedHarness): PlannedCommand[] {
   if (!manifest) return [];
   const workspacePhases: Array<PlannedCommand['phase']> = ['prepare', 'cleanup'];
   const out: PlannedCommand[] = [];
-  for (const phase of ['install', 'prepare', 'cleanup'] as const) {
+  // cleanup is accepted by the manifest schema but reserved: nothing executes it in v1, so it is not
+  // put in front of the user as something to trust either.
+  for (const phase of ['install', 'prepare'] as const) {
     const entry = manifest[phase];
     if (!entry || !platformAllows(entry.platforms)) continue;
     out.push({
@@ -141,9 +149,10 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
   const logger = opts.logger.child({ component: 'harness/apply', harness: h.name });
   const workspace = path.resolve(opts.workspace);
   const appliedFiles: string[] = [];
+  const skippedFiles: string[] = [];
   const executedCommands: string[] = [];
 
-  const commands = plannedCommands(h).filter((c) => c.phase !== 'cleanup');
+  const commands = plannedCommands(h);
   if (commands.length > 0 && !opts.trusted) {
     throw new HarnessTrustRequiredError(commands.map((c) => c.command));
   }
@@ -171,6 +180,7 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
       const src = resolveInside(harnessDir, rel);
       if (src === null) {
         logger.warn('refused harness path: not relative, or escapes the harness directory', { path: rel });
+        skippedFiles.push(rel);
         continue;
       }
       const st = await lstatOrNull(src);
@@ -180,6 +190,7 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
       }
       if (st.isLink) {
         logger.warn('skipped symlink declared by the harness', { path: rel });
+        skippedFiles.push(rel);
         continue;
       }
       if (st.isDir) await copyDirectory(src, rel);
@@ -199,6 +210,7 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
       const rel = `${relDir.replace(/[/\\]+$/, '')}/${entry.name}`;
       if (entry.isSymbolicLink()) {
         logger.warn('skipped symlink inside the harness', { path: rel });
+        skippedFiles.push(rel);
         continue;
       }
       const abs = path.join(srcDir, entry.name);
@@ -207,10 +219,53 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
     }
   }
 
+  /**
+   * Write one harness file into the workspace. The destination is refused when any component below the
+   * workspace is a symbolic link (the checked-out repository may ship `.claude -> /somewhere`), the
+   * file itself is opened with `wx` so an existing entry — link included — is never followed, and any
+   * per-file failure is a skip with a warning rather than an aborted apply.
+   */
+  async function writeGuarded(srcFile: string, dest: string, rel: string): Promise<boolean> {
+    const linked = await firstSymlinkComponent(workspace, dest);
+    if (linked !== null) {
+      logger.warn('refused to write through a symlinked path in the workspace', {
+        path: rel,
+        symlink: toPosix(path.relative(workspace, linked)),
+      });
+      skippedFiles.push(rel);
+      return false;
+    }
+    try {
+      const destDir = path.dirname(dest);
+      await fs.mkdir(destDir, { recursive: true });
+      if ((await realpathInside(workspace, destDir)) === null) {
+        logger.warn('refused to write outside the workspace', { path: rel });
+        skippedFiles.push(rel);
+        return false;
+      }
+      const data = await fs.readFile(srcFile);
+      const handle = await fs.open(dest, 'wx');
+      try {
+        await handle.writeFile(data);
+      } finally {
+        await handle.close();
+      }
+      return true;
+    } catch (err) {
+      logger.warn('skipped a harness file that could not be written', {
+        path: rel,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      skippedFiles.push(rel);
+      return false;
+    }
+  }
+
   async function copyOne(srcFile: string, rel: string): Promise<void> {
     const dest = resolveInside(targetRoot, rel);
     if (dest === null || resolveInside(workspace, toPosix(path.relative(workspace, dest))) === null) {
       logger.warn('refused to write outside the workspace', { path: rel });
+      skippedFiles.push(rel);
       return;
     }
     const existing = await lstatOrNull(dest);
@@ -228,8 +283,7 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
           );
           return;
         }
-        await fs.mkdir(path.dirname(alt), { recursive: true });
-        await fs.copyFile(srcFile, alt);
+        if (!(await writeGuarded(srcFile, alt, rel))) return;
         logger.info('workspace already had CLAUDE.md; harness CLAUDE.md applied as .claude/CLAUDE.md', {
           path: altRel,
         });
@@ -241,16 +295,11 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
       });
       return;
     }
-    await fs.mkdir(path.dirname(dest), { recursive: true });
-    await fs.copyFile(srcFile, dest);
+    if (!(await writeGuarded(srcFile, dest, rel))) return;
     appliedFiles.push(toPosix(path.relative(workspace, dest)));
   }
 
   // ---- commands -------------------------------------------------------------------------------
-  const shell =
-    process.platform === 'win32'
-      ? { command: 'cmd.exe', args: ['/d', '/s', '/c'] }
-      : { command: 'sh', args: ['-c'] };
   const env: Record<string, string> = {
     ...opts.env,
     ARENA_WORKSPACE: workspace,
@@ -266,9 +315,13 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
       continue;
     }
     logger.info('running harness command', { phase: planned.phase, command: planned.command, cwd });
+    // the shell command line is handed over verbatim on Windows; Node's own escaping would mangle any
+    // command containing a double quote, which then exits 0 and is recorded as if it had run
+    const shell = shellInvocation(planned.command);
     const result = await opts.runner.run({
       command: shell.command,
-      args: [...shell.args, planned.command],
+      args: shell.args,
+      windowsVerbatimArguments: shell.windowsVerbatimArguments,
       cwd,
       env,
       stdin: null,
@@ -299,6 +352,10 @@ export async function applyHarness(h: ResolvedHarness, opts: ApplyOptions): Prom
     executedCommands.push(planned.command);
   }
 
-  logger.debug('harness applied', { files: appliedFiles.length, commands: executedCommands.length });
-  return { appliedFiles, executedCommands, agentConfig: resolveAgentConfig(h, opts.agentId) };
+  logger.debug('harness applied', {
+    files: appliedFiles.length,
+    skipped: skippedFiles.length,
+    commands: executedCommands.length,
+  });
+  return { appliedFiles, skippedFiles, executedCommands, agentConfig: resolveAgentConfig(h, opts.agentId) };
 }

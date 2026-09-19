@@ -15,6 +15,14 @@ spawning anything. `execute()` uses an injectable `ProcessRunner`, so the engine
 process implementation: argument arrays only (no shell), stdin delivery, output caps, timeouts, and
 whole-process-tree kills (`taskkill /T` on Windows, process-group kill elsewhere).
 
+The runner resolves the command to an absolute path first, searching **absolute `PATH` entries only**
+(`lookupOnPath`): Windows resolves a bare name against the current directory before `PATH`, and the
+current directory here is a battle workspace the harness and the agent can write to. A command that
+cannot be spawned at all is reported as `spawnError` on the run, never thrown. Command lines that a user
+authored (test, build, install) run through a shell by design, and that shell is taken from an absolute
+path too: `shellInvocation(commandLine)` returns `cmd.exe /d /s /c "<line>"` with
+`windowsVerbatimArguments` on Windows, `/bin/sh -c <line>` elsewhere.
+
 ## Built-in adapters
 
 ### Claude Code (`claude-code`)
@@ -80,6 +88,13 @@ opencode run --standalone --format json --auto [--model provider/model] <extra a
 User config isolation: **no**. Telemetry: text parts, tool use with state, per-step tokens and cost when the
 provider reports it.
 
+The prompt is the only adapter argument that is not fixed, because `opencode run` documents no stdin input.
+On Windows, where OpenCode is installed as a `.cmd` shim, it can only be started through `cmd.exe`, which
+reads CR and LF as command separators and cannot escape them: a prompt containing a line break cannot be
+delivered at all. Such a run fails immediately, before anything is spawned, with `errorCode`
+`unsupported_prompt` and an explanation; `capabilities().notes` states the limitation. Single-line prompts,
+and every platform where OpenCode is a native binary, are unaffected.
+
 ### Fake (`fake`)
 
 A deterministic adapter that replays a fixture script (`fixtures/fake/*.json`): timed events plus file
@@ -89,9 +104,13 @@ suite, `arena demo`, and CI. It costs nothing and never touches the network. Fix
 
 ## Detection
 
-`arena agents` runs every adapter's `detect()`: binary on `PATH` (with `.cmd`/`.exe` handling on Windows),
-`--version`, and an auth status of `ok`, `missing`, or `unknown`. Auth is never checked by reading credential
-files; the CLI itself is the only source of truth.
+`arena agents` runs every adapter's `detect()`: binary on `PATH` (with `.cmd`/`.exe` handling through
+`PATHEXT` on Windows), `--version`, and an auth status of `ok`, `missing`, or `unknown`. Auth is never
+checked by reading credential files; the CLI itself is the only source of truth.
+
+`findBinary` iterates `PATH` itself and skips entries that are empty or relative, because both resolve
+against the working directory. It returns an absolute path or `null`; the working directory is never
+searched, on any platform.
 
 ## Writing a community adapter
 

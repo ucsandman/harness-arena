@@ -196,6 +196,9 @@ importers:
 
   packages/harness:
     dependencies:
+      '@harness-arena/adapters':
+        specifier: workspace:*
+        version: link:../adapters
       '@harness-arena/protocol':
         specifier: workspace:*
         version: link:../protocol

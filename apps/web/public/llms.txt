@@ -29,4 +29,6 @@
 ## Notes for agents
 
 - The landing page preview is demo data, labeled `demo: true` in the battle record.
-- Battle pages, leaderboard and accounts are not live yet.
+- Live surfaces: /battles and /battles/<id> (battle reports), /leaderboard, /harnesses and
+  /harnesses/<slug>, and accounts (/login, /dashboard, /settings). robots.txt disallows the account
+  surfaces, the device flow and /api/.

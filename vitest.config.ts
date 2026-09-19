@@ -12,6 +12,8 @@ export default defineConfig({
       '@harness-arena/harness': r('./packages/harness/src/index.ts'),
       '@harness-arena/evaluator': r('./packages/evaluator/src/index.ts'),
       '@harness-arena/database': r('./packages/database/src/index.ts'),
+      // apps/web uses the Next.js "@/*" path alias; test.include already covers apps/web/test
+      '@/': `${r('./apps/web')}/`,
     },
   },
   test: {

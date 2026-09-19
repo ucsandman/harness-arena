@@ -1,7 +1,11 @@
+import { chmod, writeFile } from 'node:fs/promises';
 import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { defaultProcessRunner, killProcessTree, LineSplitter } from '../src/process';
+import { shellInvocation } from '../src/resolve';
 import type { ProcessRunResult } from '../src/types';
+import { makeTempDir, removeTempDir } from './helpers';
 
 const NODE = process.execPath;
 
@@ -18,6 +22,7 @@ async function run(options: {
   timeoutMs?: number;
   maxOutputBytes?: number;
   signal?: AbortSignal;
+  windowsVerbatimArguments?: boolean;
 }): Promise<RunCapture> {
   const stdout: string[] = [];
   const stderr: string[] = [];
@@ -33,6 +38,9 @@ async function run(options: {
     maxOutputBytes: options.maxOutputBytes ?? 10 * 1024 * 1024,
     onStdoutLine: (line) => stdout.push(line),
     onStderrLine: (line) => stderr.push(line),
+    ...(options.windowsVerbatimArguments === undefined
+      ? {}
+      : { windowsVerbatimArguments: options.windowsVerbatimArguments }),
   });
   return { result, stdout, stderr };
 }
@@ -127,6 +135,68 @@ describe('defaultProcessRunner', () => {
 
     expect(result.spawnError).toContain('ENOENT');
     expect(result.exitCode).toBeNull();
+  });
+});
+
+describe('defaultProcessRunner argument refusals', () => {
+  it('records a spawn failure instead of throwing when an argument holds a null byte', async () => {
+    const nullByte = String.fromCharCode(0);
+    const { result } = await run({ args: ['-e', "console.log('never')", `nul${nullByte}byte`] });
+
+    expect(result.spawnError).toMatch(/null byte/i);
+    expect(result.exitCode).toBeNull();
+    expect(result.aborted).toBe(false);
+    expect(result.timedOut).toBe(false);
+  });
+
+  it.skipIf(process.platform !== 'win32')(
+    'records a spawn failure instead of throwing when argv holds a line break on a shim',
+    async () => {
+      const dir = await makeTempDir('arena-shim-');
+      try {
+        const shim = path.join(dir, 'agent.cmd');
+        await writeFile(shim, '@echo off\r\necho shim %*\r\n', 'utf8');
+        // cmd.exe reads CR and LF as command separators, so a multi-line argv entry is refused.
+        const { result } = await run({ command: shim, args: ['line one\nline two'] });
+
+        expect(result.spawnError).toMatch(/line break/i);
+        expect(result.exitCode).toBeNull();
+      } finally {
+        await removeTempDir(dir);
+      }
+    },
+  );
+
+  it('still spawns the same shim when the argument is a single line', async () => {
+    const dir = await makeTempDir('arena-shim-ok-');
+    try {
+      const isWindows = process.platform === 'win32';
+      const shim = path.join(dir, isWindows ? 'agent.cmd' : 'agent.sh');
+      const body = isWindows ? '@echo off\r\necho shim %1\r\n' : '#!/bin/sh\necho shim "$1"\n';
+      await writeFile(shim, body, 'utf8');
+      await chmod(shim, 0o755);
+      const { result, stdout } = await run({ command: shim, args: ['one-line'] });
+
+      expect(result.spawnError).toBeNull();
+      expect(result.exitCode).toBe(0);
+      // cmd.exe echoes %1 with the quoting execa applied, so only the value itself is asserted.
+      expect(stdout.join('\n')).toMatch(/shim "?one-line"?/);
+    } finally {
+      await removeTempDir(dir);
+    }
+  });
+
+  it('runs a shell command line through the absolute shell, verbatim on Windows', async () => {
+    const invocation = shellInvocation('echo arena-shell-ok');
+    const { result, stdout } = await run({
+      command: invocation.command,
+      args: invocation.args,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments,
+    });
+
+    expect(result.spawnError).toBeNull();
+    expect(result.exitCode).toBe(0);
+    expect(stdout.join('\n')).toContain('arena-shell-ok');
   });
 });
 

@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Assertion } from '@harness-arena/protocol';
 import { assertionSchema } from '@harness-arena/protocol';
 import { assertionsEvaluator, checkAssertion, makeSideContext, matchesGlob } from '../src/index.js';
-import { fakeRunner, makeCtx, makeSpec } from './helpers.js';
+import { fakeRunner, makeCtx, makeSpec, shellLineOf } from './helpers.js';
 
 let workspace: string;
 
@@ -137,7 +137,9 @@ describe('checkAssertion', () => {
     );
     expect(runner.calls[0]?.cwd).toBe(workspace);
     expect(runner.calls[0]?.timeoutMs).toBe(4321);
-    expect(runner.calls[0]?.args.at(-1)).toBe('npm run build');
+    const call = runner.calls[0];
+    expect(call).toBeDefined();
+    if (call) expect(shellLineOf(call)).toBe('npm run build');
   });
 
   it('diff-touches and diff-not-touches match changed paths by glob', async () => {

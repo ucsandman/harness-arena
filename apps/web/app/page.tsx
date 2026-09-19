@@ -19,7 +19,10 @@ import {
   VerifiedBattles,
 } from '@/components/marketing/sections';
 import { BRAND } from '@/lib/brand';
-import { SAMPLE_REPORT } from '@/lib/sample-battle';
+import { loadLandingBattle } from '@/lib/demo-battle';
+
+// the preview renders a battle read from the database, so this page is per-request
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: `${BRAND.name}: ${BRAND.tagline}`,
@@ -96,17 +99,20 @@ function FinalCta() {
   );
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const demo = await loadLandingBattle();
+  const note =
+    demo.source === 'database'
+      ? `This is the live report UI rendered from the seeded demo battle in the database (${demo.events.length} events), not a screenshot. Scroll it, scrub the timeline, filter the events.`
+      : 'This is the live report UI rendered from a bundled sample battle record, not a screenshot. Scroll it, scrub the timeline, filter the events.';
+
   return (
     <>
       <Hero />
 
       <Container className="pb-12">
-        <PreviewFrame
-          title={`${BRAND.cli.bin} report ${SAMPLE_REPORT.record.id}`}
-          note="This is the live report UI rendered from a sample battle record, not a screenshot. Scroll it, scrub the timeline, filter the events."
-        >
-          <BattleReport record={SAMPLE_REPORT.record} events={SAMPLE_REPORT.events} />
+        <PreviewFrame title={`${BRAND.cli.bin} report ${demo.record.id}`} note={note}>
+          <BattleReport record={demo.record} events={demo.events} />
         </PreviewFrame>
       </Container>
 

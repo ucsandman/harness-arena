@@ -57,7 +57,10 @@ pnpm --filter @harness-arena/database exec drizzle-kit generate --config drizzle
   No provider credential ever reaches this database.
 - **catalog** — `agents` (the CLIs Arena drives), `harnesses` (`slug` = `owner--repo`, `vanilla`, or a
   slugified local name), `harness_versions` (one per commit), `repositories`, `tasks` (id = hash of
-  the task content, so identical tasks are shared).
+  the task content, so identical tasks are shared). A battle upload may create a `harnesses` row but
+  never rewrites one that exists: `name`, `source_kind`, `source_url`, `description` and
+  `owner_user_id` belong to the import flow, and an upload only bumps `updated_at`. Otherwise any
+  account could edit another account's catalog entry by uploading a battle that slugs to the same key.
 - **battles** — `battles`, `battle_runs` (one per side), `events` (primary key `(battle_id, seq)`, so a
   retried upload is a no-op), `metrics` (denormalized comparison table), `evaluations`, `artifacts`
   (diff / final response / report HTML).

@@ -57,7 +57,6 @@ export function eventsOfType<T extends EventType>(
 export const TEST_LIMITS: Limits = {
   timeoutMs: 20 * 60_000,
   maxOutputBytes: 50 * 1024 * 1024,
-  stallTimeoutMs: 0,
 };
 
 export function testLogger(): Logger {

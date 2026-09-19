@@ -197,18 +197,26 @@ export async function createWorktree(args: {
   }
 }
 
-/** Remove a worktree and forget it. Tolerates a directory that is already gone. */
+/**
+ * Remove a worktree and forget it. Tolerates a directory that is already gone. A Windows file lock
+ * (an editor, a virus scanner, a lingering child) makes the delete fail on the first try, so the
+ * fallback retries; `worktree prune` runs even when the delete gives up, otherwise the mirror keeps a
+ * registration for a directory nobody will ever clean up.
+ */
 export async function removeWorktree(args: { mirror: string; dest: string; home?: string }): Promise<void> {
   const dest = path.resolve(args.dest);
   const opts: GitOptions & { cwd: string } = { home: args.home, cwd: args.mirror };
-  if (fs.existsSync(dest)) {
-    const removed = await git(['worktree', 'remove', '--force', toGitPath(dest)], opts);
-    if (removed.exitCode !== 0) {
-      // Fall back to a plain delete: losing the directory matters more than git's bookkeeping.
-      fs.rmSync(dest, { recursive: true, force: true });
+  try {
+    if (fs.existsSync(dest)) {
+      const removed = await git(['worktree', 'remove', '--force', toGitPath(dest)], opts);
+      if (removed.exitCode !== 0) {
+        // Fall back to a plain delete: losing the directory matters more than git's bookkeeping.
+        fs.rmSync(dest, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      }
     }
+  } finally {
+    await git(['worktree', 'prune'], opts);
   }
-  await git(['worktree', 'prune'], opts);
 }
 
 /** A fresh repository with one empty commit, for greenfield ("empty") battles. */

@@ -2,6 +2,9 @@ export type * from './types.js';
 
 export { LineSplitter, defaultProcessRunner, killProcessTree, runProcess } from './process.js';
 
+export { lookupOnPath, shellInvocation } from './resolve.js';
+export type { PathLookupOptions, ShellInvocation } from './resolve.js';
+
 export { VERSION_TIMEOUT_MS, detectAgents, findBinary, getSemverOf, getVersionOf } from './detect.js';
 export type { VersionOptions } from './detect.js';
 

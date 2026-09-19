@@ -180,6 +180,94 @@ describe('aggregateRunMetrics honesty', () => {
     expect(metrics.tool_calls).toMatchObject({ value: 2, status: 'calculated' });
   });
 
+  it('never counts Arena’s own test suites as agent retries', () => {
+    const arenaSuite = (failed: number, seq: number): ArenaEvent =>
+      makeEvent(
+        'test.completed',
+        {
+          command: 'node --test',
+          phase: 'post',
+          exitCode: failed > 0 ? 1 : 0,
+          passed: 3 - failed,
+          failed,
+          total: 3,
+          durationMs: 10,
+          parser: 'tap',
+        },
+        { seq, source: { adapter: 'arena' } },
+      );
+    const metrics = aggregateRunMetrics({
+      events: [arenaSuite(1, 1)],
+      adapterResult: RESULT,
+      capabilities: FULL_CAPABILITIES,
+      diff: DIFF,
+      tests: { baseline: null, post: makeTestOutcome({ passed: 2, failed: 1, total: 3 }) },
+      status: 'completed',
+      exitCode: 0,
+      durationMs: 100,
+      agentId: 'fake',
+    });
+    expect(metrics.retries).toMatchObject({ value: 0, status: 'calculated' });
+  });
+
+  it('counts a failing then passing test command the agent ran as one retry', () => {
+    const metrics = aggregateRunMetrics({
+      events: [
+        makeEvent('command.started', { commandId: 'c1', command: 'npm test' }, { seq: 1 }),
+        makeEvent('command.completed', { commandId: 'c1', exitCode: 1 }, { seq: 2 }),
+        makeEvent('command.started', { commandId: 'c2', command: 'npm test' }, { seq: 3 }),
+        makeEvent('command.completed', { commandId: 'c2', exitCode: 0 }, { seq: 4 }),
+        // a non-test command that failed is not a retry
+        makeEvent('command.started', { commandId: 'c3', command: 'git status' }, { seq: 5 }),
+        makeEvent('command.completed', { commandId: 'c3', exitCode: 1 }, { seq: 6 }),
+      ],
+      adapterResult: RESULT,
+      capabilities: FULL_CAPABILITIES,
+      diff: DIFF,
+      tests: { baseline: null, post: null },
+      status: 'completed',
+      exitCode: 0,
+      durationMs: 100,
+      agentId: 'fake',
+    });
+    expect(metrics.retries).toMatchObject({ value: 1, status: 'calculated' });
+  });
+
+  it('labels a status Arena decided (timeout, abort, spawn failure) as calculated', () => {
+    const decided = aggregateRunMetrics({
+      events: [],
+      adapterResult: { ...RESULT, status: 'interrupted', exitCode: null },
+      capabilities: FULL_CAPABILITIES,
+      diff: null,
+      tests: { baseline: null, post: null },
+      status: 'timed_out',
+      exitCode: null,
+      durationMs: 1000,
+      agentId: 'fake',
+      statusDecidedBy: 'core',
+    });
+    expect(decided.completion_status).toMatchObject({
+      value: 'timed_out',
+      status: 'calculated',
+      source: 'core:engine',
+    });
+    expect(decided.completion_status.note).toContain('Arena ended the run');
+
+    const reported = aggregateRunMetrics({
+      events: [],
+      adapterResult: RESULT,
+      capabilities: FULL_CAPABILITIES,
+      diff: null,
+      tests: { baseline: null, post: null },
+      status: 'completed',
+      exitCode: 0,
+      durationMs: 1000,
+      agentId: 'fake',
+      statusDecidedBy: 'adapter',
+    });
+    expect(reported.completion_status).toMatchObject({ value: 'completed', status: 'observed' });
+  });
+
   it('says why regressions are unknown when there is no baseline', () => {
     const metrics = aggregateRunMetrics({
       events: [],

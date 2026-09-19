@@ -1,34 +1,90 @@
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  OUTPUT_CAP_BYTES,
-  PROCESS_OUTPUT_CAP_BYTES,
-  createOutputCollector,
-  runTests,
-  shellInvocation,
-} from '../src/index.js';
+import { defaultProcessRunner, shellInvocation } from '@harness-arena/adapters';
+import { OUTPUT_CAP_BYTES, PROCESS_OUTPUT_CAP_BYTES, createOutputCollector, runTests } from '../src/index.js';
+import type { ProcessRunOptions, ProcessRunner } from '../src/index.js';
 import { fakeRunner } from './helpers.js';
 
 const cwd = path.join(os.tmpdir(), 'arena-run-tests');
 
-describe('shellInvocation', () => {
-  it('uses cmd.exe on Windows', () => {
-    const invocation = shellInvocation('npm test -- --run', 'win32');
-    expect(invocation.command.toLowerCase()).toMatch(/cmd\.exe$/);
-    expect(invocation.args).toEqual(['/d', '/s', '/c', 'npm test -- --run']);
+/**
+ * Regression for the Windows quoting bug: the shell line used to be handed to cmd.exe as a normal argv
+ * element, so Node re-escaped it and `node -e "..."` ran something else (and could exit 0, reported as
+ * a pass). The invocation now comes from `@harness-arena/adapters` and carries
+ * `windowsVerbatimArguments`, which runTests must forward to the runner.
+ */
+describe('the shell invocation runTests hands to the runner', () => {
+  const quoted = 'node -e "process.stdout.write(String(1+1))"';
+
+  it('passes a command containing a double quote to the platform shell verbatim', async () => {
+    const runner = fakeRunner({});
+    await runTests({ command: quoted, cwd, parser: 'exit-code', timeoutMs: 1000, runner });
+
+    const call = runner.calls[0];
+    expect(call).toBeDefined();
+    if (process.platform === 'win32') {
+      expect(path.isAbsolute(call?.command ?? '')).toBe(true);
+      expect(call?.command.toLowerCase()).toMatch(/cmd\.exe$/);
+      expect(call?.args).toEqual(['/d', '/s', '/c', `"${quoted}"`]);
+      expect(call?.windowsVerbatimArguments).toBe(true);
+    } else {
+      expect(call?.command).toBe('/bin/sh');
+      expect(call?.args).toEqual(['-c', quoted]);
+      expect(call?.windowsVerbatimArguments).toBe(false);
+    }
+    // whatever the platform, the user's double quotes survive into the last argument
+    expect(call?.args.at(-1)).toContain('"process.stdout.write(String(1+1))"');
   });
 
-  it('uses sh elsewhere', () => {
-    expect(shellInvocation('pytest -q', 'linux')).toEqual({ command: 'sh', args: ['-c', 'pytest -q'] });
-    expect(shellInvocation('pytest -q', 'darwin')).toEqual({ command: 'sh', args: ['-c', 'pytest -q'] });
+  it('forwards exactly what shellInvocation produced, nothing of its own', async () => {
+    const runner = fakeRunner({});
+    await runTests({ command: quoted, cwd, parser: 'exit-code', timeoutMs: 1000, runner });
+    const expected = shellInvocation(quoted);
+    expect(runner.calls[0]?.command).toBe(expected.command);
+    expect(runner.calls[0]?.args).toEqual(expected.args);
+    expect(runner.calls[0]?.windowsVerbatimArguments).toBe(expected.windowsVerbatimArguments);
   });
 
-  it('passes the command as a single argument, never interpolated', () => {
-    const tricky = 'npm test -- --grep "a b" && echo done';
-    const invocation = shellInvocation(tricky, 'linux');
-    expect(invocation.args).toHaveLength(2);
-    expect(invocation.args[1]).toBe(tricky);
+  it.skipIf(process.platform !== 'win32')(
+    'really runs a double-quoted node -e line through cmd.exe and captures its output',
+    async () => {
+      const outcome = await runTests({
+        command: quoted,
+        cwd: os.tmpdir(),
+        parser: 'exit-code',
+        timeoutMs: 60_000,
+        runner: defaultProcessRunner,
+      });
+      expect(outcome.output.trim()).toBe('2');
+      expect(outcome.exitCode).toBe(0);
+    },
+  );
+});
+
+/**
+ * Finding 4: this package used to declare its own byte-for-byte copies of `Logger`/`ProcessRunner`.
+ * The copies drifted the moment adapters added `windowsVerbatimArguments`, so the types are imported
+ * now. This is a compile-time assertion with a runtime tail.
+ */
+describe('the process contract this package re-exports', () => {
+  it('is the one @harness-arena/adapters owns, windowsVerbatimArguments included', () => {
+    const runner: ProcessRunner = defaultProcessRunner;
+    const opts: ProcessRunOptions = {
+      command: 'node',
+      args: ['-v'],
+      windowsVerbatimArguments: true,
+      cwd,
+      env: {},
+      stdin: null,
+      signal: new AbortController().signal,
+      timeoutMs: 1000,
+      maxOutputBytes: 1024,
+      onStdoutLine: () => {},
+      onStderrLine: () => {},
+    };
+    expect(typeof runner.run).toBe('function');
+    expect(opts.windowsVerbatimArguments).toBe(true);
   });
 });
 

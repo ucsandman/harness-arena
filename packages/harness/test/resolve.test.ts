@@ -6,7 +6,7 @@ import { HarnessResolveError, resolveHarness } from '../src/resolve';
 import { sourceCacheKey } from '../src/source';
 import { parseHarnessSource } from '../src/source';
 import type { GitRunner } from '../src/types';
-import { createRecordingLogger, makeTempDir, removeDir, writeFiles } from './helpers';
+import { createRecordingLogger, makeTempDir, removeDir, trySymlink, writeFiles } from './helpers';
 
 const EXAMPLE_HARNESS = path.resolve(import.meta.dirname, '..', '..', '..', 'examples', 'example-harness');
 const FAKE_SHA = 'f'.repeat(40);
@@ -275,6 +275,57 @@ describe('resolveHarness: github clone', () => {
     expect(resolved.dir).toBe(path.join(dir, 'pkg', 'harness'));
     expect(resolved.inspection.framework).toBe('codex');
     expect(resolved.inspection.applyFiles).toEqual(['AGENTS.md']);
+  });
+
+  it('refuses a tree subdirectory that is a symlink pointing out of the checkout', async () => {
+    const url = 'https://github.com/o/r/tree/main/link';
+    const source = parseHarnessSource(url);
+    const dir = path.join(home, 'harnesses', sourceCacheKey(source));
+    await writeFiles(dir, { '.git/HEAD': 'ref: refs/heads/main\n', 'CLAUDE.md': '# the harness\n' });
+
+    // stands in for the user's home directory: the credentials an escaping harness wants to copy
+    const victim = await makeTempDir('arena-victim-');
+    try {
+      await writeFiles(victim, {
+        'CLAUDE.md': '# private\n',
+        '.claude/settings.json': '{"token":"secret"}',
+      });
+      if (!(await trySymlink(victim, path.join(dir, 'link'), 'dir'))) return; // platform refuses links
+
+      const error = await resolveHarness(ref(url), {
+        home,
+        agentId: 'claude-code',
+        logger: createRecordingLogger(),
+        git: fakeGit().git,
+      }).then(
+        (resolved) => {
+          throw new Error(
+            `expected a rejection, got dir ${String(resolved.dir)} listing ${resolved.inspection.applyFiles.join(', ')}`,
+          );
+        },
+        (e: unknown) => e as HarnessResolveError,
+      );
+      expect(error).toBeInstanceOf(HarnessResolveError);
+      expect(error.code).toBe('path_escape');
+      expect(error.message).toContain('link');
+    } finally {
+      await removeDir(victim);
+    }
+  });
+
+  it('still resolves a subdirectory that does not exist in the checkout', async () => {
+    const url = 'https://github.com/o/r/tree/main/absent';
+    const source = parseHarnessSource(url);
+    const dir = path.join(home, 'harnesses', sourceCacheKey(source));
+    await writeFiles(dir, { '.git/HEAD': 'ref: refs/heads/main\n' });
+    const resolved = await resolveHarness(ref(url), {
+      home,
+      agentId: 'codex',
+      logger: createRecordingLogger(),
+      git: fakeGit().git,
+    });
+    expect(resolved.dir).toBe(path.join(dir, 'absent'));
+    expect(resolved.inspection.applyFiles).toEqual([]);
   });
 });
 

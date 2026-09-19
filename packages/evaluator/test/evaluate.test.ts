@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { METRIC_KEYS, evaluationReportSchema, verdictSchema } from '@harness-arena/protocol';
 import type { Evaluator } from '../src/index.js';
 import { createFakeJudge, decideVerdict, evaluateBattle, makeTestOutcome } from '../src/index.js';
-import { fakeRunner, makeCtx, makeSpec } from './helpers.js';
+import { fakeRunner, makeCtx, makeSpec, shellLineOf } from './helpers.js';
 
 let workspace: string;
 
@@ -136,7 +136,7 @@ describe('evaluateBattle', () => {
     });
     const judge = createFakeJudge('{"winner":"X","confidence":0.7,"rationale":"tidier"}');
     const runner = fakeRunner((call) => {
-      const line = call.args.at(-1);
+      const line = shellLineOf(call);
       if (line === 'npm run build') return { exitCode: 0 };
       return call.cwd.endsWith('side-b')
         ? { stdout: ['      Tests  1 failed | 3 passed (4)', ' FAIL  test/math.test.ts > adds'], exitCode: 1 }

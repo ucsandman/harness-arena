@@ -7,7 +7,7 @@ import {
   makeTestOutcome,
   repoTestsEvaluator,
 } from '../src/index.js';
-import { fakeRunner, makeCtx, makeSpec } from './helpers.js';
+import { fakeRunner, makeCtx, makeSpec, shellLineOf } from './helpers.js';
 
 const workspaceA = path.join(os.tmpdir(), 'arena-side-a');
 const workspaceB = path.join(os.tmpdir(), 'arena-side-b');
@@ -156,6 +156,81 @@ describe('repoTestsEvaluator', () => {
     expect(runner.calls).toHaveLength(1);
   });
 
+  it('reuses the engine-measured post-run outcome instead of running the suite again', async () => {
+    const runner = fakeRunner({ stdout: PASS_OUTPUT, exitCode: 0 });
+    const baseline = makeTestOutcome({
+      failed: 1,
+      passed: 3,
+      total: 4,
+      failingTests: ['test/math.test.ts > adds'],
+    });
+    const { ctx, events } = makeCtx({
+      spec: testsSpec(),
+      runner,
+      a: {
+        workspace: workspaceA,
+        baseline,
+        postTests: makeTestOutcome({
+          exitCode: 0,
+          passed: 4,
+          failed: 0,
+          total: 4,
+          durationMs: 4321,
+          parser: 'vitest',
+        }),
+      },
+      b: {
+        workspace: workspaceB,
+        baseline,
+        postTests: makeTestOutcome({
+          exitCode: 1,
+          passed: 2,
+          failed: 2,
+          total: 4,
+          durationMs: 1234,
+          parser: 'vitest',
+          failingTests: ['test/math.test.ts > adds', 'test/math.test.ts > subtracts'],
+        }),
+      },
+    });
+
+    const results = await repoTestsEvaluator.run(ctx);
+
+    // nothing spawned, and no duplicate test events: the engine already emitted them
+    expect(runner.calls).toHaveLength(0);
+    expect(events).toHaveLength(0);
+
+    expect(results[0]).toMatchObject({ side: 'a', status: 'passed', score: 1 });
+    expect(results[0]?.details).toMatchObject({ passed: 4, failed: 0, durationMs: 4321, regressions: 0 });
+    expect(results[1]).toMatchObject({ side: 'b', status: 'failed', score: 0.5 });
+    expect(results[1]?.details).toMatchObject({
+      passed: 2,
+      failed: 2,
+      durationMs: 1234,
+      regressions: 1,
+      regressionTests: ['test/math.test.ts > subtracts'],
+    });
+  });
+
+  it('runs the command itself when the engine measured no post-run outcome', async () => {
+    const runner = fakeRunner({ stdout: PASS_OUTPUT, exitCode: 0 });
+    const { ctx, events } = makeCtx({
+      spec: testsSpec(),
+      runner,
+      a: { workspace: workspaceA, postTests: null },
+      b: { workspace: workspaceB, postTests: null },
+    });
+    const results = await repoTestsEvaluator.run(ctx);
+    expect(runner.calls).toHaveLength(2);
+    expect(events.map((e) => e.event.type)).toEqual([
+      'test.started',
+      'test.completed',
+      'test.started',
+      'test.completed',
+    ]);
+    expect(results[0]).toMatchObject({ status: 'passed' });
+  });
+
   it('passes on exit code 0 when the parser reports no counts', async () => {
     const runner = fakeRunner({ stdout: ['done'], exitCode: 0 });
     const { ctx } = makeCtx({
@@ -178,7 +253,7 @@ describe('buildChecksEvaluator', () => {
     const spec = makeSpec({
       evaluation: { build: ['npm run build'], lint: ['npm run lint'], typecheck: ['npm run typecheck'] },
     });
-    const runner = fakeRunner((call) => ({ exitCode: call.args.at(-1) === 'npm run lint' ? 1 : 0 }));
+    const runner = fakeRunner((call) => ({ exitCode: shellLineOf(call) === 'npm run lint' ? 1 : 0 }));
     const { ctx, events } = makeCtx({
       spec,
       runner,

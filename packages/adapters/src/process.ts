@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import type { Readable, Writable } from 'node:stream';
 import { execa } from 'execa';
-import which from 'which';
+import { lookupOnPath } from './resolve.js';
 import type { ProcessRunOptions, ProcessRunResult, ProcessRunner } from './types.js';
 
 /**
@@ -96,23 +96,19 @@ export async function killProcessTree(pid: number, signal: NodeJS.Signals = 'SIG
 /**
  * Resolve the command to an absolute path before spawning.
  *
- * On Windows, cross-spawn runs a non-`.exe` command through `cmd.exe`, so a missing CLI comes back
- * as exit code 1 with "'x' is not recognized as an internal or external command" instead of ENOENT.
- * Resolving first makes "not installed" the same observable result on every platform.
+ * On Windows, a non-`.exe` command is run through `cmd.exe`, so a missing CLI comes back as exit code
+ * 1 with "'x' is not recognized as an internal or external command" instead of ENOENT. Resolving
+ * first makes "not installed" the same observable result on every platform.
+ *
+ * Resolution goes through `lookupOnPath`, which searches absolute PATH entries only. Windows (and
+ * therefore every library that mimics it) would otherwise search the working directory first, and the
+ * working directory here is a battle workspace the agent and the harness can write to.
  */
 async function resolveExecutable(command: string, env: Record<string, string>): Promise<string | null> {
-  const pathValue = env.PATH ?? env.Path ?? env.path;
-  const pathExt = env.PATHEXT ?? env.Pathext;
-  try {
-    const found = await which(command, {
-      nothrow: true,
-      ...(pathValue === undefined ? {} : { path: pathValue }),
-      ...(pathExt === undefined ? {} : { pathExt }),
-    });
-    return found ?? null;
-  } catch {
-    return null;
-  }
+  return lookupOnPath(command, {
+    path: env.PATH ?? env.Path ?? env.path,
+    pathExt: env.PATHEXT ?? env.Pathext ?? process.env.PATHEXT,
+  });
 }
 
 export async function runProcess(opts: ProcessRunOptions): Promise<ProcessRunResult> {
@@ -150,20 +146,41 @@ export async function runProcess(opts: ProcessRunOptions): Promise<ProcessRunRes
     };
   }
 
-  const subprocess = execa(executable, opts.args, {
-    cwd: opts.cwd,
-    env: opts.env,
-    extendEnv: false,
-    stdin: 'pipe',
-    stdout: 'pipe',
-    stderr: 'pipe',
-    buffer: false,
-    reject: false,
-    encoding: 'utf8',
-    // POSIX: make the child a process-group leader so the whole tree can be signalled.
-    detached: !isWindows,
-    windowsHide: true,
-  });
+  let subprocess: ReturnType<typeof execa>;
+  try {
+    subprocess = execa(executable, opts.args, {
+      cwd: opts.cwd,
+      env: opts.env,
+      extendEnv: false,
+      stdin: 'pipe',
+      stdout: 'pipe',
+      stderr: 'pipe',
+      buffer: false,
+      reject: false,
+      encoding: 'utf8',
+      // POSIX: make the child a process-group leader so the whole tree can be signalled.
+      detached: !isWindows,
+      windowsHide: true,
+      // Set when the caller already quoted the command line itself (see shellInvocation).
+      ...(opts.windowsVerbatimArguments === undefined
+        ? {}
+        : { windowsVerbatimArguments: opts.windowsVerbatimArguments }),
+    });
+  } catch (err) {
+    // Some argument shapes are refused outright rather than spawned: a line break in argv when the
+    // target is a `.cmd`/`.bat` shim on Windows (cmd.exe treats CR and LF as command separators), or a
+    // null byte anywhere. That is a failed run to record, not an exception to escape into the engine.
+    return {
+      exitCode: null,
+      signal: null,
+      timedOut: false,
+      aborted: false,
+      outputBytes: 0,
+      truncated: false,
+      durationMs: Date.now() - startedAt,
+      spawnError: `EINVAL: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 
   let forceTimer: NodeJS.Timeout | null = null;
   let killed = false;

@@ -8,8 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        // Reserved for later waves: account surfaces and the ingestion API are never indexable.
-        disallow: ['/api/', '/login', '/dashboard', '/device'],
+        // account surfaces, the device flow and the ingestion API are never indexable
+        disallow: ['/api/', '/login', '/dashboard', '/settings', '/device', '/battles/new'],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

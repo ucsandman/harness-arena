@@ -106,6 +106,18 @@ export const battleListItemSchema = z.object({
 });
 export type BattleListItem = z.infer<typeof battleListItemSchema>;
 
+/** GET /api/v1/battles/:id; `events` and `truncated` only with ?events=1 */
+export const battleDetailResponseSchema = z.object({
+  record: battleRecordSchema,
+  eventCount: z.number().int().nonnegative(),
+  eventsCapped: z.boolean(),
+  events: z.array(arenaEventSchema).optional(),
+  truncated: z.boolean().optional(),
+  /** stored events that no longer parse against the current protocol and were left out */
+  invalid: z.number().int().nonnegative().optional(),
+});
+export type BattleDetailResponse = z.infer<typeof battleDetailResponseSchema>;
+
 export const apiErrorSchema = z.object({
   error: z.object({ code: z.string(), message: z.string() }),
 });

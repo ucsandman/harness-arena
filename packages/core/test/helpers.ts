@@ -92,11 +92,15 @@ export interface FakeAdapterBehaviour {
     workspace: string;
     emit: (event: AdapterEvent) => void;
     signal: AbortSignal;
+    /** raw provider lines, as a real adapter would report them */
+    onRawLine: (stream: 'stdout' | 'stderr', line: string) => void;
   }) => Promise<AdapterResult | void>;
   capabilities?: Partial<AdapterCapabilities>;
   detection?: Partial<Detection>;
   validation?: Partial<ValidationResult>;
   id?: string;
+  /** argv reported by prepare() and disclosed to the record */
+  args?: string[];
 }
 
 const BASE_RESULT: AdapterResult = {
@@ -139,13 +143,13 @@ export function makeFakeAdapter(behaviour: FakeAdapterBehaviour = {}): AgentAdap
     getVersion: async () => '9.9.9',
     prepare: async (ctx: PrepareContext): Promise<PreparedRun> => ({
       command: 'fake-agent',
-      args: ['--headless', '--fixture', ctx.fixture ?? 'none'],
+      args: behaviour.args ?? ['--headless', '--fixture', ctx.fixture ?? 'none'],
       env: { ARENA_FAKE: '1' },
       cwd: ctx.workspace,
       stdin: ctx.task.prompt,
       disclosure: {
         command: 'fake-agent',
-        args: ['--headless', '--fixture', ctx.fixture ?? 'none'],
+        args: behaviour.args ?? ['--headless', '--fixture', ctx.fixture ?? 'none'],
         envKeysAdded: ['ARENA_FAKE'],
         promptVia: 'stdin',
         notes: ['deterministic fake: no model is called'],
@@ -154,7 +158,12 @@ export function makeFakeAdapter(behaviour: FakeAdapterBehaviour = {}): AgentAdap
     }),
     execute: async (prepared: PreparedRun, ctx: ExecuteContext): Promise<AdapterResult> => {
       const custom = behaviour.run
-        ? await behaviour.run({ workspace: prepared.cwd, emit: ctx.emit, signal: ctx.signal })
+        ? await behaviour.run({
+            workspace: prepared.cwd,
+            emit: ctx.emit,
+            signal: ctx.signal,
+            onRawLine: (stream, line) => ctx.onRawLine?.(stream, line),
+          })
         : undefined;
       if (custom) return custom;
       return { ...BASE_RESULT };
@@ -281,6 +290,7 @@ export function makeRecord(overrides: {
       manifest: null,
       appliedFiles: [],
       executedCommands: [],
+      skippedFiles: [],
     },
     startedAt: new Date(0).toISOString(),
     completedAt: new Date(1000).toISOString(),

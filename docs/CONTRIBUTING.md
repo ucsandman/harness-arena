@@ -5,7 +5,7 @@ Thanks for helping build the referee. This page gets you from clone to green in 
 ## Setup
 
 ```bash
-git clone https://github.com/harness-arena/harness-arena
+git clone https://github.com/ucsandman/harness-arena
 cd harness-arena
 pnpm install          # Node >= 22, pnpm 10 (corepack enable)
 pnpm build:packages   # compiles packages/* to dist (the CLI and the web app import from dist)

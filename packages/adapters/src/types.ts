@@ -113,6 +113,11 @@ export interface ProcessRunOptions {
   maxOutputBytes: number;
   onStdoutLine: (line: string) => void;
   onStderrLine: (line: string) => void;
+  /**
+   * Pass the arguments to Windows untouched because the caller already quoted them (that is what
+   * `shellInvocation()` produces for a user-authored command line). Ignored off Windows.
+   */
+  windowsVerbatimArguments?: boolean;
 }
 
 export interface ProcessRunResult {

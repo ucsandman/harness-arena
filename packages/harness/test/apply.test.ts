@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { shellInvocation } from '@harness-arena/adapters';
 import {
   applyHarness,
   describeExecution,
@@ -22,6 +23,7 @@ interface RunnerCall {
   env: Record<string, string>;
   timeoutMs: number;
   stdin: string | null;
+  windowsVerbatimArguments: boolean | undefined;
 }
 
 function fakeRunner(overrides: Partial<ProcessRunResult> = {}): {
@@ -38,6 +40,7 @@ function fakeRunner(overrides: Partial<ProcessRunResult> = {}): {
         env: { ...opts.env },
         timeoutMs: opts.timeoutMs,
         stdin: opts.stdin,
+        windowsVerbatimArguments: opts.windowsVerbatimArguments,
       });
       opts.onStdoutLine('fake runner output');
       return {
@@ -130,6 +133,7 @@ describe('applyHarness', () => {
     // the traversing and absolute entries were refused, and nothing landed beside the workspace
     const refusals = logger.records.filter((r) => r.msg.startsWith('refused harness path'));
     expect(refusals).toHaveLength(2);
+    expect(result.skippedFiles).toEqual(['../escape.md', '/etc/passwd']);
     await expect(fs.access(path.join(path.dirname(workspace), 'escape.md'))).rejects.toThrow();
   });
 
@@ -300,17 +304,19 @@ describe('applyHarness', () => {
     expect(calls).toHaveLength(2);
     const [install, prepare] = calls as [RunnerCall, RunnerCall];
     if (process.platform === 'win32') {
-      expect(install.command).toBe('cmd.exe');
-      expect(install.args).toEqual(['/d', '/s', '/c', 'npm ci']);
+      expect(install.command.toLowerCase()).toMatch(/cmd\.exe$/);
+      expect(install.args).toEqual(['/d', '/s', '/c', '"npm ci"']);
+      expect(install.windowsVerbatimArguments).toBe(true);
     } else {
-      expect(install.command).toBe('sh');
+      expect(install.command).toBe('/bin/sh');
       expect(install.args).toEqual(['-c', 'npm ci']);
+      expect(install.windowsVerbatimArguments).toBe(false);
     }
     expect(install.cwd).toBe(harness.dir);
     expect(install.timeoutMs).toBe(60_000);
     expect(install.stdin).toBeNull();
     expect(prepare.cwd).toBe(workspace);
-    expect(prepare.args[prepare.args.length - 1]).toBe('node scripts/prepare.mjs');
+    expect(prepare.args[prepare.args.length - 1]).toContain('node scripts/prepare.mjs');
     expect(install.env).toMatchObject({
       ARENA_WORKSPACE: workspace,
       ARENA_HARNESS_DIR: harness.dir as string,
@@ -320,6 +326,122 @@ describe('applyHarness', () => {
     // cleanup is disclosed but not run by applyHarness
     expect(result.executedCommands).not.toContain('node scripts/cleanup.mjs');
     expect(result.appliedFiles).toEqual(['CLAUDE.md']);
+  });
+
+  it('hands a command containing a double quote to the shell unmangled', async () => {
+    const command = 'node -e "console.log(1)"';
+    const harness = await makeHarness({
+      'CLAUDE.md': '# harness rules\n',
+      'arena.yaml': `arena: 1\nname: quoter\nfiles:\n  - CLAUDE.md\ninstall:\n  command: ${command}\n`,
+    });
+    const { runner, calls } = fakeRunner();
+    await applyHarness(harness, {
+      workspace,
+      agentId: 'claude-code',
+      trusted: true,
+      runner,
+      env: {},
+      logger,
+    });
+
+    const [install] = calls as [RunnerCall];
+    if (process.platform === 'win32') {
+      // cmd.exe needs the whole line wrapped and handed over verbatim, or Node re-escapes the quotes
+      expect(install.command.toLowerCase()).toMatch(/cmd\.exe$/);
+      expect(install.args).toEqual(['/d', '/s', '/c', `"${command}"`]);
+      expect(install.windowsVerbatimArguments).toBe(true);
+    } else {
+      expect(install.command).toBe('/bin/sh');
+      expect(install.args).toEqual(['-c', command]);
+      expect(install.windowsVerbatimArguments).toBe(false);
+    }
+    // the shape applyHarness produces on Windows, asserted from every platform
+    expect(shellInvocation(command, 'win32')).toMatchObject({
+      args: ['/d', '/s', '/c', `"${command}"`],
+      windowsVerbatimArguments: true,
+    });
+  });
+
+  it('refuses to write through a symlinked directory the workspace already contains', async () => {
+    const outside = await tempDir('arena-outside-');
+    if (!(await trySymlink(outside, path.join(workspace, '.claude'), 'dir'))) return; // platform refuses
+    const harness = await makeHarness({
+      ...baseFiles,
+      'arena.yaml': 'arena: 1\nname: escaper\nfiles:\n  - .claude\n  - AGENTS.md\n',
+    });
+    const result = await applyHarness(harness, {
+      workspace,
+      agentId: 'claude-code',
+      trusted: false,
+      runner: fakeRunner().runner,
+      env: {},
+      logger,
+    });
+
+    expect(result.appliedFiles).toEqual(['AGENTS.md']);
+    expect([...result.skippedFiles].sort()).toEqual(['.claude/agents/reviewer.md', '.claude/settings.json']);
+    // nothing reached the link target
+    expect(await fs.readdir(outside)).toEqual([]);
+    expect(logger.messages('warn')).toContain('refused to write through a symlinked path in the workspace');
+  });
+
+  it('skips a file it cannot write, names it, and keeps applying the rest', async () => {
+    // the repository owns a plain file where the harness wants a directory: mkdir fails for those two
+    await writeFiles(workspace, { '.claude': 'not a directory\n' });
+    const harness = await makeHarness({
+      ...baseFiles,
+      'arena.yaml': 'arena: 1\nname: colliding\nfiles:\n  - .claude\n  - AGENTS.md\n',
+    });
+    const result = await applyHarness(harness, {
+      workspace,
+      agentId: 'claude-code',
+      trusted: false,
+      runner: fakeRunner().runner,
+      env: {},
+      logger,
+    });
+
+    expect(result.appliedFiles).toEqual(['AGENTS.md']);
+    expect([...result.skippedFiles].sort()).toEqual(['.claude/agents/reviewer.md', '.claude/settings.json']);
+    expect(logger.messages('warn')).toContain('skipped a harness file that could not be written');
+    const named = logger.records.find((r) => r.msg === 'skipped a harness file that could not be written');
+    expect(String(named?.data?.path)).toContain('.claude/');
+  });
+
+  it('skips a file whose name the filesystem rejects instead of aborting the apply', async () => {
+    const harness = await makeHarness({
+      ...baseFiles,
+      'arena.yaml': 'arena: 1\nname: illegal\nfiles:\n  - CLAUDE.md\n  - AGENTS.md\n',
+    });
+    // stands in for a POSIX-legal name Windows refuses (e.g. one containing a colon): open() fails
+    const realOpen = fs.open;
+    const spy = vi.spyOn(fs, 'open').mockImplementation((async (
+      file: Parameters<typeof realOpen>[0],
+      ...rest: unknown[]
+    ) => {
+      if (String(file).endsWith('AGENTS.md')) {
+        throw Object.assign(new Error('EINVAL: invalid argument, open'), { code: 'EINVAL' });
+      }
+      return (realOpen as unknown as (...args: unknown[]) => unknown)(file, ...rest);
+    }) as unknown as typeof realOpen);
+
+    try {
+      const result = await applyHarness(harness, {
+        workspace,
+        agentId: 'claude-code',
+        trusted: false,
+        runner: fakeRunner().runner,
+        env: {},
+        logger,
+      });
+      expect(result.skippedFiles).toEqual(['AGENTS.md']);
+      expect(result.appliedFiles).toEqual(['CLAUDE.md']);
+      const named = logger.records.find((r) => r.msg === 'skipped a harness file that could not be written');
+      expect(named?.data?.path).toBe('AGENTS.md');
+      expect(String(named?.data?.error)).toContain('EINVAL');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('turns a failing command into a typed error', async () => {
@@ -480,7 +602,12 @@ describe('applyHarness', () => {
       env: {},
       logger,
     });
-    expect(result).toEqual({ appliedFiles: [], executedCommands: [], agentConfig: null });
+    expect(result).toEqual({
+      appliedFiles: [],
+      skippedFiles: [],
+      executedCommands: [],
+      agentConfig: null,
+    });
     expect(await fs.readdir(workspace)).toEqual([]);
   });
 });
@@ -512,7 +639,8 @@ describe('describeExecution', () => {
       },
     );
     expect(describeExecution(harness)).toEqual({
-      commands: ['pnpm install --frozen-lockfile', 'pnpm build', 'git clean -xdf'],
+      // cleanup is reserved and never runs, so it is not disclosed as a command either
+      commands: ['pnpm install --frozen-lockfile', 'pnpm build'],
       files: ['CLAUDE.md'],
     });
   });

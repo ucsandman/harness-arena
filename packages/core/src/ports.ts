@@ -6,7 +6,6 @@ import type {
   HarnessManifest,
   HarnessRef,
   HarnessSource,
-  JudgeOpinion,
   ResolvedTask,
   RunMetrics,
   RunStatus,
@@ -17,6 +16,7 @@ import type {
   testParserSchema,
 } from '@harness-arena/protocol';
 import type { Logger, ProcessRunner } from '@harness-arena/adapters';
+import type { JudgeRunner } from '@harness-arena/evaluator';
 import type { z } from 'zod';
 
 /**
@@ -60,6 +60,8 @@ export interface ApplyHarnessOptions {
 export interface ApplyHarnessResult {
   appliedFiles: string[];
   executedCommands: string[];
+  /** harness files left alone because the repository already had a file at that path */
+  skippedFiles?: string[];
   agentConfig: AgentConfig | null;
 }
 
@@ -97,19 +99,15 @@ export interface RunTestsOptions {
   env?: Record<string, string>;
 }
 
-export interface JudgeRequest {
-  task: ResolvedTask;
-  a: { diff: string | null; finalResponse: string | null };
-  b: { diff: string | null; finalResponse: string | null };
-  rubric?: string;
-}
-
-/** Optional, always labelled subjective. The engine never builds one; it only passes one through. */
-export interface JudgeRunner {
-  run(request: JudgeRequest): Promise<JudgeOpinion>;
-}
+/**
+ * Optional, always labelled subjective. The engine never builds one; it only passes one through to the
+ * evaluator, so the type must be the evaluator's own — a structural look-alike declared here would
+ * silently stop matching the moment the evaluator changed it.
+ */
+export type { JudgeRunner };
 
 export interface EvaluationSideInput {
+  /** absolute path the evaluator works in: the worktree root, or `repository.subdir` inside it */
   workspace: string;
   startCommit: string | null;
   status: RunStatus;
@@ -117,6 +115,8 @@ export interface EvaluationSideInput {
   artifacts: RunArtifacts;
   finalResponse: string | null;
   baseline: TestOutcome | null;
+  /** the post-run test outcome the engine already measured, so evaluators need not re-run the suite */
+  postTests: TestOutcome | null;
 }
 
 export interface EvaluationContext {

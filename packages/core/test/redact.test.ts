@@ -90,6 +90,22 @@ describe('createRedactor patterns', () => {
     expect(redactor.redactString('PRIVATE' + '_KEY:' + V.eight)).toContain(REDACTED);
   });
 
+  it('drops the userinfo of a URL but keeps the scheme and the host', () => {
+    const password = join('s3cr3t', 'token', 'value');
+    const url = 'postgres://dbuser:' + password + '@db.internal.test:5432/app';
+    const out = redactor.redactString('connecting to ' + url + ' now');
+    expect(out).not.toContain(password);
+    expect(out).not.toContain('dbuser');
+    expect(out).toBe('connecting to postgres://' + REDACTED + '@db.internal.test:5432/app now');
+  });
+
+  it('drops a token used as the whole userinfo of an https URL', () => {
+    const token = join('abcdef', '0123456789');
+    const out = redactor.redactString('git remote https://' + token + '@github.com/a/b.git');
+    expect(out).not.toContain(token);
+    expect(out).toContain('@github.com/a/b.git');
+  });
+
   it('leaves ordinary text and short values alone', () => {
     const samples = [
       'the build finished in 4.2 s',
@@ -181,10 +197,34 @@ describe('collectSecretEnvValues', () => {
     expect(collectSecretEnvValues(env)).toEqual([]);
   });
 
+  it('collects a *_URL value when, and only when, it carries credentials', () => {
+    const password = join('s3cr3t', 'token', 'value');
+    const withCreds = 'postgres://dbuser:' + password + '@db.internal.test:5432/app';
+    const env: Record<string, string> = {};
+    env['DATABASE' + '_URL'] = withCreds;
+    env['PUBLIC' + '_API_URL'] = 'https://api.example.test/v1';
+    expect(collectSecretEnvValues(env)).toEqual([withCreds]);
+  });
+
   it('returns values longest first', () => {
     const env: Record<string, string> = {};
     env['A' + '_SECRET'] = 'aaaaaaaa';
     env['B' + '_SECRET'] = 'bbbbbbbbbbbb';
     expect(collectSecretEnvValues(env)).toEqual(['bbbbbbbbbbbb', 'aaaaaaaa']);
+  });
+});
+
+describe('heuristics off', () => {
+  const header = 'Authorization: Bearer abcdefghijklmnopqrstuvwxyz012345';
+  it('still scrubs exact secret values and only skips the pattern scans', () => {
+    const r = createRedactor({ envValues: ['hunter2-exact-value'], heuristics: false });
+    const out = r.redactString('token=hunter2-exact-value ' + header);
+    expect(out).not.toContain('hunter2-exact-value');
+    expect(out).toContain(header);
+    expect(r.size()).toEqual({ values: 1, patterns: 0 });
+  });
+  it('scrubs the same header when heuristics are on (the default)', () => {
+    const r = createRedactor({ envValues: ['hunter2-exact-value'] });
+    expect(r.redactString(header)).not.toContain('abcdefghijklmnopqrstuvwxyz012345');
   });
 });

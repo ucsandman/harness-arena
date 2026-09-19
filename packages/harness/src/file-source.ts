@@ -38,6 +38,13 @@ export const DEFAULT_MAX_BYTES = 512 * 1024;
 export interface LocalFileSourceOptions {
   maxFiles?: number;
   ignore?: readonly string[];
+  /**
+   * When set, the root must still resolve (`fs.realpath`) inside this directory. A root that is itself
+   * a symbolic link out of `base` — a subdirectory link committed in a harness repository, say
+   * `link -> ../../../../home/victim` — is refused: the source then lists nothing and reads nothing,
+   * so inspection can never walk the link target.
+   */
+  base?: string;
 }
 
 export interface LocalFileSource extends FileSource {
@@ -73,12 +80,64 @@ export function toPosix(relative: string): string {
   return relative.split(path.sep).join('/').replace(/\\/g, '/');
 }
 
-/** Walks a directory with fs.promises. Symlinks are never listed and never followed. */
+/**
+ * The first path component at or below `base` on the way to `candidate` that is a symbolic link (or a
+ * Windows junction), or null when every component is a real entry. A component that does not exist
+ * yet counts as clean: there is nothing to follow.
+ *
+ * `resolveInside` is textual, so it cannot see a link committed inside a repository. This is the
+ * filesystem half of the containment check and must run before anything is read or written.
+ */
+export async function firstSymlinkComponent(base: string, candidate: string): Promise<string | null> {
+  const absBase = path.resolve(base);
+  const rel = path.relative(absBase, path.resolve(candidate));
+  if (rel.length === 0) return null;
+  let current = absBase;
+  for (const segment of rel.split(path.sep).filter((s) => s.length > 0)) {
+    current = path.join(current, segment);
+    try {
+      if ((await fs.lstat(current)).isSymbolicLink()) return current;
+    } catch {
+      return null; // does not exist: nothing can be followed through it
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve both sides with `fs.realpath` and re-assert containment, so a link anywhere along the way
+ * cannot smuggle the candidate out of `base`. Returns the real path, or null when either side cannot
+ * be resolved or the candidate lands outside.
+ */
+export async function realpathInside(base: string, candidate: string): Promise<string | null> {
+  try {
+    const realBase = await fs.realpath(path.resolve(base));
+    const realCandidate = await fs.realpath(path.resolve(candidate));
+    return sameOrChild(realBase, realCandidate) ? realCandidate : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Walks a directory with fs.promises. Symlinks are never listed and never followed. With `opts.base`
+ * the root itself is realpath-checked against that base on first use (see `LocalFileSourceOptions`);
+ * a root that escapes it yields an empty listing and no reads.
+ */
 export function createLocalFileSource(root: string, opts: LocalFileSourceOptions = {}): LocalFileSource {
   const absRoot = path.resolve(root);
   const maxFiles = opts.maxFiles ?? DEFAULT_MAX_FILES;
   const ignore = new Set((opts.ignore ?? DEFAULT_IGNORE).map((s) => s.toLowerCase()));
+  const base = opts.base === undefined ? null : path.resolve(opts.base);
   let cached: Promise<ListResult> | null = null;
+  let containedPromise: Promise<boolean> | null = null;
+
+  /** fail closed: the root must realpath inside the base it was promised to be under */
+  function isContained(): Promise<boolean> {
+    containedPromise ??=
+      base === null ? Promise.resolve(true) : realpathInside(base, absRoot).then((real) => real !== null);
+    return containedPromise;
+  }
 
   async function walk(): Promise<ListResult> {
     const files: string[] = [];
@@ -115,7 +174,7 @@ export function createLocalFileSource(root: string, opts: LocalFileSourceOptions
   }
 
   function listResult(): Promise<ListResult> {
-    cached ??= walk();
+    cached ??= (async () => ((await isContained()) ? walk() : { files: [], truncated: false }))();
     return cached;
   }
 
@@ -126,6 +185,7 @@ export function createLocalFileSource(root: string, opts: LocalFileSourceOptions
       return (await listResult()).files;
     },
     async read(relative, maxBytes = DEFAULT_MAX_BYTES) {
+      if (!(await isContained())) return null;
       const abs = resolveInside(absRoot, relative);
       if (abs === null) return null;
       try {
@@ -146,6 +206,7 @@ export function createLocalFileSource(root: string, opts: LocalFileSourceOptions
       }
     },
     async exists(relative) {
+      if (!(await isContained())) return false;
       const abs = resolveInside(absRoot, relative);
       if (abs === null) return false;
       try {
@@ -207,6 +268,47 @@ const USER_AGENT = 'harness-arena';
 
 function errMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Read at most `limit` bytes of a response body. `content-length` is honoured when the server sends
+ * one, and the body is consumed as a stream that is cancelled the moment the cap is reached, so an
+ * oversized (or endless) file is never buffered whole. Truncation is silent, exactly like the local
+ * source's `read()`, which also returns the first `maxBytes`.
+ */
+async function readCapped(res: Response, limit: number): Promise<string> {
+  const declaredHeader = res.headers.get('content-length');
+  const declared = declaredHeader === null ? null : Number(declaredHeader);
+  const cap =
+    declared !== null && Number.isFinite(declared) && declared >= 0 ? Math.min(limit, declared) : limit;
+
+  if (cap === 0) {
+    await res.body?.cancel().catch(() => undefined);
+    return '';
+  }
+
+  const body = res.body;
+  if (!body) {
+    return Buffer.from(await res.arrayBuffer())
+      .subarray(0, cap)
+      .toString('utf8');
+  }
+
+  const reader = body.getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  try {
+    while (total < cap) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = Buffer.from(value as Uint8Array);
+      chunks.push(chunk);
+      total += chunk.byteLength;
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+  return Buffer.concat(chunks).subarray(0, cap).toString('utf8');
 }
 
 function encodeRepoPath(p: string): string {
@@ -345,8 +447,7 @@ export function createGitHubFileSource(opts: GitHubFileSourceOptions): GitHubFil
         if (err instanceof GitHubSourceError && err.kind === 'not_found') return null;
         throw err;
       }
-      const buf = Buffer.from(await res.arrayBuffer());
-      return buf.subarray(0, Math.max(0, maxBytes)).toString('utf8');
+      return readCapped(res, Math.max(0, maxBytes));
     },
     async exists(relative) {
       const posix = relative.replace(/\\/g, '/');

@@ -119,7 +119,6 @@ export const limitsSchema = z.object({
     .positive()
     .default(50 * 1024 * 1024),
   /** seconds of no output before the run is considered stalled and interrupted; 0 disables */
-  stallTimeoutMs: z.number().int().nonnegative().default(0),
 });
 export type Limits = z.infer<typeof limitsSchema>;
 
@@ -225,7 +224,11 @@ export const privacySettingsSchema = z.object({
    */
   upload: z.enum(['none', 'metrics', 'events', 'full']).default('none'),
   exclude: z.array(privacyExclusionSchema).default([]),
-  /** run the secret redactor over every event and artifact (always on for uploads) */
+  /**
+   * Run the heuristic secret scans (token shapes, auth headers, key=value pairs) over every event and
+   * artifact. Exact values of your environment secrets and of agent.env are scrubbed regardless, and
+   * the heuristics are forced on whenever upload is not "none".
+   */
   redact: z.boolean().default(true),
 });
 export type PrivacySettings = z.infer<typeof privacySettingsSchema>;
@@ -264,6 +267,8 @@ export const harnessSummarySchema = z.object({
   appliedFiles: z.array(z.string()),
   /** commands that were executed on the user's behalf (install/prepare) */
   executedCommands: z.array(z.string()),
+  /** harness files that were not applied because the repository already had them */
+  skippedFiles: z.array(z.string()).default([]),
 });
 export type HarnessSummary = z.infer<typeof harnessSummarySchema>;
 

@@ -2,7 +2,7 @@ import type { BattleRecord, Side } from '@harness-arena/protocol';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/cn';
-import { formatNumber, formatUtcTime, shortCommit } from '@/lib/format';
+import { NOT_AVAILABLE, formatNumber, formatUtcTime, shortCommit } from '@/lib/format';
 import { SideChip } from './shared';
 
 function Field({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
@@ -35,8 +35,11 @@ export function EnvironmentPanel({ record, className }: { record: BattleRecord; 
             <Field label="Node" value={env.node} />
             <Field label="Git" value={env.git ?? 'n/a'} />
             <Field label="Arena" value={env.arenaVersion} />
-            <Field label="CPU cores" value={formatNumber(env.cpuCount)} />
-            <Field label="Memory" value={`${formatNumber(env.memoryGb)} GB`} />
+            <Field label="CPU cores" value={env.cpuCount > 0 ? formatNumber(env.cpuCount) : NOT_AVAILABLE} />
+            <Field
+              label="Memory"
+              value={env.memoryGb > 0 ? `${formatNumber(env.memoryGb)} GB` : NOT_AVAILABLE}
+            />
             <Field label="CI" value={env.ci ? 'yes' : 'no'} />
             <Field label="Repository" value={record.repository.source} />
             <Field label="Ref" value={record.repository.ref ?? 'n/a'} />
@@ -100,9 +103,12 @@ export function EnvironmentPanel({ record, className }: { record: BattleRecord; 
             <div>
               <h4 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">Shared flags</h4>
               <ul className="mt-1.5 flex flex-col gap-1">
-                {Object.entries(env.sharedFlags).map(([agentId, flags]) => (
-                  <li key={agentId} className="font-mono text-2xs text-fg-muted">
-                    <span className="text-fg">{agentId}</span> {flags.join(' ')}
+                {Object.entries(env.sharedFlags).map(([sideKey, flags]) => (
+                  <li key={sideKey} className="font-mono text-2xs text-fg-muted">
+                    <span className="text-fg">
+                      {sideKey === 'a' ? 'Side A' : sideKey === 'b' ? 'Side B' : sideKey}
+                    </span>{' '}
+                    {flags.join(' ')}
                   </li>
                 ))}
               </ul>

@@ -2,10 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AdapterRegistry, AdapterResult, ProcessRunner } from '@harness-arena/adapters';
+import { privacySettingsSchema } from '@harness-arena/protocol';
 import type { ArenaEvent, BattleRecord, BattleSpecInput, EventType, Side } from '@harness-arena/protocol';
 import { runBattle } from '../src/engine.js';
 import type { RunBattleDeps, RunBattleOptions } from '../src/engine.js';
+import { initRepoFromDirectory } from '../src/git.js';
 import { createStateStore } from '../src/store.js';
+import { createUploader } from '../src/upload.js';
 import type { Uploader } from '../src/upload.js';
 import type { ApplyHarnessFn, DescribeExecutionFn, ResolveHarnessFn, TestOutcome } from '../src/ports.js';
 import {
@@ -29,6 +32,19 @@ beforeEach(() => {
 afterEach(() => {
   removeDir(home);
 });
+
+const COMPLETED: AdapterResult = {
+  status: 'completed',
+  exitCode: 0,
+  finalResponse: 'done',
+  usage: null,
+  model: null,
+  version: null,
+  turns: null,
+  errorCode: null,
+  errorMessage: null,
+  native: {},
+};
 
 const INTERRUPTED: AdapterResult = {
   status: 'interrupted',
@@ -178,7 +194,9 @@ describe('runBattle: a full battle with the fake adapter', () => {
       args: ['--headless', '--fixture', 'demo-harness-a'],
       envKeys: ['ARENA_FAKE'],
     });
-    expect(record.environment.sharedFlags.fake).toEqual(['--headless', '--fixture', 'demo-vanilla-b']);
+    // keyed by side: two harnesses on the same agent used to collapse into one entry
+    expect(record.environment.sharedFlags.a).toEqual(['--headless', '--fixture', 'demo-harness-a']);
+    expect(record.environment.sharedFlags.b).toEqual(['--headless', '--fixture', 'demo-vanilla-b']);
     expect(record.runs.a.agent.version).toBe('9.9.9');
     expect(record.repository.kind).toBe('empty');
     expect(record.verification).toEqual({ kind: 'local', eligible: false, sandbox: null });
@@ -497,6 +515,257 @@ describe('runBattle: privacy and uploads', () => {
     const events = await readEvents(record);
     const started = events.find((e) => e.type === 'run.started');
     expect(started?.payload).not.toHaveProperty('workspace');
+  });
+});
+
+describe('runBattle: credentials never reach disk, a report or the network', () => {
+  const API_KEY = ['sk', '-live-', 'abcdefghijklmnop'].join('');
+  const GH_TOKEN = ['ghp', '_', 'abcdefghijklmnopqrstuvwxyz0123456789'].join('');
+
+  function specWithKey(privacy: BattleSpecInput['privacy']): BattleSpecInput {
+    return spec({
+      privacy,
+      competitors: {
+        a: {
+          label: 'A',
+          agent: { id: 'fake', env: { MY_KEY: API_KEY } },
+          harness: { source: 'vanilla' },
+        },
+        b: { label: 'B', agent: { id: 'fake' }, harness: { source: 'vanilla' } },
+      },
+    });
+  }
+
+  it('keeps the env NAME and drops the VALUE in battle.json, the report and the upload', async () => {
+    const bodies: string[] = [];
+    const fetchImpl = (async (_url: string | URL | Request, init?: RequestInit) => {
+      bodies.push(typeof init?.body === 'string' ? init.body : '');
+      return { ok: true, status: 200, json: async () => ({}) } as Response;
+    }) as unknown as typeof fetch;
+    const uploader = createUploader({
+      serverUrl: 'https://arena.test',
+      token: 'device-token',
+      privacy: privacySettingsSchema.parse({ upload: 'full' }),
+      logger: silentLogger(),
+      fetchImpl,
+    });
+    const adapter = makeFakeAdapter({
+      run: async ({ workspace, emit, onRawLine }) => {
+        // The agent leaks a token into a file, into the raw provider log and into its answer.
+        writeFix(workspace, 'const token = "' + GH_TOKEN + '";\n');
+        onRawLine('stdout', '{"type":"message","token":"' + GH_TOKEN + '"}');
+        emit({ type: 'agent.output', payload: { role: 'assistant', text: GH_TOKEN, final: true } });
+        return { ...COMPLETED, finalResponse: 'used ' + GH_TOKEN + ' to authenticate' };
+      },
+    });
+
+    const record = await runBattle(
+      specWithKey({ upload: 'full' }),
+      baseOptions({ registry: makeRegistry([adapter]), uploader }),
+    );
+    await uploader.flush();
+
+    const paths = createStateStore(home).paths(record.id);
+    const battleJson = fs.readFileSync(paths.record, 'utf8');
+    const report = fs.readFileSync(paths.report, 'utf8');
+    const rawLog = fs.readFileSync(paths.rawLogs.a, 'utf8');
+    const uploaded = bodies.join('\n');
+
+    for (const [what, text] of [
+      ['battle.json', battleJson],
+      ['report.html', report],
+      ['raw.log', rawLog],
+      ['upload', uploaded],
+    ] as const) {
+      expect(text, what + ' leaked the API key').not.toContain(API_KEY);
+      expect(text, what + ' leaked the GitHub token').not.toContain(GH_TOKEN);
+    }
+    // The disclosure survives: the name is still there, only the value is gone.
+    expect(battleJson).toContain('MY_KEY');
+    expect(report).toContain('MY_KEY');
+    expect(JSON.parse(battleJson).spec.competitors.a.agent.env).toEqual({ MY_KEY: '[REDACTED]' });
+    expect(rawLog).toContain('[REDACTED]');
+    expect(record.runs.a.artifacts.diff).toContain('[REDACTED]');
+    expect(record.runs.a.artifacts.finalResponse).toContain('[REDACTED]');
+    expect(uploaded).toContain('[REDACTED]');
+  });
+});
+
+describe('runBattle: repository.subdir', () => {
+  /** A real repository with a subproject in it, so the worktree has a `sub/` to work in. */
+  async function sourceRepoWithSubdir(): Promise<string> {
+    const seed = path.join(home, 'seed');
+    fs.mkdirSync(path.join(seed, 'sub'), { recursive: true });
+    fs.writeFileSync(path.join(seed, 'README.md'), '# root\n');
+    fs.writeFileSync(path.join(seed, 'sub', 'package.json'), '{ "name": "sub" }\n');
+    const repo = path.join(home, 'source-repo');
+    await initRepoFromDirectory(repo, seed, { home });
+    return repo;
+  }
+
+  it('runs the agent, both test phases and the evaluator in the subdirectory', async () => {
+    const repo = await sourceRepoWithSubdir();
+    const testCwds: string[] = [];
+    const evaluated: Array<{ workspace: string; postTests: TestOutcome | null }> = [];
+    const adapter = makeFakeAdapter({
+      run: async ({ workspace }) => {
+        fs.writeFileSync(path.join(workspace, 'fix.js'), 'export const x = 1;\n');
+      },
+    });
+    const record = await runBattle(
+      spec({ repository: { source: repo, subdir: 'sub' } }),
+      baseOptions({
+        registry: makeRegistry([adapter]),
+        deps: {
+          runTests: async ({ cwd }) => {
+            testCwds.push(cwd);
+            return makeTestOutcome();
+          },
+          evaluateBattle: async (ctx) => {
+            for (const side of ['a', 'b'] as Side[]) {
+              evaluated.push({
+                workspace: ctx.sides[side].workspace,
+                postTests: ctx.sides[side].postTests,
+              });
+            }
+            return fakeEvaluationReport();
+          },
+          decideVerdict: () => fakeVerdict('a'),
+        },
+      }),
+    );
+
+    expect(record.status, 'battle error: ' + String(record.error)).toBe('completed');
+    // baseline a, post a, baseline b, post b — all of them inside sub/
+    expect(testCwds).toHaveLength(4);
+    for (const cwd of testCwds) expect(path.basename(cwd)).toBe('sub');
+    for (const side of evaluated) {
+      expect(path.basename(side.workspace)).toBe('sub');
+      expect(side.postTests).not.toBeNull();
+    }
+    // the diff is still taken at the worktree root, so the path keeps its prefix
+    expect(record.runs.a.artifacts.changedFiles.map((f) => f.path)).toEqual(['sub/fix.js']);
+  }, 60_000);
+
+  it('fails with a clear message when the subdirectory is missing or escapes the repository', async () => {
+    const repo = await sourceRepoWithSubdir();
+    const adapter = makeFakeAdapter();
+    const missing = await runBattle(
+      spec({ repository: { source: repo, subdir: 'nope' } }),
+      baseOptions({ registry: makeRegistry([adapter]) }),
+    );
+    expect(missing.status).toBe('failed');
+    expect(missing.error).toContain('repository.subdir does not exist');
+
+    const escaping = await runBattle(
+      spec({ repository: { source: repo, subdir: '../..' } }),
+      baseOptions({ registry: makeRegistry([adapter]) }),
+    );
+    expect(escaping.status).toBe('failed');
+    expect(escaping.error).toContain('must stay inside the repository');
+  }, 60_000);
+});
+
+describe('runBattle: the abort signal reaches the evaluation commands', () => {
+  interface TestCall {
+    cwd: string;
+    signal: AbortSignal | undefined;
+    aborted: boolean | null;
+  }
+
+  function recordingDeps(calls: TestCall[]): RunBattleDeps {
+    return {
+      runTests: async ({ cwd, signal }) => {
+        calls.push({ cwd, signal, aborted: signal?.aborted ?? null });
+        return makeTestOutcome();
+      },
+      evaluateBattle: async () => fakeEvaluationReport(),
+      decideVerdict: () => fakeVerdict('a'),
+    };
+  }
+
+  it('hands every test phase the battle signal, so Ctrl-C kills the test process too', async () => {
+    const calls: TestCall[] = [];
+    const controller = new AbortController();
+    const adapter = makeFakeAdapter({ run: async ({ workspace }) => writeFix(workspace, 'ok\n') });
+    await runBattle(
+      spec(),
+      baseOptions({
+        registry: makeRegistry([adapter]),
+        deps: recordingDeps(calls),
+        signal: controller.signal,
+      }),
+    );
+    // baseline a, post a, baseline b, post b
+    expect(calls).toHaveLength(4);
+    expect(calls.every((c) => c.signal === controller.signal)).toBe(true);
+  });
+
+  it('does not start a post-run suite after an abort', async () => {
+    const calls: TestCall[] = [];
+    const controller = new AbortController();
+    const adapter = makeFakeAdapter({
+      run: async ({ emit, signal }) => {
+        emit({ type: 'agent.thinking', payload: { chars: 10 } });
+        await new Promise<void>((resolve) => {
+          if (signal.aborted) return resolve();
+          signal.addEventListener('abort', () => resolve(), { once: true });
+        });
+        return INTERRUPTED;
+      },
+    });
+    const record = await runBattle(
+      spec(),
+      baseOptions({
+        registry: makeRegistry([adapter]),
+        deps: recordingDeps(calls),
+        onEvent: (event: ArenaEvent) => {
+          if (event.side === 'a' && event.type === 'agent.thinking') controller.abort();
+        },
+        signal: controller.signal,
+      }),
+    );
+    expect(record.status).toBe('cancelled');
+    // only the two baselines, which ran before the abort; no process is spawned after Ctrl-C
+    expect(calls).toHaveLength(2);
+    expect(calls.every((c) => c.aborted === false)).toBe(true);
+    // the diff is still collected for both sides
+    expect(record.runs.a.metrics.files_changed.status).toBe('calculated');
+  });
+});
+
+describe('runBattle: the invocation disclosure', () => {
+  it('records the argv of BOTH sides even when they share one agent', async () => {
+    const adapter = makeFakeAdapter({ run: async ({ workspace }) => writeFix(workspace, 'ok\n') });
+    const record = await runBattle(spec(), baseOptions({ registry: makeRegistry([adapter]) }));
+    expect(record.environment.sharedFlags.a).toEqual(['--headless', '--fixture', 'demo-harness-a']);
+    expect(record.environment.sharedFlags.b).toEqual(['--headless', '--fixture', 'demo-vanilla-b']);
+  });
+
+  it('strips absolute paths from the disclosure when paths are excluded', async () => {
+    const settings = path.join(home, 'harnesses', 'agnostic-ai', 'settings.json');
+    const adapter = makeFakeAdapter({
+      args: ['--settings', settings, '--strict-mcp-config'],
+      run: async ({ workspace }) => writeFix(workspace, 'ok\n'),
+    });
+    const record = await runBattle(
+      spec({ privacy: { upload: 'none', exclude: ['paths'] } }),
+      baseOptions({ registry: makeRegistry([adapter]) }),
+    );
+    expect(record.runs.a.invocation?.args).toEqual(['--settings', '<path>', '--strict-mcp-config']);
+    expect(JSON.stringify(record.environment.sharedFlags)).not.toContain(home);
+    const report = fs.readFileSync(createStateStore(home).paths(record.id).report, 'utf8');
+    expect(report).not.toContain(settings);
+  });
+
+  it('keeps the absolute path when paths are not excluded', async () => {
+    const settings = path.join(home, 'harnesses', 'agnostic-ai', 'settings.json');
+    const adapter = makeFakeAdapter({
+      args: ['--settings', settings],
+      run: async ({ workspace }) => writeFix(workspace, 'ok\n'),
+    });
+    const record = await runBattle(spec(), baseOptions({ registry: makeRegistry([adapter]) }));
+    expect(record.runs.a.invocation?.args).toEqual(['--settings', settings]);
   });
 });
 

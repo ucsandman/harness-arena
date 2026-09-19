@@ -168,26 +168,35 @@ export async function createDb(opts: CreateDbOptions = {}): Promise<ArenaDb> {
   };
 }
 
-let cached: Promise<ArenaDb> | null = null;
+// One slot per process, not per module instance: Next transpiles this package into every route
+// bundle, and a module-level variable would open PGlite twice and split the writes between handles.
+const CACHE_KEY = Symbol.for('harness-arena.database.handle');
+interface CacheSlot {
+  cached: Promise<ArenaDb> | null;
+}
+const globalSlots = globalThis as unknown as Record<symbol, CacheSlot | undefined>;
+const slot: CacheSlot = (globalSlots[CACHE_KEY] ??= { cached: null });
 
 /**
  * Process-wide database for the web app: reads DATABASE_URL and ARENA_DATA_DIR, migrates once.
  * Values of those variables are never logged.
  */
 export function getDb(logger?: DbLogger): Promise<ArenaDb> {
-  cached ??= createDb({ url: process.env.DATABASE_URL, dataDir: process.env.ARENA_DATA_DIR, logger }).then(
-    async (handle) => {
-      await handle.migrate();
-      return handle;
-    },
-  );
-  return cached;
+  slot.cached ??= createDb({
+    url: process.env.DATABASE_URL,
+    dataDir: process.env.ARENA_DATA_DIR,
+    logger,
+  }).then(async (handle) => {
+    await handle.migrate();
+    return handle;
+  });
+  return slot.cached;
 }
 
 /** Drop the memoized handle (tests, and after a close in a long-lived process). */
 export async function closeDb(): Promise<void> {
-  const current = cached;
-  cached = null;
+  const current = slot.cached;
+  slot.cached = null;
   if (current) {
     const handle = await current;
     await handle.close();

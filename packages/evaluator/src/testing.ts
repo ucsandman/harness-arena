@@ -14,6 +14,7 @@ export function makeSideContext(overrides: Partial<SideContext> = {}): SideConte
     artifacts: { changedFiles: [] },
     finalResponse: null,
     baseline: null,
+    postTests: null,
     ...overrides,
   };
 }

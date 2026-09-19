@@ -10,7 +10,15 @@ export interface NavItem {
   label: string;
 }
 
-export function MobileMenu({ items, github }: { items: NavItem[]; github: string }) {
+export function MobileMenu({
+  items,
+  github,
+  signedIn = false,
+}: {
+  items: NavItem[];
+  github: string;
+  signedIn?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -51,13 +59,40 @@ export function MobileMenu({ items, github }: { items: NavItem[]; github: string
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            onClick={() => setOpen(false)}
-            className="rounded-md px-3 py-2 text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg"
-          >
-            Sign in
-          </Link>
+          {signedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-3 py-2 text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/settings"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-3 py-2 text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg"
+              >
+                Settings
+              </Link>
+              <form action="/api/auth/logout" method="post">
+                <button
+                  type="submit"
+                  className="w-full rounded-md px-3 py-2 text-left text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg"
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-2 text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg"
+            >
+              Sign in
+            </Link>
+          )}
           <a
             href={github}
             target="_blank"

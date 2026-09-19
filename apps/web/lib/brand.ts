@@ -14,7 +14,7 @@ export const BRAND = {
     install: 'npm install -g harness-arena',
     npx: 'npx harness-arena',
   },
-  github: 'https://github.com/harness-arena/harness-arena',
+  github: 'https://github.com/ucsandman/harness-arena',
   twitter: null,
 } as const;
 

@@ -1,11 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ClaudeCodeAdapter } from '../src/claude-code/adapter';
 import { CodexAdapter } from '../src/codex/adapter';
+import { OpenCodeAdapter } from '../src/opencode/adapter';
 import {
   countByType,
+  emptyPathEnv,
   makeExecuteContext,
   makePrepareContext,
+  makeTempDir,
   readFixture,
+  removeTempDir,
   scriptedRunner,
   TEST_LIMITS,
 } from './helpers';
@@ -95,6 +101,82 @@ describe('runCliProcess through ClaudeCodeAdapter.execute', () => {
     await adapter.execute(prepared, { ...harness.ctx, onRawLine: (_stream, line) => raw.push(line) });
 
     expect(raw).toEqual(['{"type":"system","subtype":"init"}']);
+  });
+});
+
+/**
+ * OpenCode passes the prompt in argv, and on Windows it is a `.cmd` shim: cmd.exe cannot carry a line
+ * break in an argument, so such a run must fail with a reason instead of crashing the spawn. The
+ * platform is injected so this holds on Linux CI too.
+ */
+describe('OpenCodeAdapter with a multi-line prompt on a Windows shim', () => {
+  let shimDir: string;
+
+  beforeEach(async () => {
+    shimDir = await makeTempDir('arena-opencode-shim-');
+    await writeFile(path.join(shimDir, 'opencode.cmd'), '@echo off\r\n', 'utf8');
+  });
+
+  afterEach(async () => {
+    await removeTempDir(shimDir);
+  });
+
+  const contextFor = (prompt: string) =>
+    makePrepareContext({
+      agent: { id: 'opencode' },
+      env: emptyPathEnv({ PATH: shimDir, PATHEXT: '.COM;.EXE;.BAT;.CMD' }),
+      task: { title: 'multi line', prompt, source: { kind: 'prompt' } },
+    });
+
+  const NEVER_SPAWN = {
+    run: async () => {
+      throw new Error('a refused prompt must never reach the process runner');
+    },
+  };
+
+  it('fails with unsupported_prompt without spawning anything', async () => {
+    const adapter = new OpenCodeAdapter({ platform: 'win32' });
+    const prepared = await adapter.prepare(contextFor('line one\nline two'));
+    const harness = makeExecuteContext(NEVER_SPAWN);
+
+    expect(prepared.command.toLowerCase()).toBe(path.join(shimDir, 'opencode.cmd').toLowerCase());
+    expect(prepared.disclosure.notes.join(' ')).toMatch(/line break/i);
+
+    const result = await adapter.execute(prepared, harness.ctx);
+
+    expect(result.status).toBe('failed');
+    expect(result.exitCode).toBeNull();
+    expect(result.errorCode).toBe('unsupported_prompt');
+    expect(result.errorMessage).toMatch(/line break/i);
+    expect(harness.events.map((e) => e.type)).toEqual(['error']);
+  });
+
+  it('runs the same shim normally when the prompt is a single line', async () => {
+    const adapter = new OpenCodeAdapter({ platform: 'win32' });
+    const prepared = await adapter.prepare(contextFor('one line prompt'));
+    const harness = makeExecuteContext(scriptedRunner({ exitCode: 0 }));
+
+    expect(prepared.disclosure.notes.join(' ')).not.toMatch(/line break/i);
+
+    const result = await adapter.execute(prepared, harness.ctx);
+
+    expect(result.status).toBe('completed');
+    expect(result.errorCode).toBeNull();
+  });
+
+  it('accepts a multi-line prompt off Windows, where no shim is involved', async () => {
+    const adapter = new OpenCodeAdapter({ platform: 'linux' });
+    const prepared = await adapter.prepare(contextFor('line one\nline two'));
+    const harness = makeExecuteContext(scriptedRunner({ exitCode: 0 }));
+
+    const result = await adapter.execute(prepared, harness.ctx);
+
+    expect(result.status).toBe('completed');
+    expect(result.errorCode).toBeNull();
+  });
+
+  it('declares the limitation in capabilities notes', () => {
+    expect(new OpenCodeAdapter().capabilities().notes.join(' ')).toMatch(/line break/i);
   });
 });
 

@@ -9,6 +9,7 @@ import {
 import type { ArenaEvent, BattleRecord, PrivacySettings, Side } from '@harness-arena/protocol';
 import type { Logger } from '@harness-arena/adapters';
 import { ARENA_VERSION } from './version.js';
+import { withRedactedAgentEnv, withRedactedManifestEnv } from './redact.js';
 
 /**
  * Optional upload to the web app. Three promises to the engine:
@@ -85,12 +86,30 @@ function createNoopUploader(): Uploader {
   };
 }
 
-/** Strip artifacts the privacy level or exclusions forbid, and the local-only raw log path. */
+const EXCLUDED = '[excluded]';
+
+/**
+ * Strip artifacts the privacy level or exclusions forbid, and the local-only raw log path.
+ *
+ * This function assumes nothing about its caller: the agent env values and the task prompt are
+ * stripped here even if the engine already did it, because any future caller (a re-upload, a CLI
+ * command, a test) reaches the network through this one function.
+ */
 export function sanitizeRecordForUpload(record: BattleRecord, privacy: PrivacySettings): BattleRecord {
   const exclude = new Set(privacy.exclude);
   const full = privacy.upload === 'full';
   const clone = JSON.parse(JSON.stringify(record)) as BattleRecord;
+  // BYOK keys: names kept, values gone. Never uploaded at any level.
+  clone.spec = withRedactedAgentEnv(clone.spec);
+  // The `metrics` level promises metrics, not the task text; `prompts` promises no prompt at all.
+  if (privacy.upload === 'metrics' || exclude.has('prompts')) {
+    clone.task = { ...clone.task, prompt: EXCLUDED };
+    if (clone.spec.task.kind === 'prompt') {
+      clone.spec = { ...clone.spec, task: { ...clone.spec.task, prompt: EXCLUDED } };
+    }
+  }
   for (const side of ['a', 'b'] as const) {
+    clone.runs[side].harness.manifest = withRedactedManifestEnv(clone.runs[side].harness.manifest);
     const artifacts = clone.runs[side].artifacts;
     delete artifacts.rawLogPath;
     if (!full || exclude.has('diffs')) {

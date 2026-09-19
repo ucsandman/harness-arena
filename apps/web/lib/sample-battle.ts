@@ -757,6 +757,7 @@ const RUN_A: RunRecord = {
       '.claude/skills/repo-conventions/SKILL.md',
     ],
     executedCommands: [],
+    skippedFiles: [],
   },
   startedAt: iso(19_400),
   completedAt: iso(19_400 + RUN_A_DURATION_MS),
@@ -825,6 +826,7 @@ const RUN_B: RunRecord = {
     manifest: null,
     appliedFiles: [],
     executedCommands: [],
+    skippedFiles: [],
   },
   startedAt: iso(19_600),
   completedAt: iso(19_600 + RUN_B_DURATION_MS),
@@ -924,7 +926,6 @@ export const SAMPLE_RECORD: BattleRecord = {
       timeoutMs: 1_200_000,
       maxTurns: 40,
       maxOutputBytes: 52_428_800,
-      stallTimeoutMs: 0,
     },
     evaluation: {
       tests: { command: 'pnpm vitest run', baseline: true, parser: 'vitest', timeoutMs: 600_000 },

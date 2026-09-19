@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   createGitHubFileSource,
   createLocalFileSource,
+  firstSymlinkComponent,
   GitHubSourceError,
+  realpathInside,
   resolveInside,
 } from '../src/file-source';
 import { jsonResponse, makeTempDir, removeDir, stubFetch, trySymlink, writeFiles } from './helpers';
@@ -24,6 +26,54 @@ describe('resolveInside', () => {
     expect(resolveInside(root, '/etc/passwd')).toBeNull();
     expect(resolveInside(root, 'C:/Windows/system32')).toBeNull();
     expect(resolveInside(root, '')).toBeNull();
+  });
+});
+
+describe('symlink-aware containment', () => {
+  let dir: string;
+  let outside: string;
+
+  beforeEach(async () => {
+    dir = await makeTempDir('arena-root-');
+    outside = await makeTempDir('arena-outside-');
+    await writeFiles(dir, { 'real/deep/file.txt': 'inside\n' });
+    await writeFiles(outside, { 'CLAUDE.md': '# the victim home\n' });
+  });
+
+  afterEach(async () => {
+    await removeDir(dir);
+    await removeDir(outside);
+  });
+
+  it('names the first symlinked component and lets a clean path through', async () => {
+    expect(await firstSymlinkComponent(dir, path.join(dir, 'real', 'deep', 'file.txt'))).toBeNull();
+    expect(await firstSymlinkComponent(dir, path.join(dir, 'missing', 'file.txt'))).toBeNull();
+    expect(await firstSymlinkComponent(dir, dir)).toBeNull();
+
+    const link = path.join(dir, 'link');
+    if (!(await trySymlink(outside, link, 'dir'))) return; // platform refuses links and junctions
+    expect(await firstSymlinkComponent(dir, path.join(link, 'CLAUDE.md'))).toBe(link);
+    expect(await realpathInside(dir, path.join(link, 'CLAUDE.md'))).toBeNull();
+    expect(await realpathInside(dir, path.join(dir, 'real', 'deep'))).toBe(
+      await fs.realpath(path.join(dir, 'real', 'deep')),
+    );
+  });
+
+  it('refuses a local file source whose root is a symlink out of the given base', async () => {
+    const link = path.join(dir, 'link');
+    if (!(await trySymlink(outside, link, 'dir'))) return;
+
+    const guarded = createLocalFileSource(link, { base: dir });
+    expect(await guarded.list()).toEqual([]);
+    expect(await guarded.listResult()).toEqual({ files: [], truncated: false });
+    expect(await guarded.read('CLAUDE.md')).toBeNull();
+    expect(await guarded.exists('CLAUDE.md')).toBe(false);
+
+    // a root that really is under the base is unaffected
+    const contained = createLocalFileSource(path.join(dir, 'real'), { base: dir });
+    expect(await contained.list()).toEqual(['deep/file.txt']);
+    // and without a base the caller chose the directory itself, so it is still readable
+    expect(await createLocalFileSource(link).list()).toEqual(['CLAUDE.md']);
   });
 });
 
@@ -207,6 +257,36 @@ describe('createGitHubFileSource', () => {
     expect(calls[0]?.url).toBe('https://api.github.com/repos/o/r/contents/CLAUDE.md?ref=main');
     expect(calls[0]?.headers.accept).toBe('application/vnd.github.raw+json');
     expect(calls[0]?.headers.authorization).toBe('Bearer ghp_x');
+  });
+
+  it('stops reading the body once maxBytes is reached instead of buffering it all', async () => {
+    const chunk = new TextEncoder().encode('x'.repeat(1024));
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        if (pulls > 64) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(chunk);
+      },
+    });
+    const { fetchImpl } = stubFetch(() => new Response(body, { status: 200 }));
+    const source = createGitHubFileSource({ owner: 'o', repo: 'r', ref: 'main', fetchImpl });
+
+    const text = await source.read('huge.md', 2048);
+    expect(text).toHaveLength(2048);
+    // 64 KB were on offer; reading 2 KB must not have pulled the whole body
+    expect(pulls).toBeLessThan(8);
+  });
+
+  it('honours a content-length smaller than maxBytes', async () => {
+    const { fetchImpl } = stubFetch(
+      () => new Response('# harness rules\n', { status: 200, headers: { 'content-length': '7' } }),
+    );
+    const source = createGitHubFileSource({ owner: 'o', repo: 'r', ref: 'main', fetchImpl });
+    expect(await source.read('CLAUDE.md')).toBe('# harne');
   });
 
   it('returns null for a missing file and refuses traversal without a request', async () => {

@@ -278,6 +278,59 @@ describe('privacy filtering', () => {
     expect(uploader.stats().artifacts).toBe(1);
   });
 
+  it('replaces agent env VALUES with [REDACTED] at every level, keeping the names', () => {
+    const key = ['sk', '-live-', 'abcdefghijklmnop'].join('');
+    const spec = battleSpecSchema.parse({
+      version: 1,
+      task: { kind: 'prompt', prompt: 'Fix it.' },
+      repository: { source: 'empty' },
+      competitors: {
+        a: { agent: { id: 'fake', env: { MY_KEY: key } }, harness: { source: 'vanilla' } },
+        b: { agent: { id: 'fake' }, harness: { source: 'vanilla' } },
+      },
+    });
+    for (const level of ['metrics', 'events', 'full'] as const) {
+      const clean = sanitizeRecordForUpload(makeRecord({ spec }), privacy({ upload: level }));
+      const body = JSON.stringify(clean);
+      expect(body, level).not.toContain(key);
+      expect(body, level).toContain('MY_KEY');
+      expect(clean.spec.competitors.a.agent.env).toEqual({ MY_KEY: '[REDACTED]' });
+    }
+  });
+
+  it('excludes the task prompt at the metrics level and whenever prompts are excluded', () => {
+    const record = recordWithArtifacts();
+    const metricsOnly = sanitizeRecordForUpload(record, privacy({ upload: 'metrics' }));
+    expect(metricsOnly.task.prompt).toBe('[excluded]');
+    expect(metricsOnly.task.title).toBe('Fix the session-expiry bug');
+    expect(metricsOnly.task.source).toEqual({ kind: 'prompt' });
+    expect(metricsOnly.spec.task.kind === 'prompt' ? metricsOnly.spec.task.prompt : null).toBe('[excluded]');
+
+    const noPrompts = sanitizeRecordForUpload(record, privacy({ upload: 'full', exclude: ['prompts'] }));
+    expect(noPrompts.task.prompt).toBe('[excluded]');
+    expect(noPrompts.spec.task.kind === 'prompt' ? noPrompts.spec.task.prompt : null).toBe('[excluded]');
+
+    const full = sanitizeRecordForUpload(record, privacy({ upload: 'full' }));
+    expect(full.task.prompt).toBe('Fix it.');
+  });
+
+  it('never puts the task prompt on the wire at the metrics level', async () => {
+    const { calls, impl } = stubFetch(() => ({ status: 200, body: {} }));
+    const uploader = createUploader({
+      serverUrl: 'https://arena.test',
+      token: 't',
+      privacy: privacy({ upload: 'metrics' }),
+      logger: silentLogger(),
+      fetchImpl: impl,
+    });
+    await uploader.patchRecord('btl_0000000000000abc', recordWithArtifacts());
+    await uploader.flush();
+    expect(calls).toHaveLength(1);
+    const body = JSON.stringify(calls[0]?.body);
+    expect(body).not.toContain('Fix it.');
+    expect(body).toContain('[excluded]');
+  });
+
   it('skips artifacts below the full level', async () => {
     const { calls, impl } = stubFetch(() => ({ status: 200, body: {} }));
     const uploader = createUploader({

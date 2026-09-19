@@ -88,6 +88,44 @@ describe('decideVerdict / tests', () => {
   });
 });
 
+describe('decideVerdict / tests with missing evidence', () => {
+  const noEvidence = (side: Side, exitCode: number | null) =>
+    testsResult(side, { passed: null, failed: null, total: null, regressions: null, exitCode }, 'failed');
+
+  it('does not crown a winner when the losing side produced no counts at all', () => {
+    // side B's test command died (spawn error / killed): no counts, no exit code. That is missing
+    // evidence, not a failing suite, so tests must not decide the battle.
+    const verdict = decideVerdict(makeReport([allTestsPass('a'), noEvidence('b', null)]), sides());
+    expect(verdict.winner).not.toBe('a');
+    expect(verdict.winner).toBe('tie');
+    expect(verdict.decisiveFactors).toEqual([]);
+    expect(verdict.caveats.join(' ')).toContain("Side B's repository tests reported no pass/fail counts");
+    expect(verdict.caveats.join(' ')).toContain('no exit code');
+    expect(verdict.reasons.join(' ')).not.toContain('came out equal');
+  });
+
+  it('keeps the exit-code rule when both sides reported an exit code', () => {
+    const report = makeReport([
+      testsResult('a', { passed: null, failed: null, total: null, regressions: null, exitCode: 0 }, 'passed'),
+      noEvidence('b', 1),
+    ]);
+    const verdict = decideVerdict(report, sides());
+    expect(verdict).toMatchObject({ winner: 'a', decisiveFactors: ['tests'] });
+    expect(verdict.caveats.join(' ')).not.toContain('no pass/fail counts');
+  });
+
+  it('does not use the exit-code rule when the other side has no exit code', () => {
+    const report = makeReport([
+      testsResult('a', { passed: null, failed: null, total: null, regressions: null, exitCode: 0 }, 'passed'),
+      noEvidence('b', null),
+    ]);
+    const verdict = decideVerdict(report, sides());
+    expect(verdict.winner).toBe('tie');
+    expect(verdict.decisiveFactors).toEqual([]);
+    expect(verdict.caveats.join(' ')).toContain("Side B's repository tests reported no pass/fail counts");
+  });
+});
+
 describe('decideVerdict / assertions and build', () => {
   it('more satisfied assertions wins', () => {
     const report = makeReport([

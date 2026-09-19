@@ -346,12 +346,12 @@ async function upsertHarnessFromRun(
     })
     .onConflictDoUpdate({
       target: harnesses.slug,
-      set: {
-        name: harnessDisplayName(run.harness),
-        sourceKind: run.harness.kind,
-        sourceUrl: harnessSourceUrl(run.harness),
-        updatedAt: new Date(),
-      },
+      // A battle upload may DISCOVER a harness but never rewrites the identity of a row that already
+      // exists: name, sourceKind, sourceUrl (and the owner) belong to the import flow in
+      // apps/web/lib/harness-import.ts, which re-inspects the repository itself. An upload only marks
+      // the row as seen; anything else would let one account edit another account's catalog entry by
+      // uploading a battle whose harness slugs to the same key.
+      set: { updatedAt: new Date() },
     })
     .returning({ id: harnesses.id });
   if (!harnessRow) throw new Error(`upsertHarnessFromRun: no harness row for ${slug}`);
@@ -946,9 +946,16 @@ export async function getHarnessBySlug(db: ArenaDatabase, slug: string): Promise
   return row ?? null;
 }
 
-export async function listHarnesses(db: ArenaDatabase, opts: { limit?: number } = {}): Promise<Harness[]> {
+export async function listHarnesses(
+  db: ArenaDatabase,
+  opts: { limit?: number; ownerUserId?: string } = {},
+): Promise<Harness[]> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
-  return db.select().from(harnesses).orderBy(desc(harnesses.updatedAt), harnesses.slug).limit(limit);
+  // The owner filter runs in SQL (index harnesses_owner_idx), so a caller listing one user's
+  // harnesses is not limited to whatever fits in the most-recently-updated page of the catalog.
+  const query = db.select().from(harnesses);
+  const scoped = opts.ownerUserId ? query.where(eq(harnesses.ownerUserId, opts.ownerUserId)) : query;
+  return scoped.orderBy(desc(harnesses.updatedAt), harnesses.slug).limit(limit);
 }
 
 export interface HarnessProfile {

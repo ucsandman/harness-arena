@@ -9,6 +9,8 @@ export {
   createRedactor,
   MIN_SECRET_LENGTH,
   REDACTED,
+  withRedactedAgentEnv,
+  withRedactedManifestEnv,
 } from './redact.js';
 export type { Redactor, RedactorOptions } from './redact.js';
 
@@ -67,7 +69,6 @@ export type {
   EvaluationContext,
   EvaluationSideInput,
   HarnessExecution,
-  JudgeRequest,
   JudgeRunner,
   ResolveHarnessFn,
   ResolveHarnessOptions,

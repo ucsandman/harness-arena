@@ -92,36 +92,49 @@ export const repoTestsEvaluator: Evaluator = {
       }
 
       const startedAt = Date.now();
-      ctx.emit(side, {
-        type: 'test.started',
-        payload: { command: tests.command, phase: 'post' },
-        confidence: 'observed',
-      });
+      let outcome: TestOutcome;
 
-      const outcome = await runTests({
-        command: tests.command,
-        cwd: sideCtx.workspace,
-        parser: tests.parser,
-        timeoutMs: tests.timeoutMs,
-        runner: ctx.runner,
-        signal: ctx.signal,
-      });
-
-      ctx.emit(side, {
-        type: 'test.completed',
-        payload: {
-          command: tests.command,
-          phase: 'post',
+      if (sideCtx.postTests) {
+        // The engine already measured the suite after the run (and already emitted its test.started /
+        // test.completed events). Running it again would double the wall clock, could disagree with the
+        // recorded metrics, and would let a flaky suite change the verdict. Reuse, emit nothing.
+        outcome = sideCtx.postTests;
+        ctx.logger.debug('repo-tests reusing the engine-measured post-run outcome', {
+          side,
           exitCode: outcome.exitCode,
-          passed: outcome.passed,
-          failed: outcome.failed,
-          skipped: outcome.skipped,
-          total: outcome.total,
-          durationMs: outcome.durationMs,
-          parser: outcome.parser,
-        },
-        confidence: 'observed',
-      });
+        });
+      } else {
+        ctx.emit(side, {
+          type: 'test.started',
+          payload: { command: tests.command, phase: 'post' },
+          confidence: 'observed',
+        });
+
+        outcome = await runTests({
+          command: tests.command,
+          cwd: sideCtx.workspace,
+          parser: tests.parser,
+          timeoutMs: tests.timeoutMs,
+          runner: ctx.runner,
+          signal: ctx.signal,
+        });
+
+        ctx.emit(side, {
+          type: 'test.completed',
+          payload: {
+            command: tests.command,
+            phase: 'post',
+            exitCode: outcome.exitCode,
+            passed: outcome.passed,
+            failed: outcome.failed,
+            skipped: outcome.skipped,
+            total: outcome.total,
+            durationMs: outcome.durationMs,
+            parser: outcome.parser,
+          },
+          confidence: 'observed',
+        });
+      }
 
       const regressions = computeRegressions(sideCtx.baseline, outcome);
       const noFailures = outcome.failed === 0 || outcome.failed === null;

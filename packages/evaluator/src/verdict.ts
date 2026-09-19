@@ -72,6 +72,14 @@ function testsHaveFailures(view: TestsView): boolean {
   return view.status === 'failed';
 }
 
+/**
+ * Did the parser produce any pass/fail counts for this side? A side with no counts at all (spawn error,
+ * a timed-out test command, or the `exit-code` parser) is missing evidence, not proof of failure.
+ */
+function testCountsKnown(view: TestsView): boolean {
+  return view.passed !== null || view.failed !== null;
+}
+
 /** Efficiency never decides a winner; it is reported as a caveat so nobody reads a tie as "identical". */
 function efficiencyCaveats(comparisons: readonly Comparison[]): string[] {
   const caveats: string[] = [];
@@ -128,14 +136,22 @@ function decideDeterministic(
   const aTests = testsViewFor(results, 'a');
   const bTests = testsViewFor(results, 'b');
   const bothTests = testsRan(aTests) && testsRan(bTests);
+  const testEvidenceCaveats: string[] = [];
   if (bothTests && aTests && bTests) {
+    const bothCounts = testCountsKnown(aTests) && testCountsKnown(bTests);
     for (const side of ['a', 'b'] as const) {
       const mine = side === 'a' ? aTests : bTests;
       const theirs = side === 'a' ? bTests : aTests;
-      // Counts decide when the parser produced them; otherwise the evaluator status (which is the
-      // exit code for the `exit-code` parser) is still deterministic evidence.
-      const byCounts = testsAllPassed(mine) && testsHaveFailures(theirs);
-      const byStatus = mine.status === 'passed' && theirs.status === 'failed';
+      // Counts decide only when BOTH sides produced counts: "no counts" is missing evidence, never a
+      // failure. Otherwise the evaluator status (the exit code for the `exit-code` parser) is still
+      // deterministic evidence — but only when both sides actually reported an exit code, because a
+      // spawn error or a killed test command reports none.
+      const byCounts = bothCounts && testsAllPassed(mine) && testsHaveFailures(theirs);
+      const byStatus =
+        mine.status === 'passed' &&
+        theirs.status === 'failed' &&
+        mine.exitCode !== null &&
+        theirs.exitCode !== null;
       if (byCounts || byStatus) {
         const reason = byCounts
           ? `Side ${label(side)} passed the repository tests (${mine.passed}/${mine.total ?? mine.passed} passing) ` +
@@ -151,6 +167,19 @@ function decideDeterministic(
         };
       }
     }
+    // Nothing above decided. Name the side whose tests produced no usable evidence, so a fall-through
+    // to a tie is never read as "both suites agreed".
+    for (const view of [aTests, bTests]) {
+      const counterpart = view.side === 'a' ? bTests : aTests;
+      if (testCountsKnown(view)) continue;
+      if (!testCountsKnown(counterpart) && view.exitCode !== null) continue;
+      const exitText = view.exitCode === null ? 'and no exit code' : `exit ${view.exitCode}`;
+      testEvidenceCaveats.push(
+        `Side ${label(view.side)}'s repository tests reported no pass/fail counts (${exitText}), so they ` +
+          'are not evidence of failure; the repository tests did not decide this battle.',
+      );
+    }
+
     const aReg = aTests.regressions;
     const bReg = bTests.regressions;
     if (aReg !== null && bReg !== null && aReg !== bReg) {
@@ -160,7 +189,7 @@ function decideDeterministic(
           method: 'deterministic',
           decisiveFactors: ['regressions'],
           reasons: [`Side A introduced ${aReg} regression(s); side B introduced none.`],
-          caveats: [],
+          caveats: [...testEvidenceCaveats],
         };
       }
       if (bReg > 0 && aReg === 0) {
@@ -169,7 +198,7 @@ function decideDeterministic(
           method: 'deterministic',
           decisiveFactors: ['regressions'],
           reasons: [`Side B introduced ${bReg} regression(s); side A introduced none.`],
-          caveats: [],
+          caveats: [...testEvidenceCaveats],
         };
       }
     }
@@ -191,7 +220,7 @@ function decideDeterministic(
         `Side ${label(winner)} satisfied ${winnerView.passed}/${winnerView.total} task assertions, ` +
           `side ${label(other(winner))} satisfied ${loserView.passed}/${loserView.total}.`,
       ],
-      caveats: [],
+      caveats: [...testEvidenceCaveats],
     };
   }
 
@@ -214,7 +243,7 @@ function decideDeterministic(
         reasons: [
           `Side ${label(winner)} passed every build check; side ${label(other(winner))} failed ${failed}.`,
         ],
-        caveats: [],
+        caveats: [...testEvidenceCaveats],
       };
     }
   }
@@ -235,8 +264,12 @@ function decideDeterministic(
     winner: 'tie',
     method: 'deterministic',
     decisiveFactors: [],
-    reasons: ['Every deterministic check that ran came out equal for both sides.'],
-    caveats: efficiencyCaveats(report.comparisons),
+    reasons: [
+      testEvidenceCaveats.length
+        ? 'No deterministic check separated the sides on evidence both sides produced.'
+        : 'Every deterministic check that ran came out equal for both sides.',
+    ],
+    caveats: [...testEvidenceCaveats, ...efficiencyCaveats(report.comparisons)],
   };
 }
 

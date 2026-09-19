@@ -1,4 +1,4 @@
-import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
+import { appendFile, lstat, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { AdapterEvent } from '@harness-arena/protocol';
 import { buildChildEnv } from '../shared.js';
@@ -45,6 +45,30 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
+/**
+ * A symlinked directory inside the workspace leads outside it while every joined path still looks
+ * contained, so each component below the workspace is checked and a symlink refuses the whole
+ * operation. Same rule as `applyHarness`: symlinks are never followed.
+ */
+async function assertNoSymlinkComponent(workspace: string, rel: string, declared: string): Promise<void> {
+  let current = workspace;
+  for (const segment of rel.split(path.sep)) {
+    if (segment.length === 0) continue;
+    current = path.join(current, segment);
+    let stats;
+    try {
+      stats = await lstat(current);
+    } catch {
+      return; // this component does not exist yet, so nothing below it can either
+    }
+    if (stats.isSymbolicLink()) {
+      throw new Error(
+        `fake fixture file operation crosses a symlink inside the workspace: ${declared} (at ${segment})`,
+      );
+    }
+  }
+}
+
 async function applyFsOp(root: string, op: FakeFsOp): Promise<void> {
   const workspace = path.resolve(root);
   const target = path.resolve(workspace, op.path);
@@ -52,6 +76,7 @@ async function applyFsOp(root: string, op: FakeFsOp): Promise<void> {
   if (rel.startsWith('..') || path.isAbsolute(rel)) {
     throw new Error(`fake fixture file operation escapes the workspace: ${op.path}`);
   }
+  await assertNoSymlinkComponent(workspace, rel, op.path);
   switch (op.op) {
     case 'mkdir':
       await mkdir(target, { recursive: true });

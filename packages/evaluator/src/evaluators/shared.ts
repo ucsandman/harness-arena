@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { EvaluatorResult, RunArtifacts, Side } from '@harness-arena/protocol';
-import { createOutputCollector, shellInvocation, PROCESS_OUTPUT_CAP_BYTES } from '../run-tests.js';
+import { shellInvocation } from '@harness-arena/adapters';
+import { createOutputCollector, PROCESS_OUTPUT_CAP_BYTES } from '../run-tests.js';
 import type { ProcessRunner } from '../types.js';
 
 export const SIDES: readonly Side[] = ['a', 'b'];
@@ -40,6 +41,7 @@ export async function runShellCommand(opts: {
   const result = await opts.runner.run({
     command: invocation.command,
     args: invocation.args,
+    windowsVerbatimArguments: invocation.windowsVerbatimArguments,
     cwd: opts.cwd,
     env: { ...base, ...(opts.env ?? {}) },
     stdin: null,

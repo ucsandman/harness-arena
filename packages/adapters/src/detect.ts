@@ -1,6 +1,6 @@
 import path from 'node:path';
-import which from 'which';
 import { defaultProcessRunner } from './process.js';
+import { lookupOnPath } from './resolve.js';
 import { extractVersion } from './shared.js';
 import type { AdapterRegistry, Detection, ProcessRunner } from './types.js';
 
@@ -9,27 +9,25 @@ const VERSION_MAX_OUTPUT_BYTES = 256 * 1024;
 
 /**
  * Locate a CLI on PATH. Returns an absolute path or null; never throws.
- * On Windows this resolves `.cmd`/`.exe`/`.ps1` shims through PATHEXT, which is how npm-installed
- * agent CLIs appear.
+ * On Windows this resolves `.cmd`/`.exe` shims through PATHEXT, which is how npm-installed agent CLIs
+ * appear. Only absolute PATH entries are searched: the working directory is never consulted, so a
+ * binary dropped in a battle workspace can never stand in for the real CLI.
  */
 export async function findBinary(
   names: readonly string[],
   env: Record<string, string | undefined> = process.env,
+  options: { platform?: NodeJS.Platform } = {},
 ): Promise<string | null> {
   const pathValue = env.PATH ?? env.Path ?? env.path;
   const pathExt = env.PATHEXT ?? env.Pathext ?? process.env.PATHEXT;
   for (const name of names) {
     if (!name) continue;
-    try {
-      const found = await which(name, {
-        nothrow: true,
-        ...(pathValue === undefined ? {} : { path: pathValue }),
-        ...(pathExt === undefined ? {} : { pathExt }),
-      });
-      if (found) return path.resolve(found);
-    } catch {
-      // unreadable PATH entry; try the next name
-    }
+    const found = await lookupOnPath(name, {
+      path: pathValue,
+      pathExt,
+      ...(options.platform === undefined ? {} : { platform: options.platform }),
+    });
+    if (found !== null) return path.resolve(found);
   }
   return null;
 }

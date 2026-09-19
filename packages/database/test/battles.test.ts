@@ -342,4 +342,58 @@ describe('harnesses', () => {
     // vanilla has a null commit: the unique constraint is NULLS NOT DISTINCT, so it dedups too.
     expect(await handle.db.select().from(harnessVersions)).toHaveLength(2);
   });
+
+  it('a battle upload never rewrites the identity or the owner of an existing harness row', async () => {
+    const imported = {
+      name: 'ucsandman/agnostic-ai',
+      source: 'https://github.com/ucsandman/agnostic-ai',
+      kind: 'github' as const,
+    };
+    await upsertBattleFromRecord(handle.db, { record: buildRecord({ harnessA: imported }) });
+    const alice = await upsertGithubUser(handle.db, { githubId: 11, login: 'alice' });
+    await handle.db
+      .update(harnesses)
+      .set({ ownerUserId: alice.id, description: 'imported by alice' })
+      .where(eq(harnesses.slug, 'ucsandman--agnostic-ai'));
+
+    // Another account uploads an unrelated battle whose local harness slugs to the same key
+    // (harnessSlug matches an embedded github.com path anywhere in the source string).
+    const impostor = {
+      name: 'TOTALLY NOT agnostic-ai',
+      source: 'C:/tmp/github.com/ucsandman/agnostic-ai',
+      kind: 'local' as const,
+    };
+    await upsertBattleFromRecord(handle.db, { record: buildRecord({ harnessA: impostor }) });
+
+    const rows = await handle.db.select().from(harnesses).where(eq(harnesses.slug, 'ucsandman--agnostic-ai'));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.name).toBe('ucsandman/agnostic-ai');
+    expect(rows[0]?.sourceKind).toBe('github');
+    expect(rows[0]?.sourceUrl).toBe('https://github.com/ucsandman/agnostic-ai');
+    expect(rows[0]?.ownerUserId).toBe(alice.id);
+    expect(rows[0]?.description).toBe('imported by alice');
+  });
+
+  it('listHarnesses scopes to one owner instead of filtering a page of the catalog', async () => {
+    const alice = await upsertGithubUser(handle.db, { githubId: 12, login: 'alice2' });
+    const harnessA = {
+      name: 'superclaude',
+      source: 'https://github.com/acme/superclaude',
+      kind: 'github' as const,
+    };
+    await upsertBattleFromRecord(handle.db, { record: buildRecord({ harnessA }) });
+    await handle.db
+      .update(harnesses)
+      .set({ ownerUserId: alice.id })
+      .where(eq(harnesses.slug, 'acme--superclaude'));
+    // vanilla is the most recently updated row, so it fills a one-row page of the whole catalog.
+    await handle.db
+      .update(harnesses)
+      .set({ updatedAt: new Date(Date.UTC(2030, 0, 1)) })
+      .where(eq(harnesses.slug, 'vanilla'));
+
+    expect((await listHarnesses(handle.db, { limit: 1 })).map((row) => row.slug)).toEqual(['vanilla']);
+    const owned = await listHarnesses(handle.db, { limit: 1, ownerUserId: alice.id });
+    expect(owned.map((row) => row.slug)).toEqual(['acme--superclaude']);
+  });
 });

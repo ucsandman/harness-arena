@@ -9,54 +9,18 @@ import type {
   Side,
 } from '@harness-arena/protocol';
 import { testParserSchema } from '@harness-arena/protocol';
+import type { Logger, ProcessRunner } from '@harness-arena/adapters';
 import type { z } from 'zod';
 
 export type TestParser = z.infer<typeof testParserSchema>;
 export const TEST_PARSERS = testParserSchema.options;
 
 /**
- * Structural mirrors of the three interfaces this package consumes from `@harness-arena/adapters`
- * (`Logger`, `ProcessRunner` and its options/result). They are declared here, byte-for-byte in shape,
- * because `packages/adapters/src/index.ts` does not export them yet (that package is written in
- * parallel) and tsc cannot import across package roots. TypeScript is structural, so a real
- * `adapters` ProcessRunner/Logger satisfies these without a cast. Replace with
- * `import type { Logger, ProcessRunner } from '@harness-arena/adapters'` once the barrel exports them.
+ * The process/logging contract is owned by `@harness-arena/adapters`; this package consumes it rather
+ * than mirroring it, so a change to `ProcessRunOptions` (for example `windowsVerbatimArguments`)
+ * cannot drift between the two.
  */
-export interface Logger {
-  debug(msg: string, data?: Record<string, unknown>): void;
-  info(msg: string, data?: Record<string, unknown>): void;
-  warn(msg: string, data?: Record<string, unknown>): void;
-  error(msg: string, data?: Record<string, unknown>): void;
-  child(bindings: Record<string, unknown>): Logger;
-}
-
-export interface ProcessRunOptions {
-  command: string;
-  args: string[];
-  cwd: string;
-  env: Record<string, string>;
-  stdin: string | null;
-  signal: AbortSignal;
-  timeoutMs: number;
-  maxOutputBytes: number;
-  onStdoutLine: (line: string) => void;
-  onStderrLine: (line: string) => void;
-}
-
-export interface ProcessRunResult {
-  exitCode: number | null;
-  signal: string | null;
-  timedOut: boolean;
-  aborted: boolean;
-  outputBytes: number;
-  truncated: boolean;
-  durationMs: number;
-  spawnError: string | null;
-}
-
-export interface ProcessRunner {
-  run(opts: ProcessRunOptions): Promise<ProcessRunResult>;
-}
+export type { Logger, ProcessRunOptions, ProcessRunResult, ProcessRunner } from '@harness-arena/adapters';
 
 /** Counts a parser could extract. `null` means "the tool did not say", never zero. */
 export interface ParsedTestOutput {
@@ -93,6 +57,12 @@ export interface SideContext {
   finalResponse: string | null;
   /** test outcome measured on the untouched workspace, when a baseline ran */
   baseline: TestOutcome | null;
+  /**
+   * Post-run test outcome the engine already measured (and already emitted `test.completed` for).
+   * When it is present the `repo-tests` evaluator reuses it instead of running the suite a second
+   * time; `null` means nobody has run the tests after the agent, so the evaluator runs them itself.
+   */
+  postTests: TestOutcome | null;
 }
 
 export interface EvaluationContext {

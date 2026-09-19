@@ -25,6 +25,8 @@ export interface ProcessRunOptions {
   maxOutputBytes: number;
   onStdoutLine: (line: string) => void;
   onStderrLine: (line: string) => void;
+  /** pass the argument line to Windows verbatim (no re-escaping); set for `cmd.exe /d /s /c "…"` */
+  windowsVerbatimArguments?: boolean;
 }
 
 export interface ProcessRunResult {

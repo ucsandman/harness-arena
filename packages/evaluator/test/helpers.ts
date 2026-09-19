@@ -21,6 +21,7 @@ import { makeSideContext, silentLogger } from '../src/index.js';
 export interface FakeRunCall {
   command: string;
   args: string[];
+  windowsVerbatimArguments: boolean | undefined;
   cwd: string;
   timeoutMs: number;
   maxOutputBytes: number;
@@ -51,6 +52,7 @@ export function fakeRunner(
       const call: FakeRunCall = {
         command: opts.command,
         args: opts.args,
+        windowsVerbatimArguments: opts.windowsVerbatimArguments,
         cwd: opts.cwd,
         timeoutMs: opts.timeoutMs,
         maxOutputBytes: opts.maxOutputBytes,
@@ -74,6 +76,17 @@ export function fakeRunner(
       return result;
     },
   };
+}
+
+/**
+ * The user-authored shell line a recorded call carries. On Windows the line is wrapped in double quotes
+ * and passed verbatim to `cmd.exe /d /s /c`, so tests unwrap it instead of hardcoding one platform.
+ */
+export function shellLineOf(call: FakeRunCall): string {
+  const last = call.args.at(-1) ?? '';
+  return call.windowsVerbatimArguments === true && last.startsWith('"') && last.endsWith('"')
+    ? last.slice(1, -1)
+    : last;
 }
 
 export function makeSpec(overrides: Partial<BattleSpecInput> = {}): BattleSpec {

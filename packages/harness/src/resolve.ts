@@ -5,6 +5,8 @@ import type { HarnessInspection, HarnessManifest, HarnessRef, HarnessSource } fr
 import {
   createGitHubFileSource,
   createLocalFileSource,
+  firstSymlinkComponent,
+  realpathInside,
   resolveInside,
   type FetchImpl,
   type FileSource,
@@ -225,8 +227,33 @@ export async function resolveHarness(ref: HarnessRef, opts: ResolveOptions): Pro
         `harness subdirectory escapes the checkout: ${source.path}`,
       );
     }
+    // the textual check above cannot see a link committed in the repository: ask the filesystem too,
+    // otherwise `/tree/<ref>/link` with `link -> ../../../../home/victim` would be listed and applied
+    if (await isDirectory(inside)) {
+      const linked = await firstSymlinkComponent(cloneDir, inside);
+      if (linked !== null) {
+        throw new HarnessResolveError(
+          'path_escape',
+          `harness subdirectory is a symbolic link, which could point anywhere: ${source.path}`,
+        );
+      }
+      if ((await realpathInside(cloneDir, inside)) === null) {
+        throw new HarnessResolveError(
+          'path_escape',
+          `harness subdirectory resolves outside the checkout: ${source.path}`,
+        );
+      }
+    }
     rootDir = inside;
   }
 
-  return finish(source.kind, source, createLocalFileSource(rootDir), rootDir, commit, ref, opts);
+  return finish(
+    source.kind,
+    source,
+    createLocalFileSource(rootDir, { base: cloneDir }),
+    rootDir,
+    commit,
+    ref,
+    opts,
+  );
 }

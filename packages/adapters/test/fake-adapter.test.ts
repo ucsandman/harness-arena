@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { execa } from 'execa';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -101,6 +101,42 @@ describe('builtin fake fixtures', () => {
 
   it('refuses a fixture name that is not a builtin or an absolute path', async () => {
     await expect(loadFakeFixture('../../etc/passwd')).rejects.toThrow(/builtin name/);
+  });
+
+  it('refuses a file operation that leaves the workspace through a symlinked directory', async () => {
+    const outside = await makeTempDir('arena-fake-outside-');
+    const link = path.join(workspace, 'link');
+    try {
+      try {
+        // A junction needs no elevation on Windows; an unprivileged POSIX user can always symlink.
+        await symlink(outside, link, process.platform === 'win32' ? 'junction' : 'dir');
+      } catch {
+        return; // this platform refuses symlink creation: nothing to assert
+      }
+
+      const fixture = path.join(outside, 'symlinked.json');
+      await writeFile(
+        fixture,
+        JSON.stringify({
+          name: 'symlinked',
+          agentVersion: 'fake-1.0.0',
+          // The joined path stays textually inside the workspace, but `link` is not a real directory.
+          steps: [{ atMs: 0, fs: { op: 'write', path: 'link/escaped.txt', content: 'nope' } }],
+          result: { status: 'completed', exitCode: 0, finalResponse: null, usage: null, turns: 1 },
+        }),
+        'utf8',
+      );
+
+      const adapter = new FakeAdapter();
+      const prepared = await adapter.prepare(makePrepareContext({ workspace, fixture }));
+      const harness = makeExecuteContext(NO_RUNNER);
+
+      await expect(adapter.execute(prepared, harness.ctx)).rejects.toThrow(/symlink/i);
+      await expect(readdir(outside)).resolves.toEqual(['symlinked.json']);
+    } finally {
+      await rm(link, { force: true, recursive: true });
+      await removeTempDir(outside);
+    }
   });
 });
 
@@ -244,6 +280,18 @@ describe('FakeAdapter replay', () => {
     expect(result.status).toBe('interrupted');
     expect(harness.events.at(-1)?.type).toBe('interrupt');
     expect((result.native as { stepsReplayed: number }).stepsReplayed).toBeLessThan(121);
+  });
+
+  it('never reports an event later than the duration it returns', async () => {
+    for (const fixture of ['quick-success', 'demo-harness-a']) {
+      const { result, events } = await replay(fixture);
+      const first = events[0]?.at ?? 0;
+      const last = events.at(-1)?.at ?? 0;
+
+      // durationMs is the fixture timeline, and events are anchored to the same start, so the run can
+      // never complete before its own last event.
+      expect(result.durationMs).toBe(last - first);
+    }
   });
 
   it('detects as installed without touching the filesystem or a provider', async () => {

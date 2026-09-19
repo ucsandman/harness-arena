@@ -12,7 +12,7 @@ export interface CollectEnvironmentOptions {
   registry?: AdapterRegistry;
   detections: Detection[];
   arenaVersion: string;
-  /** flags Arena adds to both sides, per agent id */
+  /** the argv Arena used, keyed by side ('a' | 'b'); both sides appear even on the same agent */
   sharedFlags?: Record<string, string[]>;
   /** ARENA_HOME, used only to keep git invocations hook-free */
   home?: string;

@@ -1,3 +1,4 @@
+import { shellInvocation } from '@harness-arena/adapters';
 import { parseTestOutput } from './test-parsers.js';
 import type { ProcessRunner, TestOutcome, TestParser } from './types.js';
 
@@ -7,23 +8,6 @@ export const OUTPUT_CAP_BYTES = 512 * 1024;
 export const PROCESS_OUTPUT_CAP_BYTES = 16 * 1024 * 1024;
 
 const TRUNCATION_RESERVE = 200;
-
-/**
- * Test commands come from `arena.yaml` / the battle spec as a single user-authored shell line
- * (`npm test -- --run`, `pytest -q && echo done`). Arena therefore runs them through the platform
- * shell: `cmd.exe /d /s /c <line>` on Windows, `sh -c <line>` elsewhere. Nothing is interpolated into
- * the line by Arena; the line is passed as one argument, exactly as the user wrote it. Agent prompts
- * and agent CLIs are never invoked this way (adapters use fixed argv, see PreparedRun).
- */
-export function shellInvocation(
-  command: string,
-  platform: NodeJS.Platform = process.platform,
-): { command: string; args: string[] } {
-  if (platform === 'win32') {
-    return { command: process.env.ComSpec ?? 'cmd.exe', args: ['/d', '/s', '/c', command] };
-  }
-  return { command: 'sh', args: ['-c', command] };
-}
 
 function truncateToBytes(text: string, maxBytes: number): string {
   if (Buffer.byteLength(text) <= maxBytes) return text;
@@ -86,6 +70,11 @@ function processEnv(extra: Record<string, string> | undefined): Record<string, s
 /**
  * Runs a test command and parses its output. Deterministic: no retries, no heuristics beyond the
  * parser, and counts stay `null` when the tool did not report them.
+ *
+ * The command is a single user-authored shell line, so it goes through `shellInvocation` from
+ * `@harness-arena/adapters` (`cmd.exe /d /s /c "<line>"` with verbatim arguments on Windows,
+ * `/bin/sh -c <line>` elsewhere). Arena interpolates nothing into the line and never starts an agent
+ * CLI this way (adapters build a fixed argv, see PreparedRun).
  */
 export async function runTests(opts: RunTestsOptions): Promise<TestOutcome> {
   const invocation = shellInvocation(opts.command);
@@ -96,6 +85,7 @@ export async function runTests(opts: RunTestsOptions): Promise<TestOutcome> {
   const result = await opts.runner.run({
     command: invocation.command,
     args: invocation.args,
+    windowsVerbatimArguments: invocation.windowsVerbatimArguments,
     cwd: opts.cwd,
     env: processEnv(opts.env),
     stdin: null,

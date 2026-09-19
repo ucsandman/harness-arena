@@ -59,7 +59,7 @@ const applied = await applyHarness(harness, {
 
 ```
 pnpm exec tsc -p packages/harness/tsconfig.json --noEmit    # sources
-pnpm exec tsc -p packages/harness/tsconfig.test.json --noEmit  # sources + tests
+pnpm typecheck                                              # sources + tests, repo-wide
 pnpm exec vitest run packages/harness
 pnpm exec eslint packages/harness
 ```

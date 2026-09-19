@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { battleSpecSchema, emptyMetrics, makeId, PROTOCOL_VERSION } from '@harness-arena/protocol';
+import { battleSpecSchema, emptyMetrics, isId, makeId, PROTOCOL_VERSION } from '@harness-arena/protocol';
 import type {
   AdapterEvent,
   AgentConfig,
@@ -25,7 +25,12 @@ import type {
 } from '@harness-arena/adapters';
 import { ARENA_VERSION } from './version.js';
 import { createLogger, createSilentLogger } from './logger.js';
-import { collectSecretEnvValues, createPassthroughRedactor, createRedactor } from './redact.js';
+import {
+  collectSecretEnvValues,
+  createRedactor,
+  withRedactedAgentEnv,
+  withRedactedManifestEnv,
+} from './redact.js';
 import { createStateStore } from './store.js';
 import type { StateStore } from './store.js';
 import {
@@ -87,6 +92,8 @@ export interface RunBattleDeps {
 }
 
 export interface RunBattleOptions {
+  /** Reuse a battle id the server already issued (arena run --battle <id>). Must be a valid battle id. */
+  battleId?: string;
   home?: string;
   registry?: AdapterRegistry;
   logger?: Logger;
@@ -253,6 +260,7 @@ function emptyRunRecord(spec: BattleSpec, side: Side): RunRecord {
       manifest: null,
       appliedFiles: [],
       executedCommands: [],
+      skippedFiles: [],
     },
     startedAt: null,
     completedAt: null,
@@ -268,6 +276,37 @@ function emptyRunRecord(spec: BattleSpec, side: Side): RunRecord {
 
 function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Absolute paths leak the home directory (and with it the user name), so `privacy.exclude: [paths]`
+ * replaces them in the invocation disclosure. Windows drive paths, UNC paths and POSIX paths.
+ */
+const ABSOLUTE_PATH_RE = /(?:[A-Za-z]:[\\/]|\\\\|\/)[^\s"']*/g;
+const PATH_PLACEHOLDER = '<path>';
+
+function maskAbsolutePaths(value: string): string {
+  ABSOLUTE_PATH_RE.lastIndex = 0;
+  return value.replace(ABSOLUTE_PATH_RE, PATH_PLACEHOLDER);
+}
+
+/**
+ * The directory the agent, the tests and the evaluator work in: the worktree root, or
+ * `repository.subdir` inside it. Must exist and must stay inside the workspace — a `..` subdir would
+ * point the agent and the test command at the user's own files.
+ */
+function resolveWorkDir(root: string, subdir: string | undefined): string {
+  const requested = subdir?.trim();
+  if (!requested) return root;
+  const abs = path.resolve(root, requested);
+  const rel = path.relative(root, abs);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error('repository.subdir must stay inside the repository: ' + requested);
+  }
+  if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) {
+    throw new Error('repository.subdir does not exist in the repository at this commit: ' + requested);
+  }
+  return abs;
 }
 
 // ---- the engine -------------------------------------------------------------------------------
@@ -286,7 +325,10 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
   const env = opts.env ?? process.env;
   const store: StateStore = createStateStore(opts.home);
   const home = store.home;
-  const battleId = makeId('battle');
+  if (opts.battleId !== undefined && !isId('battle', opts.battleId)) {
+    throw new Error('not a battle id: ' + opts.battleId);
+  }
+  const battleId = opts.battleId ?? makeId('battle');
   const paths = store.paths(battleId);
   const startedAtMs = now();
   const logger = opts.logger ?? createSilentLogger();
@@ -294,11 +336,12 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
 
   // Secrets: the user's own environment plus anything the spec adds for the agents.
   const specEnvValues = SIDES.flatMap((s) => Object.values(spec.competitors[s].agent.env ?? {}));
-  const redactor = spec.privacy.redact
-    ? createRedactor({
-        envValues: [...collectSecretEnvValues(env), ...specEnvValues.filter((v) => v.length >= 8)],
-      })
-    : createPassthroughRedactor();
+  // Exact secret values are scrubbed no matter what. `privacy.redact: false` only switches off the
+  // heuristic scans, and only while nothing leaves the machine.
+  const redactor = createRedactor({
+    envValues: [...collectSecretEnvValues(env), ...specEnvValues.filter((v) => v.length >= 8)],
+    heuristics: spec.privacy.redact || spec.privacy.upload !== 'none',
+  });
 
   fs.mkdirSync(paths.logs, { recursive: true });
   const engineLog = createLogger({
@@ -346,12 +389,16 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
   const emit = (side: Side | null, adapterId: string, event: AdapterEvent) =>
     bus.emit(side, side ? runIds[side] : null, adapterId, event);
 
+  // The record carries a spec whose agent env VALUES are already gone; `spec` keeps the real ones in
+  // memory for the child process only.
+  const storedSpec = withRedactedAgentEnv(spec);
+
   const record: BattleRecord = {
     id: battleId,
     protocolVersion: PROTOCOL_VERSION,
     arenaVersion: ARENA_VERSION,
     status: 'pending',
-    spec,
+    spec: storedSpec,
     task: { title: spec.title ?? 'Battle', prompt: '', source: demo ? { kind: 'demo' } : { kind: 'prompt' } },
     repository: {
       source: spec.repository.source,
@@ -380,6 +427,10 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
   // The prompt is required by the schema, so a placeholder stands in until the task resolves.
   record.task.prompt = '(resolving the task)';
 
+  // Dropped to null when the server declines the battle, so no batch is ever pushed to a battle
+  // that does not exist there.
+  let uploader: Uploader | null = opts.uploader ?? null;
+
   const flushEvents = async (): Promise<void> => {
     const batch = pendingEvents.splice(0, pendingEvents.length);
     if (batch.length === 0) return;
@@ -388,7 +439,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
     } catch (err) {
       both.warn('could not append events', { reason: errorText(err) });
     }
-    if (opts.uploader) void opts.uploader.pushEvents(battleId, batch);
+    if (uploader) void uploader.pushEvents(battleId, batch);
   };
 
   const setStatus = async (status: BattleStatus, detail?: string): Promise<void> => {
@@ -398,23 +449,32 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
     await save();
   };
 
+  /**
+   * What is allowed to leave memory: the record with every string scrubbed by the redactor. The
+   * in-memory record is what the caller gets back; nothing that reaches disk, a report or the network
+   * skips this.
+   */
+  const storable = (): BattleRecord => redactor.redactValue(record);
+
   const save = async (): Promise<void> => {
     for (const side of SIDES) {
       record.runs[side].eventCount = allEvents.filter((e) => e.side === side).length;
     }
     await flushEvents();
-    await store.saveRecord(record);
+    await store.saveRecord(storable());
   };
 
   const lock = await store.lock(battleId);
   const mirrors = new Set<string>();
   const workspaceRoots: Partial<Record<Side, string>> = {};
+  /** where the work happens: the worktree root, or `repository.subdir` inside it */
+  const workDirs: Partial<Record<Side, string>> = {};
   const startCommits: Record<Side, string | null> = { a: null, b: null };
   const mirrorForWorktree: Partial<Record<Side, string>> = {};
   let cancelled = false;
 
   try {
-    await store.saveRecord(record);
+    await store.saveRecord(storable());
 
     emit(null, 'arena', {
       type: 'battle.started',
@@ -453,6 +513,19 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
     }
     record.startedAt = new Date(startedAtMs).toISOString();
     await save();
+
+    // Register the battle server-side before any event batch is pushed. A null answer means uploading
+    // is off for this privacy level, so the uploader is dropped and nothing is sent afterwards.
+    if (uploader) {
+      try {
+        if ((await uploader.createBattle(storable())) === null) uploader = null;
+      } catch (err) {
+        both.warn('could not register the battle on the server; continuing locally', {
+          reason: errorText(err),
+        });
+        uploader = null;
+      }
+    }
 
     // ---- repository ----------------------------------------------------------------------------
     const repoIsEmpty = spec.repository.source.trim() === 'empty';
@@ -557,6 +630,8 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
       opts.deps?.describeExecution ??
       ((h) => ({ commands: h.inspection.install.commands, files: h.inspection.applyFiles }));
     const harnesses = {} as Record<Side, ResolvedHarness>;
+    // The trust decision actually made per side. Passing a trust callback is not consent.
+    const trustGranted: Record<Side, boolean> = { a: false, b: false };
     for (const side of SIDES) {
       const ref = spec.competitors[side].harness;
       if (ref.source.trim() === 'vanilla') {
@@ -572,7 +647,28 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         });
       }
       const harness = harnesses[side];
+      const compatibility = harness.inspection.compatibility;
+      if (compatibility.status === 'incompatible') {
+        throw new Error(
+          'harness "' + harness.name + '" cannot be applied: ' + compatibility.reasons.join('; '),
+        );
+      }
+      if (compatibility.status === 'unknown' && harness.kind !== 'vanilla' && !demo) {
+        emit(side, 'arena', {
+          type: 'warning',
+          confidence: 'derived',
+          payload: {
+            code: 'harness',
+            message:
+              'harness "' +
+              harness.name +
+              '" has nothing Arena recognises to apply, so this side runs like vanilla: ' +
+              compatibility.reasons.join('; '),
+          },
+        });
+      }
       const exec = describeExecution(harness);
+      trustGranted[side] = ref.trusted;
       if (exec.commands.length > 0 && !ref.trusted) {
         const approved = opts.trust ? await opts.trust(harness, exec) : false;
         if (!approved) {
@@ -586,15 +682,18 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
               '). Re-run with the harness trusted to allow it.',
           );
         }
+        trustGranted[side] = true;
       }
       record.runs[side].harness = {
         name: harness.name,
         source: ref.source,
         kind: harness.kind,
         commit: harness.commit,
-        manifest: harness.manifest,
+        // arena.yaml can put a credential in agentConfig.<agent>.env; the names are disclosed, not the values.
+        manifest: withRedactedManifestEnv(harness.manifest),
         appliedFiles: [],
         executedCommands: [],
+        skippedFiles: [],
       };
     }
     await save();
@@ -628,13 +727,17 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         mirrorForWorktree[side] = mirror;
       }
       workspaceRoots[side] = root;
+      // One place decides the working directory: the agent, the baseline suite, the post-run suite and
+      // the evaluator all have to see the same tree, or a subdir battle measures two different projects.
+      const workDir = resolveWorkDir(root, spec.repository.subdir);
+      workDirs[side] = workDir;
 
       const harness = harnesses[side];
       if (harness.dir !== null && applyHarness) {
         const applied = await applyHarness(harness, {
           workspace: root,
           agentId: spec.competitors[side].agent.id,
-          trusted: spec.competitors[side].harness.trusted || Boolean(opts.trust),
+          trusted: trustGranted[side],
           runner,
           env: Object.fromEntries(
             Object.entries(env).filter((e): e is [string, string] => typeof e[1] === 'string'),
@@ -644,6 +747,19 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         });
         record.runs[side].harness.appliedFiles = applied.appliedFiles;
         record.runs[side].harness.executedCommands = applied.executedCommands;
+        record.runs[side].harness.skippedFiles = applied.skippedFiles ?? [];
+        if (record.runs[side].harness.skippedFiles.length > 0) {
+          emit(side, 'arena', {
+            type: 'warning',
+            confidence: 'derived',
+            payload: {
+              code: 'harness',
+              message:
+                'harness files not applied because the repository already has them: ' +
+                record.runs[side].harness.skippedFiles.join(', '),
+            },
+          });
+        }
         agentConfigs[side] = applied.agentConfig;
       }
 
@@ -656,7 +772,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         });
         const outcome = await runTests({
           command: tests.command,
-          cwd: root,
+          cwd: workDir,
           parser: tests.parser,
           timeoutMs: tests.timeoutMs,
           runner,
@@ -694,7 +810,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
       const adapter = adapters[side];
       if (!adapter) return;
       const root = workspaceRoots[side] as string;
-      const cwd = spec.repository.subdir ? path.join(root, spec.repository.subdir) : root;
+      const cwd = workDirs[side] ?? root;
       const rawLog = fs.createWriteStream(paths.rawLogs[side], { flags: 'a' });
       const controller = new AbortController();
       let timedOut = false;
@@ -737,9 +853,11 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
           env,
           logger: both.child({ side, agent: adapter.id }),
         });
+        const hidePaths = spec.privacy.exclude.includes('paths');
         run.invocation = {
-          command: prepared.disclosure.command,
-          args: prepared.disclosure.args,
+          command: hidePaths ? maskAbsolutePaths(prepared.disclosure.command) : prepared.disclosure.command,
+          // A flag like `--settings C:\Users\me\.harness-arena\…` is a path, exclusion or not.
+          args: hidePaths ? prepared.disclosure.args.map(maskAbsolutePaths) : prepared.disclosure.args,
           envKeys: prepared.disclosure.envKeysAdded,
         };
         run.artifacts.rawLogPath = paths.rawLogs[side];
@@ -769,7 +887,9 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
           limits: spec.limits,
           runner,
           onRawLine: (stream, line) => {
-            rawLog.write(stream + ' ' + line + '\n');
+            // The raw provider log stays local, but "local" is not "safe": it is the file users paste
+            // into bug reports, so it goes through the redactor like everything else.
+            rawLog.write(stream + ' ' + redactor.redactString(line) + '\n');
           },
         });
         run.exitCode = result.exitCode;
@@ -787,7 +907,8 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         if (result.version) run.agent.version = result.version;
         if (result.model) run.agent.model = result.model;
         finalResponses[side] = result.finalResponse;
-        run.artifacts.finalResponse = result.finalResponse;
+        run.artifacts.finalResponse =
+          result.finalResponse === null ? null : redactor.redactString(result.finalResponse);
         if (result.errorMessage) {
           run.error = { code: result.errorCode ?? 'agent_error', message: result.errorMessage };
           emit(side, adapter.id, {
@@ -828,7 +949,8 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
           linesRemoved: f.linesRemoved,
         }));
         if (!spec.privacy.exclude.includes('diffs')) {
-          run.artifacts.diff = diff.diff;
+          // The patch is agent-written text: it can contain a key the agent pasted into a file.
+          run.artifacts.diff = redactor.redactString(diff.diff);
           run.artifacts.diffBytes = diff.diffBytes;
         }
         for (const file of diff.files) {
@@ -847,7 +969,9 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         both.warn('could not collect the diff', { side, reason: errorText(err) });
       }
 
-      if (runTests && spec.evaluation.tests) {
+      // Ctrl-C means stop spawning things. The diff above is already collected; a post-run suite
+      // started now would outlive the battle (and the signal is what kills its process tree).
+      if (runTests && spec.evaluation.tests && opts.signal?.aborted !== true) {
         const tests = spec.evaluation.tests;
         try {
           emit(side, 'arena', {
@@ -861,6 +985,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
             parser: tests.parser,
             timeoutMs: tests.timeoutMs,
             runner,
+            signal: opts.signal,
           });
           postTests[side] = outcome;
           emit(side, 'arena', {
@@ -893,6 +1018,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
         exitCode: run.exitCode,
         durationMs: run.durationMs,
         agentId: adapter.id,
+        statusDecidedBy: timedOut || interrupted || !result ? 'core' : 'adapter',
       });
 
       emit(side, adapter.id, {
@@ -916,10 +1042,12 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
       for (const side of SIDES) await executeSide(side);
     }
 
+    // Keyed by SIDE, not by agent id: a battle between two harnesses on the same agent used to record
+    // side B's argv twice and lose side A's, which is exactly the difference the report exists to show.
     const sharedFlags: Record<string, string[]> = {};
     for (const side of SIDES) {
       const invocation = record.runs[side].invocation;
-      if (invocation) sharedFlags[record.runs[side].agent.id] = invocation.args;
+      if (invocation) sharedFlags[side] = invocation.args;
     }
     record.environment = { ...record.environment, sharedFlags };
 
@@ -938,22 +1066,24 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
           task: record.task,
           sides: {
             a: {
-              workspace: workspaceRoots.a as string,
+              workspace: workDirs.a ?? (workspaceRoots.a as string),
               startCommit: startCommits.a,
               status: record.runs.a.status,
               metrics: record.runs.a.metrics,
               artifacts: record.runs.a.artifacts,
               finalResponse: finalResponses.a,
               baseline: baselines.a,
+              postTests: postTests.a,
             },
             b: {
-              workspace: workspaceRoots.b as string,
+              workspace: workDirs.b ?? (workspaceRoots.b as string),
               startCommit: startCommits.b,
               status: record.runs.b.status,
               metrics: record.runs.b.metrics,
               artifacts: record.runs.b.artifacts,
               finalResponse: finalResponses.b,
               baseline: baselines.b,
+              postTests: postTests.b,
             },
           },
           runner,
@@ -1040,22 +1170,23 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
 
     // The report is written even for a failed or cancelled battle: the data is already paid for.
     try {
-      const bundle = buildReportBundle(record, allEvents, ARENA_VERSION);
+      const bundle = buildReportBundle(storable(), allEvents, ARENA_VERSION);
       fs.writeFileSync(paths.report, renderReportHtml(bundle), 'utf8');
     } catch (err) {
       both.error('could not write the report', { reason: errorText(err) });
     }
 
-    if (opts.uploader) {
+    if (uploader) {
       try {
-        await opts.uploader.patchRecord(battleId, record);
+        const outgoing = storable();
+        await uploader.patchRecord(battleId, outgoing);
         for (const side of SIDES) {
-          const diff = record.runs[side].artifacts.diff;
-          if (diff) await opts.uploader.uploadArtifact(battleId, side, 'diff', diff);
-          const final = record.runs[side].artifacts.finalResponse;
-          if (final) await opts.uploader.uploadArtifact(battleId, side, 'final_response', final);
+          const diff = outgoing.runs[side].artifacts.diff;
+          if (diff) await uploader.uploadArtifact(battleId, side, 'diff', diff);
+          const final = outgoing.runs[side].artifacts.finalResponse;
+          if (final) await uploader.uploadArtifact(battleId, side, 'final_response', final);
         }
-        await opts.uploader.flush();
+        await uploader.flush();
       } catch (err) {
         both.warn('upload finished with errors', { reason: errorText(err) });
       }
