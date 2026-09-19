@@ -27,10 +27,13 @@ function escapeRegExp(value: string): string {
  * identical on every machine: the native path, the forward-slash form, and the JSON-escaped form.
  */
 export function rewriteHome(text: string, home: string, platform: string): string {
-  const absolute = path.resolve(home);
+  // Drive the path math off the target platform, not the host: a demo exported on Windows must have
+  // its C:\Users\... home rewritten even when the export (or the test) runs on Linux, and vice versa.
+  const p = platform === 'win32' ? path.win32 : path.posix;
+  const absolute = p.resolve(home);
   const variants = new Set([
     absolute,
-    absolute.split(path.sep).join('/'),
+    absolute.split(p.sep).join('/'),
     JSON.stringify(absolute).slice(1, -1),
   ]);
   let out = text;
