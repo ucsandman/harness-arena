@@ -69,7 +69,14 @@ export const harnessFeatureSchema = z.object({
 });
 export type HarnessFeature = z.infer<typeof harnessFeatureSchema>;
 
-export const inspectionFrameworkSchema = z.enum(['claude-code', 'codex', 'gemini-cli', 'opencode', 'multi', 'unknown']);
+export const inspectionFrameworkSchema = z.enum([
+  'claude-code',
+  'codex',
+  'gemini-cli',
+  'opencode',
+  'multi',
+  'unknown',
+]);
 
 export const harnessInspectionSchema = z.object({
   source: harnessSourceSchema,
@@ -87,7 +94,19 @@ export const harnessInspectionSchema = z.object({
   }),
   features: z.array(harnessFeatureSchema),
   install: z.object({
-    packageManager: z.enum(['npm', 'pnpm', 'yarn', 'bun', 'pip', 'uv', 'poetry', 'cargo', 'go', 'none', 'unknown']),
+    packageManager: z.enum([
+      'npm',
+      'pnpm',
+      'yarn',
+      'bun',
+      'pip',
+      'uv',
+      'poetry',
+      'cargo',
+      'go',
+      'none',
+      'unknown',
+    ]),
     runtime: z.enum(['node', 'python', 'rust', 'go', 'shell', 'none', 'unknown']),
     /** commands Arena would run (from the manifest); shown to the user before trust */
     commands: z.array(z.string()),

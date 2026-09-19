@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "title": "Example harness vs vanilla Claude Code on a GitHub issue",
+  "task": { "kind": "issue", "repo": "owner/project", "number": 137 },
+  "repository": { "source": "https://github.com/owner/project", "ref": "main" },
+  "competitors": {
+    "a": {
+      "label": "Example harness",
+      "agent": { "id": "claude-code", "model": "sonnet" },
+      "harness": { "source": "./examples/example-harness", "trusted": true }
+    },
+    "b": {
+      "label": "Vanilla Claude Code",
+      "agent": { "id": "claude-code", "model": "sonnet" },
+      "harness": { "source": "vanilla" }
+    }
+  },
+  "limits": { "timeoutMs": 1200000, "maxTurns": 60 },
+  "evaluation": {
+    "tests": { "command": "npm test", "baseline": true, "parser": "auto" },
+    "typecheck": ["npx tsc --noEmit"],
+    "assertions": [{ "type": "diff-not-touches", "paths": ["package-lock.json"] }]
+  },
+  "privacy": { "upload": "metrics", "exclude": ["diffs", "file_contents"] },
+  "visibility": "private",
+  "category": "debugging"
+}

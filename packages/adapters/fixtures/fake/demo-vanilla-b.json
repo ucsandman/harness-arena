@@ -1,0 +1,5420 @@
+{
+  "name": "demo-vanilla-b",
+  "description": "Vanilla Claude Code style run on the same task: 18 file reads (several irrelevant), four test runs with two failures before success, no subagent, three files edited including an unrelated README touch. 147 tool calls, 3m17s.",
+  "agentVersion": "2.1.278",
+  "model": "claude-sonnet-4-6",
+  "steps": [
+    {
+      "atMs": 0,
+      "fs": {
+        "op": "write",
+        "path": "package.json",
+        "content": "{\n  \"name\": \"session-demo\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  }\n}\n"
+      }
+    },
+    {
+      "atMs": 0,
+      "fs": {
+        "op": "write",
+        "path": "src/auth/session.js",
+        "content": "const SESSION_TTL_SECONDS = 3600;\n\n/**\n * A session stores `expiresAt` as a UNIX timestamp in SECONDS.\n */\nexport function createSession(userId, now = Date.now()) {\n  return { userId, expiresAt: Math.floor(now / 1000) + SESSION_TTL_SECONDS };\n}\n\nexport function isExpired(session, now = Date.now()) {\n  return session.expiresAt <= now;\n}\n"
+      }
+    },
+    {
+      "atMs": 0,
+      "fs": {
+        "op": "write",
+        "path": "test/session.test.js",
+        "content": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { createSession, isExpired } from '../src/auth/session.js';\n\nconst NOW = 1700000000000;\n\ntest('a session that expired a minute ago is expired', () => {\n  assert.equal(isExpired({ expiresAt: NOW / 1000 - 60 }, NOW), true);\n});\n\ntest('a fresh session is not expired', () => {\n  assert.equal(isExpired(createSession('u1', NOW), NOW), false);\n});\n"
+      }
+    },
+    {
+      "atMs": 0,
+      "fs": {
+        "op": "write",
+        "path": "README.md",
+        "content": "# session-demo\n\nA minimal auth-session helper used by the Harness Arena demo battle.\n\n- `src/auth/session.js` creates sessions and answers whether one has expired.\n- `npm test` runs the node:test suite.\n"
+      }
+    },
+    {
+      "atMs": 0,
+      "event": {
+        "type": "agent.started",
+        "native": "system/init",
+        "confidence": "observed",
+        "payload": {
+          "sessionId": "fake-b-4c7ab812",
+          "model": "claude-sonnet-4-6",
+          "version": "2.1.278",
+          "tools": [
+            "Read",
+            "Grep",
+            "Glob",
+            "Bash",
+            "Edit",
+            "Write",
+            "Task"
+          ],
+          "cwdKnown": true
+        }
+      }
+    },
+    {
+      "atMs": 1293,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 1293,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "package.json"
+        }
+      }
+    },
+    {
+      "atMs": 1333,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Read",
+          "ok": true,
+          "output": "read package.json"
+        }
+      }
+    },
+    {
+      "atMs": 2585,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 2585,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/session.js"
+        }
+      }
+    },
+    {
+      "atMs": 2625,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/auth/session.js"
+        }
+      }
+    },
+    {
+      "atMs": 3878,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Read",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 3878,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "test/session.test.js"
+        }
+      }
+    },
+    {
+      "atMs": 3918,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Read",
+          "ok": true,
+          "output": "read test/session.test.js"
+        }
+      }
+    },
+    {
+      "atMs": 5170,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 5170,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "README.md"
+        }
+      }
+    },
+    {
+      "atMs": 5210,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Read",
+          "ok": true,
+          "output": "read README.md"
+        }
+      }
+    },
+    {
+      "atMs": 6463,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/token.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 6463,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/token.js"
+        }
+      }
+    },
+    {
+      "atMs": 6503,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/auth/token.js"
+        }
+      }
+    },
+    {
+      "atMs": 6786,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 7755,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_006",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 7755,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/index.js"
+        }
+      }
+    },
+    {
+      "atMs": 7795,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_006",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/auth/index.js"
+        }
+      }
+    },
+    {
+      "atMs": 9048,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_007",
+          "name": "Read",
+          "input": {
+            "file_path": "src/server.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 9048,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/server.js"
+        }
+      }
+    },
+    {
+      "atMs": 9088,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_007",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/server.js"
+        }
+      }
+    },
+    {
+      "atMs": 10340,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_008",
+          "name": "Read",
+          "input": {
+            "file_path": "src/config.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 10340,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/config.js"
+        }
+      }
+    },
+    {
+      "atMs": 10380,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_008",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/config.js"
+        }
+      }
+    },
+    {
+      "atMs": 11633,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_009",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/middleware.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 11633,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/middleware.js"
+        }
+      }
+    },
+    {
+      "atMs": 11673,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_009",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/auth/middleware.js"
+        }
+      }
+    },
+    {
+      "atMs": 12925,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_010",
+          "name": "Read",
+          "input": {
+            "file_path": "test/token.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 12925,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "test/token.test.js"
+        }
+      }
+    },
+    {
+      "atMs": 12965,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_010",
+          "name": "Read",
+          "ok": true,
+          "output": "read test/token.test.js"
+        }
+      }
+    },
+    {
+      "atMs": 13571,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 14218,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_011",
+          "name": "Read",
+          "input": {
+            "file_path": "src/db/users.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 14218,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/db/users.js"
+        }
+      }
+    },
+    {
+      "atMs": 14258,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_011",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/db/users.js"
+        }
+      }
+    },
+    {
+      "atMs": 15510,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_012",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/time.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 15510,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/util/time.js"
+        }
+      }
+    },
+    {
+      "atMs": 15550,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_012",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/util/time.js"
+        }
+      }
+    },
+    {
+      "atMs": 16803,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_013",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/log.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 16803,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/util/log.js"
+        }
+      }
+    },
+    {
+      "atMs": 16843,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_013",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/util/log.js"
+        }
+      }
+    },
+    {
+      "atMs": 18095,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_014",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/login.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 18095,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/routes/login.js"
+        }
+      }
+    },
+    {
+      "atMs": 18135,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_014",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/routes/login.js"
+        }
+      }
+    },
+    {
+      "atMs": 19388,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_015",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/logout.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 19388,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/routes/logout.js"
+        }
+      }
+    },
+    {
+      "atMs": 19428,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_015",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/routes/logout.js"
+        }
+      }
+    },
+    {
+      "atMs": 20357,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 20680,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_016",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/policy.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 20680,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/policy.js"
+        }
+      }
+    },
+    {
+      "atMs": 20720,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_016",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/auth/policy.js"
+        }
+      }
+    },
+    {
+      "atMs": 21973,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_017",
+          "name": "Read",
+          "input": {
+            "file_path": "docs/auth.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 21973,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "docs/auth.md"
+        }
+      }
+    },
+    {
+      "atMs": 22013,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_017",
+          "name": "Read",
+          "ok": true,
+          "output": "read docs/auth.md"
+        }
+      }
+    },
+    {
+      "atMs": 23265,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_018",
+          "name": "Read",
+          "input": {
+            "file_path": "src/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 23265,
+      "event": {
+        "type": "file.read",
+        "native": "assistant/tool_use:Read",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/index.js"
+        }
+      }
+    },
+    {
+      "atMs": 23305,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_018",
+          "name": "Read",
+          "ok": true,
+          "output": "read src/index.js"
+        }
+      }
+    },
+    {
+      "atMs": 24558,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_019",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 24588,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_019",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 25850,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_020",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 25880,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_020",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 27143,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_021",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 27143,
+      "event": {
+        "type": "agent.thinking",
+        "native": "assistant/thinking",
+        "confidence": "observed",
+        "payload": {
+          "chars": 820
+        }
+      }
+    },
+    {
+      "atMs": 27143,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 27173,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_021",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 28435,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_022",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 28465,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_022",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 29728,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_023",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 29758,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_023",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 31020,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_024",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 31050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_024",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 32313,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_025",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 32343,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_025",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 33605,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_026",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 33635,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_026",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 33929,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 34898,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_027",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 34928,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_027",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 36190,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_028",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 36220,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_028",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 37483,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_029",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 37513,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_029",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 38776,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_030",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 38806,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_030",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 40068,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_031",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 40098,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_031",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 40714,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 41361,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_032",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 41391,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_032",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 42653,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_033",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 42683,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_033",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 43946,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_034",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 43976,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_034",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 45238,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_035",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 45268,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_035",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 46531,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_036",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 46561,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_036",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 47500,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 47823,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_037",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 47853,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_037",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 49116,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_038",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 49146,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_038",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 50408,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_039",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 50438,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_039",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 51701,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_040",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 51731,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_040",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 52993,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_041",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 53023,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_041",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 54286,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_042",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 54286,
+      "event": {
+        "type": "agent.thinking",
+        "native": "assistant/thinking",
+        "confidence": "observed",
+        "payload": {
+          "chars": 1340
+        }
+      }
+    },
+    {
+      "atMs": 54286,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 54316,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_042",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 55578,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_043",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 55608,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_043",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 56871,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_044",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 56901,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_044",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 58163,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_045",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 58193,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_045",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 59456,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_046",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 59486,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_046",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 60748,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_047",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 60778,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_047",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 61071,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 62041,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_048",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 62071,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_048",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 63333,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_049",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 63363,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_049",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 64626,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_050",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 64656,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_050",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 65918,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_051",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 65948,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_051",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 67211,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_052",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 67241,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_052",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 67857,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 68503,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_053",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 68533,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_053",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 69796,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_054",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 69826,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_054",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 71088,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_055",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 71118,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_055",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 72381,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_056",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 72411,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_056",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 73673,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_057",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 73703,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_057",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 74643,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 74966,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_058",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 74996,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_058",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 76259,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_059",
+          "name": "Bash",
+          "input": {
+            "command": "node --test"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 76259,
+      "event": {
+        "type": "command.started",
+        "native": "assistant/tool_use:Bash",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_059",
+          "command": "node --test"
+        }
+      }
+    },
+    {
+      "atMs": 77551,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_060",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 77581,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_060",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 78844,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_061",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 78874,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_061",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 79459,
+      "event": {
+        "type": "command.completed",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_059",
+          "exitCode": 1,
+          "durationMs": 3200,
+          "output": "# Subtest: a fresh session is not expired\nnot ok 2 - a fresh session is not expired\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: true !== false\n# pass 1\n# fail 1\n"
+        }
+      }
+    },
+    {
+      "atMs": 79459,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_059",
+          "name": "Bash",
+          "ok": false,
+          "output": "# Subtest: a fresh session is not expired\nnot ok 2 - a fresh session is not expired\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: true !== false\n# pass 1\n# fail 1\n"
+        }
+      }
+    },
+    {
+      "atMs": 79469,
+      "event": {
+        "type": "warning",
+        "native": "arena/retry",
+        "confidence": "observed",
+        "payload": {
+          "code": "retry",
+          "message": "node --test failed; retrying after inspecting the assertion"
+        }
+      }
+    },
+    {
+      "atMs": 80136,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_062",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 80166,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_062",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 81429,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_063",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 81429,
+      "event": {
+        "type": "agent.thinking",
+        "native": "assistant/thinking",
+        "confidence": "observed",
+        "payload": {
+          "chars": 610
+        }
+      }
+    },
+    {
+      "atMs": 81429,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 81459,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_063",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 82721,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_064",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 82751,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_064",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 84014,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_065",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 84044,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_065",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 85306,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_066",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 85336,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_066",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 86599,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_067",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 86629,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_067",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 87891,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_068",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 87921,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_068",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 88214,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 89184,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_069",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 89214,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_069",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 90476,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_070",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 90506,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_070",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 91769,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_071",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 91799,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_071",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 93061,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_072",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 93091,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_072",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 94354,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_073",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 94384,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_073",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 95000,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 95646,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_074",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 95676,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_074",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 96939,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_075",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 96969,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_075",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 98231,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_076",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 98261,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_076",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 99524,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_077",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 99554,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_077",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 100816,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_078",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 100846,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_078",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 101786,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 102109,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_079",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 102139,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_079",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 103401,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_080",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 103431,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_080",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 104694,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_081",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 104724,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_081",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 105986,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_082",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 106016,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_082",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 107279,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_083",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 107309,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_083",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 108571,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_084",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 108571,
+      "event": {
+        "type": "agent.thinking",
+        "native": "assistant/thinking",
+        "confidence": "observed",
+        "payload": {
+          "chars": 2110
+        }
+      }
+    },
+    {
+      "atMs": 108571,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 108601,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_084",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 109864,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_085",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 109894,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_085",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 111156,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_086",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 111186,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_086",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 112449,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_087",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 112479,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_087",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 113741,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_088",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 113771,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_088",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 115034,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_089",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 115064,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_089",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 115357,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 116327,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_090",
+          "name": "Bash",
+          "input": {
+            "command": "node --test"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 116327,
+      "event": {
+        "type": "command.started",
+        "native": "assistant/tool_use:Bash",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_090",
+          "command": "node --test"
+        }
+      }
+    },
+    {
+      "atMs": 117619,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_091",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 117649,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_091",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 118912,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_092",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 118942,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_092",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 119627,
+      "event": {
+        "type": "command.completed",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_090",
+          "exitCode": 1,
+          "durationMs": 3300,
+          "output": "# Subtest: a fresh session is not expired\nnot ok 2 - a fresh session is not expired\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: true !== false\n# pass 1\n# fail 1\n"
+        }
+      }
+    },
+    {
+      "atMs": 119627,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_090",
+          "name": "Bash",
+          "ok": false,
+          "output": "# Subtest: a fresh session is not expired\nnot ok 2 - a fresh session is not expired\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: true !== false\n# pass 1\n# fail 1\n"
+        }
+      }
+    },
+    {
+      "atMs": 119637,
+      "event": {
+        "type": "warning",
+        "native": "arena/retry",
+        "confidence": "observed",
+        "payload": {
+          "code": "retry",
+          "message": "node --test failed again; the comparison unit is wrong, not the assertion"
+        }
+      }
+    },
+    {
+      "atMs": 120204,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_093",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 120234,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_093",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 121497,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_094",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 121527,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_094",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 122143,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 122789,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_095",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 122819,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_095",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 124082,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_096",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 124112,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_096",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 125374,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_097",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 125404,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_097",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 126667,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_098",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 126697,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_098",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 127959,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_099",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 127989,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_099",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 128929,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 129252,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_100",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 129282,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_100",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 130544,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_101",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 130574,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_101",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 131837,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_102",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 131867,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_102",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 133129,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_103",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 133159,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_103",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 134422,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_104",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 134452,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_104",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 135714,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_105",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 135714,
+      "event": {
+        "type": "agent.thinking",
+        "native": "assistant/thinking",
+        "confidence": "observed",
+        "payload": {
+          "chars": 940
+        }
+      }
+    },
+    {
+      "atMs": 135714,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 135744,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_105",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 137007,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_106",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 137037,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_106",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 138299,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_107",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 138329,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_107",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 139592,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_108",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 139622,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_108",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 140884,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_109",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 140914,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_109",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 142177,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_110",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 142207,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_110",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 142500,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 143469,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_111",
+          "name": "Edit",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 143469,
+      "fs": {
+        "op": "write",
+        "path": "src/auth/session.js",
+        "content": "const SESSION_TTL_SECONDS = 3600;\nconst SECOND_MS = 1000;\n\n/**\n * A session stores `expiresAt` as a UNIX timestamp in SECONDS.\n */\nexport function createSession(userId, now = Date.now()) {\n  return { userId, expiresAt: Math.floor(now / 1000) + SESSION_TTL_SECONDS };\n}\n\nexport function isExpired(session, now = Date.now()) {\n  return session.expiresAt * SECOND_MS <= now;\n}\n"
+      }
+    },
+    {
+      "atMs": 143469,
+      "event": {
+        "type": "file.changed",
+        "native": "assistant/tool_use:Edit",
+        "confidence": "observed",
+        "payload": {
+          "path": "src/auth/session.js",
+          "kind": "modify",
+          "linesAdded": 3,
+          "linesRemoved": 1
+        }
+      }
+    },
+    {
+      "atMs": 143494,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_111",
+          "name": "Edit",
+          "ok": true,
+          "output": "applied to src/auth/session.js"
+        }
+      }
+    },
+    {
+      "atMs": 144762,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_112",
+          "name": "Bash",
+          "input": {
+            "command": "node --test"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 144762,
+      "event": {
+        "type": "command.started",
+        "native": "assistant/tool_use:Bash",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_112",
+          "command": "node --test"
+        }
+      }
+    },
+    {
+      "atMs": 146054,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_113",
+          "name": "Edit",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 146054,
+      "fs": {
+        "op": "write",
+        "path": "test/session.test.js",
+        "content": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { createSession, isExpired } from '../src/auth/session.js';\n\nconst NOW = 1700000000000;\n\ntest('a session that expired a minute ago is expired', () => {\n  assert.equal(isExpired({ expiresAt: NOW / 1000 - 60 }, NOW), true);\n});\n\ntest('a fresh session is not expired', () => {\n  assert.equal(isExpired(createSession('u1', NOW), NOW), false);\n});\n\ntest('a session one second from expiry is still valid', () => {\n  assert.equal(isExpired({ expiresAt: NOW / 1000 + 1 }, NOW), false);\n});\n"
+      }
+    },
+    {
+      "atMs": 146054,
+      "event": {
+        "type": "file.changed",
+        "native": "assistant/tool_use:Edit",
+        "confidence": "observed",
+        "payload": {
+          "path": "test/session.test.js",
+          "kind": "modify",
+          "linesAdded": 4,
+          "linesRemoved": 0
+        }
+      }
+    },
+    {
+      "atMs": 146079,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_113",
+          "name": "Edit",
+          "ok": true,
+          "output": "applied to test/session.test.js"
+        }
+      }
+    },
+    {
+      "atMs": 147347,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_114",
+          "name": "Edit",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 147347,
+      "fs": {
+        "op": "write",
+        "path": "README.md",
+        "content": "# session-demo\n\nA minimal auth-session helper used by the Harness Arena demo battle.\n\n- `src/auth/session.js` creates sessions and answers whether one has expired.\n- `npm test` runs the node:test suite.\n\n## Notes\n\nSession expiry is stored in seconds (UNIX time) and compared in milliseconds.\n"
+      }
+    },
+    {
+      "atMs": 147347,
+      "event": {
+        "type": "file.changed",
+        "native": "assistant/tool_use:Edit",
+        "confidence": "observed",
+        "payload": {
+          "path": "README.md",
+          "kind": "modify",
+          "linesAdded": 4,
+          "linesRemoved": 0
+        }
+      }
+    },
+    {
+      "atMs": 147372,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_114",
+          "name": "Edit",
+          "ok": true,
+          "output": "applied to README.md"
+        }
+      }
+    },
+    {
+      "atMs": 148162,
+      "event": {
+        "type": "command.completed",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_112",
+          "exitCode": 0,
+          "durationMs": 3400,
+          "output": "# pass 2\n# fail 0\n# cancelled 0\n"
+        }
+      }
+    },
+    {
+      "atMs": 148162,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_112",
+          "name": "Bash",
+          "ok": true,
+          "output": "# pass 2\n# fail 0\n# cancelled 0\n"
+        }
+      }
+    },
+    {
+      "atMs": 148639,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_115",
+          "name": "Bash",
+          "input": {
+            "command": "node --test"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 148639,
+      "event": {
+        "type": "command.started",
+        "native": "assistant/tool_use:Bash",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_115",
+          "command": "node --test"
+        }
+      }
+    },
+    {
+      "atMs": 149286,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 149932,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_116",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 149962,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_116",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 151224,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_117",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 151254,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_117",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 152139,
+      "event": {
+        "type": "command.completed",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_115",
+          "exitCode": 0,
+          "durationMs": 3500,
+          "output": "# pass 3\n# fail 0\n# cancelled 0\n"
+        }
+      }
+    },
+    {
+      "atMs": 152139,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_115",
+          "name": "Bash",
+          "ok": true,
+          "output": "# pass 3\n# fail 0\n# cancelled 0\n"
+        }
+      }
+    },
+    {
+      "atMs": 152517,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_118",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 152547,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_118",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 153810,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_119",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 153840,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_119",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 155102,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_120",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 155132,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_120",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 156071,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 156395,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_121",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 156425,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_121",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 157687,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_122",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 157717,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_122",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 158980,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_123",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 159010,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_123",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 160272,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_124",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 160302,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_124",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 161565,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_125",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 161595,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_125",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 162857,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_126",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 162857,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 162887,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_126",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 164150,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_127",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 164180,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_127",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 165442,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_128",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 165472,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_128",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 166735,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_129",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 166765,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_129",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 168027,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_130",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 168057,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_130",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 169320,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_131",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 169350,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_131",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 169643,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 170612,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_132",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 170642,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_132",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 171905,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_133",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 171935,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_133",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 173197,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_134",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 173227,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_134",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 174490,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_135",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 174520,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_135",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 175782,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_136",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 175812,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_136",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 176429,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "tool_use",
+          "usage": {
+            "inputTokens": 14481,
+            "outputTokens": 777,
+            "costUsd": 0.237777
+          }
+        }
+      }
+    },
+    {
+      "atMs": 177075,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_137",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 177105,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_137",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 178367,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_138",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 178397,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_138",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 179660,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_139",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiry"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 179690,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_139",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 180952,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_140",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 180982,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_140",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 182245,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_141",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 182275,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_141",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 183214,
+      "event": {
+        "type": "model.response",
+        "native": "assistant/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "end_turn",
+          "usage": {
+            "inputTokens": 14494,
+            "outputTokens": 798,
+            "costUsd": 0.237798
+          }
+        }
+      }
+    },
+    {
+      "atMs": 183537,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_142",
+          "name": "Grep",
+          "input": {
+            "pattern": "Date.now"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 183567,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_142",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 184830,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_143",
+          "name": "Grep",
+          "input": {
+            "pattern": "SESSION_TTL"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 184860,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_143",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 186122,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_144",
+          "name": "Grep",
+          "input": {
+            "pattern": "session"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 186152,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_144",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 187415,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_145",
+          "name": "Glob",
+          "input": {
+            "pattern": "docs/**/*.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 187445,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_145",
+          "name": "Glob",
+          "ok": true,
+          "output": "Glob completed"
+        }
+      }
+    },
+    {
+      "atMs": 188707,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_146",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 188737,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_146",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 190000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_147",
+          "name": "Grep",
+          "input": {
+            "pattern": "isExpired"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 190030,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_147",
+          "name": "Grep",
+          "ok": true,
+          "output": "Grep completed"
+        }
+      }
+    },
+    {
+      "atMs": 197000,
+      "event": {
+        "type": "agent.output",
+        "native": "result",
+        "confidence": "observed",
+        "payload": {
+          "role": "assistant",
+          "text": "The expiry comparison mixed seconds and milliseconds. src/auth/session.js now multiplies by 1000, test/session.test.js covers the one-second boundary, and README.md documents the unit. node --test: 3 passing, 0 failing.",
+          "final": true
+        }
+      }
+    },
+    {
+      "atMs": 197000,
+      "event": {
+        "type": "model.response",
+        "native": "result/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "claude-sonnet-4-6",
+          "stopReason": "end_turn",
+          "usage": {
+            "inputTokens": 391000,
+            "outputTokens": 21000,
+            "costUsd": 6.42
+          }
+        }
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "exitCode": 0,
+    "finalResponse": "Fixed isExpired, extended test/session.test.js and documented the expiry unit in README.md. node --test: 3 passing, 0 failing.",
+    "usage": {
+      "inputTokens": 391000,
+      "outputTokens": 21000,
+      "costUsd": 6.42
+    },
+    "turns": 27
+  }
+}

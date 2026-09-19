@@ -1,7 +1,7 @@
 packages:
-  - "packages/*"
-  - "apps/*"
+  - 'packages/*'
+  - 'apps/*'
 onlyBuiltDependencies:
-  - "@electric-sql/pglite"
+  - '@electric-sql/pglite'
   - esbuild
   - sharp

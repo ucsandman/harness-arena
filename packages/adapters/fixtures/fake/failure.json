@@ -1,0 +1,104 @@
+{
+  "name": "failure",
+  "description": "The run errors out and exits 1. Used for failure-path assertions.",
+  "agentVersion": "fake-1.0.0",
+  "model": "fake-model-1",
+  "steps": [
+    {
+      "atMs": 0,
+      "event": {
+        "type": "agent.started",
+        "native": "system/init",
+        "confidence": "observed",
+        "payload": {
+          "sessionId": "fake-fail-0001",
+          "model": "fake-model-1",
+          "version": "fake-1.0.0",
+          "tools": [
+            "Bash"
+          ]
+        }
+      }
+    },
+    {
+      "atMs": 500,
+      "event": {
+        "type": "agent.output",
+        "native": "assistant/text",
+        "confidence": "observed",
+        "payload": {
+          "role": "assistant",
+          "text": "Reproducing the failure first."
+        }
+      }
+    },
+    {
+      "atMs": 1200,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Bash",
+          "input": {
+            "command": "node --test"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 1200,
+      "event": {
+        "type": "command.started",
+        "native": "assistant/tool_use:Bash",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_001",
+          "command": "node --test"
+        }
+      }
+    },
+    {
+      "atMs": 3000,
+      "event": {
+        "type": "command.completed",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "commandId": "toolu_001",
+          "exitCode": 1,
+          "durationMs": 1800,
+          "output": "ReferenceError: parseSession is not defined (src/auth/session.js:12)"
+        }
+      }
+    },
+    {
+      "atMs": 3100,
+      "event": {
+        "type": "error",
+        "native": "result/error_during_execution",
+        "confidence": "observed",
+        "payload": {
+          "code": "unknown",
+          "message": "ReferenceError: parseSession is not defined (src/auth/session.js:12)",
+          "fatal": true
+        }
+      }
+    }
+  ],
+  "result": {
+    "status": "failed",
+    "exitCode": 1,
+    "finalResponse": null,
+    "usage": {
+      "inputTokens": 3400,
+      "outputTokens": 210,
+      "costUsd": 0.0111
+    },
+    "turns": 2,
+    "errorCode": "unknown",
+    "errorMessage": "ReferenceError: parseSession is not defined (src/auth/session.js:12)"
+  }
+}

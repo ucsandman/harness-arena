@@ -1,4 +1,13 @@
-import type { AdapterEvent, AgentConfig, AgentId, AgentRef, Limits, ResolvedTask, Side, Usage } from '@harness-arena/protocol';
+import type {
+  AdapterEvent,
+  AgentConfig,
+  AgentId,
+  AgentRef,
+  Limits,
+  ResolvedTask,
+  Side,
+  Usage,
+} from '@harness-arena/protocol';
 
 /**
  * The adapter contract. An adapter wraps an OFFICIAL agent CLI process. It never re-implements the
@@ -148,6 +157,11 @@ export interface AdapterResult {
   turns: number | null;
   errorCode: string | null;
   errorMessage: string | null;
+  /**
+   * When set, replaces the wall-clock run duration. The fake adapter reports its simulated timeline so
+   * demo and test battles carry realistic durations without sleeping; real CLI adapters leave it unset.
+   */
+  durationMs?: number | null;
   /** adapter-specific summary (session ids, native stop reasons); must not contain secrets */
   native: Record<string, unknown>;
 }

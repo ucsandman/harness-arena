@@ -44,7 +44,12 @@ export const deviceTokenResponseSchema = z.discriminatedUnion('status', [
 export type DeviceTokenResponse = z.infer<typeof deviceTokenResponseSchema>;
 
 export const meResponseSchema = z.object({
-  user: z.object({ id: z.string(), login: z.string(), name: z.string().nullable(), avatarUrl: z.string().nullable() }),
+  user: z.object({
+    id: z.string(),
+    login: z.string(),
+    name: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+  }),
   device: z.object({ id: z.string(), name: z.string(), createdAt: z.string() }),
 });
 

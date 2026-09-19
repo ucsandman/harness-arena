@@ -1,0 +1,20 @@
+arena: 1
+name: example-harness
+version: 0.1.0
+description: 'A minimal, real harness with instructions, one subagent, one skill and one echo hook.'
+agents:
+  - claude-code
+  - codex
+files:
+  - CLAUDE.md
+  - .claude
+  - AGENTS.md
+capabilities:
+  subagents: true
+  skills: true
+  hooks: true
+  mcp: false
+  commands: false
+agentConfig:
+  claude-code:
+    systemPromptAppend: AGENTS.md

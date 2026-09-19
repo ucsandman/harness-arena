@@ -1,0 +1,103 @@
+{
+  "name": "quick-success",
+  "description": "Five events and one file write, finishing in two seconds. Used by fast unit tests.",
+  "agentVersion": "fake-1.0.0",
+  "model": "fake-model-1",
+  "steps": [
+    {
+      "atMs": 0,
+      "event": {
+        "type": "agent.started",
+        "native": "system/init",
+        "confidence": "observed",
+        "payload": {
+          "sessionId": "fake-quick-0001",
+          "model": "fake-model-1",
+          "version": "fake-1.0.0",
+          "tools": [
+            "Write"
+          ]
+        }
+      }
+    },
+    {
+      "atMs": 400,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Write",
+          "input": {
+            "file_path": "NOTES.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 400,
+      "fs": {
+        "op": "write",
+        "path": "NOTES.md",
+        "content": "quick-success fixture wrote this file.\n"
+      }
+    },
+    {
+      "atMs": 400,
+      "event": {
+        "type": "file.changed",
+        "native": "assistant/tool_use:Write",
+        "confidence": "observed",
+        "payload": {
+          "path": "NOTES.md",
+          "kind": "create",
+          "linesAdded": 1,
+          "linesRemoved": 0
+        }
+      }
+    },
+    {
+      "atMs": 1500,
+      "event": {
+        "type": "model.response",
+        "native": "result/usage",
+        "confidence": "observed",
+        "payload": {
+          "model": "fake-model-1",
+          "stopReason": "end_turn",
+          "usage": {
+            "inputTokens": 1200,
+            "outputTokens": 180,
+            "costUsd": 0.0042
+          }
+        }
+      }
+    },
+    {
+      "atMs": 2000,
+      "event": {
+        "type": "agent.output",
+        "native": "result",
+        "confidence": "observed",
+        "payload": {
+          "role": "assistant",
+          "text": "Wrote NOTES.md.",
+          "final": true
+        }
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "exitCode": 0,
+    "finalResponse": "Wrote NOTES.md.",
+    "usage": {
+      "inputTokens": 1200,
+      "outputTokens": 180,
+      "costUsd": 0.0042
+    },
+    "turns": 1
+  }
+}

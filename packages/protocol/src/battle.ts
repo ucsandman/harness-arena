@@ -5,14 +5,9 @@ import { runMetricsSchema } from './metrics.js';
 import { evaluationReportSchema, verdictSchema, insightSchema } from './evaluation.js';
 import { environmentInfoSchema } from './environment.js';
 import { harnessManifestSchema } from './manifest.js';
+import { agentIdSchema } from './agents.js';
 
 export const BATTLE_SPEC_VERSION = 1 as const;
-
-export const KNOWN_AGENT_IDS = ['claude-code', 'codex', 'gemini-cli', 'opencode', 'fake'] as const;
-export const agentIdSchema = z
-  .string()
-  .regex(/^[a-z][a-z0-9-]{1,40}$/, 'agent id must be lowercase kebab-case');
-export type AgentId = z.infer<typeof agentIdSchema>;
 
 export const executionModeSchema = z.enum(['local', 'local-byok', 'cloud']);
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
@@ -59,7 +54,10 @@ export const repositorySpecSchema = z.object({
   /** branch, tag, or commit; defaults to the source's HEAD */
   ref: z.string().optional(),
   /** resolved exact commit; filled in by the engine */
-  commit: z.string().regex(/^[0-9a-f]{7,40}$/).optional(),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{7,40}$/)
+    .optional(),
   /** run the agent in a subdirectory of the repository */
   subdir: z.string().optional(),
   submodules: z.boolean().default(false),
@@ -83,7 +81,10 @@ export const harnessRefSchema = z.object({
   /** "vanilla" (agent defaults, no harness files), a GitHub/git URL, or a local path */
   source: z.string().min(1),
   ref: z.string().optional(),
-  commit: z.string().regex(/^[0-9a-f]{7,40}$/).optional(),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{7,40}$/)
+    .optional(),
   /** path to arena.yaml relative to the harness root (default: arena.yaml) */
   manifestPath: z.string().optional(),
   /** user has approved install/prepare commands declared by the harness */
@@ -103,11 +104,20 @@ export type CompetitorSpec = z.infer<typeof competitorSpecSchema>;
 // ---- limits / evaluation / privacy ------------------------------------------------------------
 
 export const limitsSchema = z.object({
-  timeoutMs: z.number().int().positive().max(24 * 3600_000).default(20 * 60_000),
+  timeoutMs: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 3600_000)
+    .default(20 * 60_000),
   maxTurns: z.number().int().positive().max(10_000).optional(),
   maxBudgetUsd: z.number().positive().max(10_000).optional(),
   /** cap on captured stdout+stderr bytes per run */
-  maxOutputBytes: z.number().int().positive().default(50 * 1024 * 1024),
+  maxOutputBytes: z
+    .number()
+    .int()
+    .positive()
+    .default(50 * 1024 * 1024),
   /** seconds of no output before the run is considered stalled and interrupted; 0 disables */
   stallTimeoutMs: z.number().int().nonnegative().default(0),
 });
@@ -120,14 +130,20 @@ export const assertionSchema = z.discriminatedUnion('type', [
     type: z.literal('file-contains'),
     path: z.string(),
     pattern: z.string(),
-    flags: z.string().regex(/^[gimsuy]*$/).optional(),
+    flags: z
+      .string()
+      .regex(/^[gimsuy]*$/)
+      .optional(),
     label: z.string().optional(),
   }),
   z.object({
     type: z.literal('file-not-contains'),
     path: z.string(),
     pattern: z.string(),
-    flags: z.string().regex(/^[gimsuy]*$/).optional(),
+    flags: z
+      .string()
+      .regex(/^[gimsuy]*$/)
+      .optional(),
     label: z.string().optional(),
   }),
   z.object({
@@ -137,17 +153,34 @@ export const assertionSchema = z.discriminatedUnion('type', [
     timeoutMs: z.number().int().positive().default(300_000),
     label: z.string().optional(),
   }),
-  z.object({ type: z.literal('diff-touches'), paths: z.array(z.string()).min(1), label: z.string().optional() }),
+  z.object({
+    type: z.literal('diff-touches'),
+    paths: z.array(z.string()).min(1),
+    label: z.string().optional(),
+  }),
   z.object({
     type: z.literal('diff-not-touches'),
     paths: z.array(z.string()).min(1),
     label: z.string().optional(),
   }),
-  z.object({ type: z.literal('max-files-changed'), max: z.number().int().nonnegative(), label: z.string().optional() }),
+  z.object({
+    type: z.literal('max-files-changed'),
+    max: z.number().int().nonnegative(),
+    label: z.string().optional(),
+  }),
 ]);
 export type Assertion = z.infer<typeof assertionSchema>;
 
-export const testParserSchema = z.enum(['auto', 'vitest', 'jest', 'pytest', 'go', 'cargo', 'tap', 'exit-code']);
+export const testParserSchema = z.enum([
+  'auto',
+  'vitest',
+  'jest',
+  'pytest',
+  'go',
+  'cargo',
+  'tap',
+  'exit-code',
+]);
 
 export const evaluationSpecSchema = z.object({
   tests: z

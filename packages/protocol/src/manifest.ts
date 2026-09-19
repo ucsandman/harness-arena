@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { agentIdSchema } from './battle.js';
+import { agentIdSchema } from './agents.js';
 
 /**
  * arena.yaml — the Harness Adapter Protocol, version 1.
@@ -60,10 +60,7 @@ export const harnessManifestSchema = z
      * Omitted = auto-detect (CLAUDE.md, .claude/, AGENTS.md, .codex/, GEMINI.md, .gemini/, opencode.json, .opencode/, .mcp.json).
      * Paths may not contain `..`, be absolute, or resolve through symlinks.
      */
-    files: z
-      .array(z.string().min(1).max(500))
-      .max(200)
-      .optional(),
+    files: z.array(z.string().min(1).max(500)).max(200).optional(),
     /** where inside the workspace to place `files`; default "." */
     target: z.string().max(200).optional(),
     install: commandSchema.optional(),
@@ -101,7 +98,9 @@ export const AUTO_DETECT_FILES: ReadonlyArray<{ path: string; agent: string; fea
   { path: '.opencode', agent: 'opencode', feature: 'opencode_dir' },
 ];
 
-export function validateManifest(input: unknown): { ok: true; manifest: HarnessManifest } | { ok: false; errors: string[] } {
+export function validateManifest(
+  input: unknown,
+): { ok: true; manifest: HarnessManifest } | { ok: false; errors: string[] } {
   const r = harnessManifestSchema.safeParse(input);
   if (r.success) return { ok: true, manifest: r.data };
   return {

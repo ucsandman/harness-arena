@@ -192,7 +192,10 @@ export const eventPayloads = {
   }),
   warning: z.object({ code: z.string().optional(), message: limitedString }),
   error: z.object({ code: z.string().optional(), message: limitedString, fatal: z.boolean() }),
-  interrupt: z.object({ reason: z.enum(['user', 'timeout', 'signal', 'limit']), detail: z.string().optional() }),
+  interrupt: z.object({
+    reason: z.enum(['user', 'timeout', 'signal', 'limit']),
+    detail: z.string().optional(),
+  }),
 } as const;
 
 export type EventType = keyof typeof eventPayloads;

@@ -1,0 +1,10 @@
+model = "gpt-5-codex"
+approval_policy = "on-request"
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
+
+[mcp_servers.time]
+command = "uvx"
+args = ["mcp-server-time"]

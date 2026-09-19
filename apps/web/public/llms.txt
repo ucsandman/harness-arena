@@ -1,0 +1,32 @@
+# Harness Arena
+
+> Battle two AI coding agent setups ("harnesses") on the same task through the official, locally
+> authenticated CLIs (claude, codex, gemini, opencode), capture telemetry, evaluate deterministically,
+> and read a battle report. Arena never proxies model traffic and never touches provider credentials:
+> model usage is paid by the subscriptions the user already has.
+
+## What it is
+
+- A local CLI (`npx harness-arena`) that runs two harnesses against the same repository commit and task.
+- A normalized, versioned event protocol so both sides are measured the same way.
+- Honest telemetry: every metric carries a status of observed, calculated, estimated or unavailable.
+  A CLI that does not report cost shows "n/a", never $0.
+- Deterministic evaluation first (repo tests, build, lint, typecheck, task assertions, diff signals);
+  an optional LLM judge is labeled subjective.
+
+## Docs
+
+- /docs: overview
+- /docs/cli: install and run a battle
+- /docs/architecture: engine, adapters, evaluator, web app
+- /docs/protocol: event protocol
+- /docs/harness-protocol: arena.yaml harness manifest
+- /docs/adapters: what each agent CLI can and cannot report
+- /docs/security: trust boundaries
+- /docs/privacy: local-only mode and upload contents
+- /docs/contributing: development
+
+## Notes for agents
+
+- The landing page preview is demo data, labeled `demo: true` in the battle record.
+- Battle pages, leaderboard and accounts are not live yet.

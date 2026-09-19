@@ -1,0 +1,161 @@
+import type { BattleRecord, Verdict } from '@harness-arena/protocol';
+import { CircleSlash, Equal, Info, TriangleAlert, Trophy } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/format';
+import { SIDE_BG, SIDE_BORDER, SIDE_TEXT, SideChip } from './shared';
+
+const METHOD_LABEL: Record<Verdict['method'], string> = {
+  deterministic: 'Deterministic evidence only',
+  'deterministic+judge': 'Deterministic evidence plus a labeled LLM opinion',
+  insufficient: 'Insufficient evidence',
+};
+
+function headline(record: BattleRecord, verdict: Verdict): { title: string; sub: string } {
+  const labelA = record.runs.a.label;
+  const labelB = record.runs.b.label;
+  switch (verdict.winner) {
+    case 'a':
+      return {
+        title: `${labelA} wins`,
+        sub: `Side A beat side B (${labelB}) on decisive, reproducible signals.`,
+      };
+    case 'b':
+      return {
+        title: `${labelB} wins`,
+        sub: `Side B beat side A (${labelA}) on decisive, reproducible signals.`,
+      };
+    case 'tie':
+      return { title: 'Tie', sub: 'Neither side separated itself on the deterministic signals.' };
+    default:
+      return {
+        title: 'Inconclusive',
+        sub: 'The evidence collected does not support calling a winner. The numbers are still below.',
+      };
+  }
+}
+
+export function VerdictBanner({ record, className }: { record: BattleRecord; className?: string }) {
+  const verdict = record.verdict;
+
+  if (!verdict) {
+    return (
+      <section
+        aria-labelledby="verdict-heading"
+        className={cn('rounded-card border border-border bg-surface p-4', className)}
+      >
+        <h2 id="verdict-heading" className="flex items-center gap-2 text-base font-semibold">
+          <Info size={16} className="text-fg-muted" aria-hidden="true" />
+          No verdict yet
+        </h2>
+        <p className="mt-1 text-xs text-fg-muted">
+          This battle has not been evaluated. Metrics below are raw telemetry, not a comparison.
+        </p>
+      </section>
+    );
+  }
+
+  const { title, sub } = headline(record, verdict);
+  const winnerSide = verdict.winner === 'a' || verdict.winner === 'b' ? verdict.winner : null;
+  const Icon = winnerSide ? Trophy : verdict.winner === 'tie' ? Equal : CircleSlash;
+
+  return (
+    <section
+      aria-labelledby="verdict-heading"
+      className={cn(
+        'rounded-card border p-4',
+        winnerSide ? cn(SIDE_BORDER[winnerSide], SIDE_BG[winnerSide]) : 'border-border bg-surface',
+        className,
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Icon
+              size={18}
+              className={winnerSide ? SIDE_TEXT[winnerSide] : 'text-fg-muted'}
+              aria-hidden="true"
+            />
+            <h2 id="verdict-heading" className="text-base font-semibold sm:text-lg">
+              {title}
+            </h2>
+            {winnerSide ? <SideChip side={winnerSide} /> : null}
+            {record.demo ? <Badge variant="demo">Demo data</Badge> : null}
+          </div>
+          <p className="mt-1 max-w-2xl text-xs text-fg-muted">{sub}</p>
+        </div>
+
+        <div className="w-full max-w-64 shrink-0">
+          <div className="flex items-baseline justify-between text-2xs text-fg-muted">
+            <span>Confidence</span>
+            <span className="font-mono tabular-nums text-fg">{formatPercent(verdict.confidence)}</span>
+          </div>
+          <div
+            role="meter"
+            aria-valuenow={Math.round(verdict.confidence * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Verdict confidence"
+            className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken"
+          >
+            <div
+              className={cn('h-full rounded-full', winnerSide === 'b' ? 'bg-side-b' : 'bg-side-a')}
+              style={{ width: `${Math.round(verdict.confidence * 100)}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-2xs text-fg-subtle">{METHOD_LABEL[verdict.method]}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle">Why</h3>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {verdict.reasons.map((reason) => (
+              <li key={reason} className="flex gap-2 text-xs leading-relaxed">
+                <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-fg-subtle" />
+                <span>{reason}</span>
+              </li>
+            ))}
+          </ul>
+          {verdict.decisiveFactors.length > 0 ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-2xs text-fg-subtle">Decisive:</span>
+              {verdict.decisiveFactors.map((factor) => (
+                <Badge key={factor} variant="accent" mono>
+                  {factor}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div>
+          <h3 className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">
+            <TriangleAlert size={12} aria-hidden="true" />
+            What this does not prove
+          </h3>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {verdict.caveats.map((caveat) => (
+              <li key={caveat} className="flex gap-2 text-xs leading-relaxed text-fg-muted">
+                <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-warn" />
+                <span>{caveat}</span>
+              </li>
+            ))}
+          </ul>
+          {verdict.judge ? (
+            <p className="mt-2 text-2xs text-fg-subtle">
+              A blind LLM judge ({verdict.judge.judgeAgent}) also read both diffs and favoured{' '}
+              <span className="font-mono">{verdict.judge.winner}</span>. That opinion is subjective and does
+              not move the deterministic result.
+            </p>
+          ) : (
+            <p className="mt-2 text-2xs text-fg-subtle">
+              No LLM judge ran, so nothing here is a subjective score.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

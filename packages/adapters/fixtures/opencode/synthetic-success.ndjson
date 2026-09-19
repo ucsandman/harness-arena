@@ -1,0 +1,6 @@
+{"type":"step_start","sessionID":"ses_a91c4d77bbaaQwErTy103","timestamp":1789820100120}
+{"type":"tool_use","sessionID":"ses_a91c4d77bbaaQwErTy103","part":{"id":"prt_1","callID":"call_1","tool":"read","state":{"status":"completed","input":{"filePath":"src/auth/session.js"},"output":"export function isExpired(session, now = Date.now()) {\n  return session.expiresAt <= now;\n}","title":"src/auth/session.js"}}}
+{"type":"tool_use","sessionID":"ses_a91c4d77bbaaQwErTy103","part":{"id":"prt_2","callID":"call_2","tool":"edit","state":{"status":"completed","input":{"filePath":"src/auth/session.js"},"output":"1 edit applied","title":"src/auth/session.js"}}}
+{"type":"tool_use","sessionID":"ses_a91c4d77bbaaQwErTy103","part":{"id":"prt_3","callID":"call_3","tool":"bash","state":{"status":"completed","input":{"command":"node --test"},"output":"# pass 2\n# fail 0","title":"node --test"}}}
+{"type":"text","sessionID":"ses_a91c4d77bbaaQwErTy103","part":{"text":"Expiry is now compared in milliseconds; node --test reports 2 passing, 0 failing."}}
+{"type":"step_finish","sessionID":"ses_a91c4d77bbaaQwErTy103","part":{"tokens":{"input":18400,"output":2100,"reasoning":320,"cache":{"read":12000,"write":1800}},"cost":0.0413}}

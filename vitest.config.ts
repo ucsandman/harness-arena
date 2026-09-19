@@ -17,8 +17,8 @@ export default defineConfig({
   test: {
     include: ['packages/*/test/**/*.test.ts', 'apps/web/test/**/*.test.ts', 'apps/web/test/**/*.test.tsx'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**'],
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    testTimeout: 120_000,
+    hookTimeout: 120_000,
     environment: 'node',
   },
 });

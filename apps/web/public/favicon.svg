@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Harness Arena">
+  <rect width="32" height="32" rx="7" fill="#12151d" />
+  <g fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 9l6 7-6 7" stroke="#5b8df6" />
+    <path d="M25 9l-6 7 6 7" stroke="#f0a02c" />
+    <path d="M16 5.5v21" stroke="#39404f" stroke-width="2" />
+  </g>
+</svg>

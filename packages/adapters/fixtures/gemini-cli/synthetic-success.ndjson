@@ -1,0 +1,10 @@
+{"type":"init","session_id":"3f9c1d54-7a2b-4f61-9c0e-8d5a2b7e4411","model":"gemini-3-pro-preview"}
+{"type":"message","role":"assistant","content":"I'll read the session helper and its test before changing anything."}
+{"type":"tool_use","tool_name":"read_file","tool_id":"tool-1","parameters":{"absolute_path":"src/auth/session.js"}}
+{"type":"tool_result","tool_id":"tool-1","status":"success","output":"export function isExpired(session, now = Date.now()) {\n  return session.expiresAt <= now;\n}"}
+{"type":"tool_use","tool_name":"replace","tool_id":"tool-2","parameters":{"file_path":"src/auth/session.js","old_string":"session.expiresAt <= now","new_string":"session.expiresAt * 1000 <= now"}}
+{"type":"tool_result","tool_id":"tool-2","status":"success","output":"1 replacement applied"}
+{"type":"tool_use","tool_name":"run_shell_command","tool_id":"tool-3","parameters":{"command":"node --test"}}
+{"type":"tool_result","tool_id":"tool-3","status":"success","output":"# pass 2\n# fail 0"}
+{"type":"message","role":"assistant","content":"Expiry is compared in milliseconds now, so a fresh session is no longer reported as expired. Both tests pass."}
+{"type":"result","status":"success","stats":{"total_tokens":24680,"input_tokens":21000,"output_tokens":3680,"cached":15000,"duration_ms":41200,"tool_calls":3}}

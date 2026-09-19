@@ -2,6 +2,7 @@
   "name": "harness-arena-monorepo",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "description": "Harness Arena: battle AI coding agent harnesses on the same task and measure what actually performs better.",
   "license": "MIT",
   "packageManager": "pnpm@10.32.1",

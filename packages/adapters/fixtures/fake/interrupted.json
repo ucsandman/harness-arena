@@ -1,0 +1,1836 @@
+{
+  "name": "interrupted",
+  "description": "A five-minute timeline used by abort tests: cancel mid-replay and the run reports interrupted.",
+  "agentVersion": "fake-1.0.0",
+  "model": "fake-model-1",
+  "steps": [
+    {
+      "atMs": 0,
+      "event": {
+        "type": "agent.started",
+        "native": "system/init",
+        "confidence": "observed",
+        "payload": {
+          "sessionId": "fake-interrupt-0001",
+          "model": "fake-model-1",
+          "version": "fake-1.0.0",
+          "tools": [
+            "Read",
+            "Grep"
+          ]
+        }
+      }
+    },
+    {
+      "atMs": 5000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 5050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 10000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 10050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 15000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Read",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 15050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 20000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 20050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 25000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/token.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 25050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 30000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_006",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 30050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_006",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 35000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_007",
+          "name": "Read",
+          "input": {
+            "file_path": "src/server.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 35050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_007",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 40000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_008",
+          "name": "Read",
+          "input": {
+            "file_path": "src/config.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 40050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_008",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 45000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_009",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/middleware.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 45050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_009",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 50000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_010",
+          "name": "Read",
+          "input": {
+            "file_path": "test/token.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 50050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_010",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 55000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_011",
+          "name": "Read",
+          "input": {
+            "file_path": "src/db/users.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 55050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_011",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 60000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_012",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/time.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 60050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_012",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 65000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_013",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/log.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 65050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_013",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 70000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_014",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/login.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 70050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_014",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 75000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_015",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/logout.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 75050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_015",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 80000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_016",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/policy.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 80050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_016",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 85000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_017",
+          "name": "Read",
+          "input": {
+            "file_path": "docs/auth.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 85050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_017",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 90000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_018",
+          "name": "Read",
+          "input": {
+            "file_path": "src/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 90050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_018",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 95000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_019",
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 95050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_019",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 100000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_020",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 100050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_020",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 105000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_021",
+          "name": "Read",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 105050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_021",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 110000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_022",
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 110050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_022",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 115000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_023",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/token.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 115050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_023",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 120000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_024",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 120050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_024",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 125000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_025",
+          "name": "Read",
+          "input": {
+            "file_path": "src/server.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 125050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_025",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 130000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_026",
+          "name": "Read",
+          "input": {
+            "file_path": "src/config.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 130050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_026",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 135000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_027",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/middleware.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 135050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_027",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 140000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_028",
+          "name": "Read",
+          "input": {
+            "file_path": "test/token.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 140050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_028",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 145000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_029",
+          "name": "Read",
+          "input": {
+            "file_path": "src/db/users.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 145050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_029",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 150000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_030",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/time.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 150050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_030",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 155000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_031",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/log.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 155050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_031",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 160000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_032",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/login.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 160050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_032",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 165000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_033",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/logout.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 165050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_033",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 170000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_034",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/policy.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 170050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_034",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 175000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_035",
+          "name": "Read",
+          "input": {
+            "file_path": "docs/auth.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 175050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_035",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 180000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_036",
+          "name": "Read",
+          "input": {
+            "file_path": "src/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 180050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_036",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 185000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_037",
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 185050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_037",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 190000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_038",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 190050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_038",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 195000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_039",
+          "name": "Read",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 195050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_039",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 200000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_040",
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 200050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_040",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 205000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_041",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/token.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 205050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_041",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 210000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_042",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 210050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_042",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 215000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_043",
+          "name": "Read",
+          "input": {
+            "file_path": "src/server.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 215050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_043",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 220000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_044",
+          "name": "Read",
+          "input": {
+            "file_path": "src/config.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 220050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_044",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 225000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_045",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/middleware.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 225050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_045",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 230000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_046",
+          "name": "Read",
+          "input": {
+            "file_path": "test/token.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 230050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_046",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 235000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_047",
+          "name": "Read",
+          "input": {
+            "file_path": "src/db/users.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 235050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_047",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 240000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_048",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/time.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 240050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_048",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 245000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_049",
+          "name": "Read",
+          "input": {
+            "file_path": "src/util/log.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 245050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_049",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 250000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_050",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/login.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 250050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_050",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 255000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_051",
+          "name": "Read",
+          "input": {
+            "file_path": "src/routes/logout.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 255050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_051",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 260000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_052",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/policy.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 260050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_052",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 265000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_053",
+          "name": "Read",
+          "input": {
+            "file_path": "docs/auth.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 265050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_053",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 270000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_054",
+          "name": "Read",
+          "input": {
+            "file_path": "src/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 270050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_054",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 275000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_055",
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 275050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_055",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 280000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_056",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/session.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 280050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_056",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 285000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_057",
+          "name": "Read",
+          "input": {
+            "file_path": "test/session.test.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 285050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_057",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 290000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_058",
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 290050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_058",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 295000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_059",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/token.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 295050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_059",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    },
+    {
+      "atMs": 300000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_060",
+          "name": "Read",
+          "input": {
+            "file_path": "src/auth/index.js"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 300050,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_060",
+          "name": "Read",
+          "ok": true,
+          "output": "read"
+        }
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "exitCode": 0,
+    "finalResponse": "Read every file.",
+    "usage": {
+      "inputTokens": 45000,
+      "outputTokens": 900,
+      "costUsd": 0.14
+    },
+    "turns": 12
+  }
+}

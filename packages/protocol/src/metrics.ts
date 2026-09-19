@@ -125,7 +125,11 @@ export function emptyMetrics(): RunMetrics {
   return out;
 }
 
-export function observed(value: number | string | boolean, source: string, extra?: Partial<MetricValue>): MetricValue {
+export function observed(
+  value: number | string | boolean,
+  source: string,
+  extra?: Partial<MetricValue>,
+): MetricValue {
   return { value, status: 'observed', source, ...extra };
 }
 

@@ -1,0 +1,198 @@
+{
+  "name": "timeout",
+  "description": "A timeline that runs for ten minutes. With a small limits.timeoutMs the replay stops early and reports timed_out.",
+  "agentVersion": "fake-1.0.0",
+  "model": "fake-model-1",
+  "steps": [
+    {
+      "atMs": 0,
+      "event": {
+        "type": "agent.started",
+        "native": "system/init",
+        "confidence": "observed",
+        "payload": {
+          "sessionId": "fake-timeout-0001",
+          "model": "fake-model-1",
+          "version": "fake-1.0.0",
+          "tools": [
+            "Grep"
+          ]
+        }
+      }
+    },
+    {
+      "atMs": 30000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 30100,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_001",
+          "name": "Grep",
+          "ok": true,
+          "output": "3 matches"
+        }
+      }
+    },
+    {
+      "atMs": 120000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 120100,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_002",
+          "name": "Grep",
+          "ok": true,
+          "output": "3 matches"
+        }
+      }
+    },
+    {
+      "atMs": 300000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 300100,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_003",
+          "name": "Grep",
+          "ok": true,
+          "output": "3 matches"
+        }
+      }
+    },
+    {
+      "atMs": 480000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 480100,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_004",
+          "name": "Grep",
+          "ok": true,
+          "output": "3 matches"
+        }
+      }
+    },
+    {
+      "atMs": 600000,
+      "event": {
+        "type": "tool.called",
+        "native": "assistant/tool_use",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Grep",
+          "input": {
+            "pattern": "expiresAt"
+          },
+          "parentToolId": null
+        }
+      }
+    },
+    {
+      "atMs": 600100,
+      "event": {
+        "type": "tool.result",
+        "native": "user/tool_result",
+        "confidence": "observed",
+        "payload": {
+          "toolId": "toolu_005",
+          "name": "Grep",
+          "ok": true,
+          "output": "3 matches"
+        }
+      }
+    },
+    {
+      "atMs": 600500,
+      "event": {
+        "type": "agent.output",
+        "native": "result",
+        "confidence": "observed",
+        "payload": {
+          "role": "assistant",
+          "text": "Still searching after ten minutes.",
+          "final": true
+        }
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "exitCode": 0,
+    "finalResponse": "Still searching after ten minutes.",
+    "usage": {
+      "inputTokens": 90000,
+      "outputTokens": 1200,
+      "costUsd": 0.31
+    },
+    "turns": 6
+  }
+}

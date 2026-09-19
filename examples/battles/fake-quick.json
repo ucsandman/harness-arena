@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "title": "Fake vs fake smoke battle",
+  "task": { "kind": "prompt", "prompt": "Create hello.txt containing the word hello." },
+  "repository": { "source": "empty" },
+  "competitors": {
+    "a": {
+      "label": "Fake A",
+      "agent": { "id": "fake" },
+      "harness": { "source": "vanilla" },
+      "fixture": "quick-success"
+    },
+    "b": {
+      "label": "Fake B",
+      "agent": { "id": "fake" },
+      "harness": { "source": "vanilla" },
+      "fixture": "quick-success"
+    }
+  },
+  "limits": { "timeoutMs": 60000 },
+  "evaluation": { "assertions": [{ "type": "file-exists", "path": "hello.txt" }] },
+  "privacy": { "upload": "none" }
+}

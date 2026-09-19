@@ -19,19 +19,19 @@ arena CLI ──▶ official agent CLI (claude / codex / gemini / opencode) ─�
 
 ## Monorepo layout
 
-| Path                  | Package                    | Role                                                                                                                  |
-| --------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `packages/protocol`   | `@harness-arena/protocol`  | Zod schemas and types for everything that crosses a boundary: events, battle spec/record, `arena.yaml`, metrics, evaluation, API. No runtime deps except zod. |
-| `packages/adapters`   | `@harness-arena/adapters`  | `AgentAdapter` interface, detection, and adapters for Claude Code, Codex, Gemini CLI, OpenCode, plus the deterministic `fake` adapter used by tests and demo. |
-| `packages/harness`    | `@harness-arena/harness`   | Harness resolution: GitHub URL parsing, repository inspection (works on a file-listing abstraction so the web server never executes repo code), `arena.yaml` loading, applying a harness to a workspace. |
-| `packages/evaluator`  | `@harness-arena/evaluator` | Evaluator plugins (repo tests, build/lint/typecheck, task assertions, diff signals, optional blind LLM judge) and the verdict engine. |
-| `packages/core`       | `@harness-arena/core`      | Battle engine: state store (`~/.harness-arena`), git workspace manager, process runner, event bus with redaction and size caps, metrics aggregation, insights, local HTML report, structured logging, uploader. |
-| `packages/database`   | `@harness-arena/database`  | Drizzle schema + migrations. Postgres in production, embedded PGlite for dev/tests (zero setup). |
-| `packages/cli`        | `harness-arena`            | The `arena` CLI (interactive and non-interactive). Thin over core. |
-| `packages/mcp`        | `@harness-arena/mcp`       | MCP server exposing battles to MCP clients. An interface into Arena, never the execution engine. |
-| `apps/web`            | `@harness-arena/web`       | Next.js app: marketing, battle pages (live + replay), harness import/profile, leaderboard, docs, auth, device login, ingestion API. Deployable separately from local execution. |
-| `examples/`           |                            | Example harness with `arena.yaml`, example battle specs, fixtures. |
-| `docs/`               |                            | Architecture, protocol, adapters, security, contributing. Rendered by the web app under `/docs`. |
+| Path                 | Package                    | Role                                                                                                                                                                                                            |
+| -------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/protocol`  | `@harness-arena/protocol`  | Zod schemas and types for everything that crosses a boundary: events, battle spec/record, `arena.yaml`, metrics, evaluation, API. No runtime deps except zod.                                                   |
+| `packages/adapters`  | `@harness-arena/adapters`  | `AgentAdapter` interface, detection, and adapters for Claude Code, Codex, Gemini CLI, OpenCode, plus the deterministic `fake` adapter used by tests and demo.                                                   |
+| `packages/harness`   | `@harness-arena/harness`   | Harness resolution: GitHub URL parsing, repository inspection (works on a file-listing abstraction so the web server never executes repo code), `arena.yaml` loading, applying a harness to a workspace.        |
+| `packages/evaluator` | `@harness-arena/evaluator` | Evaluator plugins (repo tests, build/lint/typecheck, task assertions, diff signals, optional blind LLM judge) and the verdict engine.                                                                           |
+| `packages/core`      | `@harness-arena/core`      | Battle engine: state store (`~/.harness-arena`), git workspace manager, process runner, event bus with redaction and size caps, metrics aggregation, insights, local HTML report, structured logging, uploader. |
+| `packages/database`  | `@harness-arena/database`  | Drizzle schema + migrations. Postgres in production, embedded PGlite for dev/tests (zero setup).                                                                                                                |
+| `packages/cli`       | `harness-arena`            | The `arena` CLI (interactive and non-interactive). Thin over core.                                                                                                                                              |
+| `packages/mcp`       | `@harness-arena/mcp`       | MCP server exposing battles to MCP clients. An interface into Arena, never the execution engine.                                                                                                                |
+| `apps/web`           | `@harness-arena/web`       | Next.js app: marketing, battle pages (live + replay), harness import/profile, leaderboard, docs, auth, device login, ingestion API. Deployable separately from local execution.                                 |
+| `examples/`          |                            | Example harness with `arena.yaml`, example battle specs, fixtures.                                                                                                                                              |
+| `docs/`              |                            | Architecture, protocol, adapters, security, contributing. Rendered by the web app under `/docs`.                                                                                                                |
 
 Dependency direction (no cycles): `protocol` ← `adapters`, `harness`, `evaluator`, `database` ← `core` ← `cli`, `mcp`. `web` depends on `protocol`, `database`, `harness` (inspection only).
 
@@ -49,7 +49,7 @@ pending ─▶ preparing ─▶ running ─▶ evaluating ─▶ completed
 ```
 
 1. **Resolve.** Task (prompt or GitHub issue → prompt), repository (URL or local path → exact commit), harnesses (URL/path/`vanilla` → checkout + commit + manifest or auto-detected files), agents (detect + validate).
-2. **Prepare workspaces.** Arena keeps a bare mirror per repository under `ARENA_HOME/repos/`. Each run gets its own detached `git worktree` of the mirror at the resolved commit. The user's checkout is only ever *read* (fetched from). Git hooks are disabled for every git invocation Arena makes (`core.hooksPath` pointed at an empty directory).
+2. **Prepare workspaces.** Arena keeps a bare mirror per repository under `ARENA_HOME/repos/`. Each run gets its own detached `git worktree` of the mirror at the resolved commit. The user's checkout is only ever _read_ (fetched from). Git hooks are disabled for every git invocation Arena makes (`core.hooksPath` pointed at an empty directory).
 3. **Apply harness.** Files declared by `arena.yaml` (or auto-detected: `CLAUDE.md`, `.claude/`, `AGENTS.md`, `.codex/`, `GEMINI.md`, `.gemini/`, `opencode.json`, `.opencode/`, `.mcp.json`) are copied into the workspace with path-containment and symlink checks. `install`/`prepare` commands run only after the user has trusted the harness (interactive prompt or `--trust`).
 4. **Baseline evaluation.** If a test command is configured, it runs once on the untouched workspace so regressions can be distinguished from pre-existing failures.
 5. **Execute.** Runs are sequential by default (fairness on shared CPU; `--parallel` opts in). The adapter builds a fixed argv (never shell-interpolated; the prompt goes over stdin), spawns the CLI, and translates its native stream into protocol events. Every event passes through the redactor and size caps before it is written to `events.ndjson` or uploaded.
@@ -73,7 +73,7 @@ Verified against real CLI output on 2026-09-19 (Windows 11):
 ## Fairness controls
 
 - Same commit, same task text, same limits, same evaluation for both sides.
-- User-level agent configuration is excluded where the CLI allows it (Claude Code: `--setting-sources project,local --strict-mcp-config`; Codex: `--ignore-user-config --ignore-rules`) so the harness under test is the *only* difference. Where a CLI cannot exclude user config, `EnvironmentInfo` records that and the report says so.
+- User-level agent configuration is excluded where the CLI allows it (Claude Code: `--setting-sources project,local --strict-mcp-config`; Codex: `--ignore-user-config --ignore-rules`) so the harness under test is the _only_ difference. Where a CLI cannot exclude user config, `EnvironmentInfo` records that and the report says so.
 - Harness B never sees harness A's workspace.
 - Sequential execution by default.
 
