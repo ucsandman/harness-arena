@@ -1,0 +1,40 @@
+{
+  "name": "harness-arena",
+  "version": "0.1.0",
+  "description": "Harness Arena CLI: battle AI coding agent harnesses on the same task using the CLIs and subscriptions you already have.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "arena": "./dist/bin.js",
+    "harness-arena": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "@harness-arena/adapters": "workspace:*",
+    "@harness-arena/core": "workspace:*",
+    "@harness-arena/evaluator": "workspace:*",
+    "@harness-arena/harness": "workspace:*",
+    "@harness-arena/protocol": "workspace:*",
+    "@clack/prompts": "^1.8.1",
+    "commander": "^15.0.0",
+    "open": "^11.0.4",
+    "picocolors": "^1.1.1",
+    "zod": "^4.6.5"
+  }
+}

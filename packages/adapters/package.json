@@ -1,0 +1,32 @@
+{
+  "name": "@harness-arena/adapters",
+  "version": "0.1.0",
+  "description": "Agent adapters: Claude Code, Codex, Gemini CLI, OpenCode, and a deterministic fake adapter for tests and demos.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "fixtures",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "@harness-arena/protocol": "workspace:*",
+    "execa": "^10.0.1",
+    "which": "^7.0.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {}
+}

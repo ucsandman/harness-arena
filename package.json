@@ -1,0 +1,39 @@
+{
+  "name": "harness-arena-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Harness Arena: battle AI coding agent harnesses on the same task and measure what actually performs better.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm build:packages && pnpm --filter @harness-arena/web run build",
+    "build:packages": "pnpm -r --filter \"./packages/*\" run build",
+    "dev": "pnpm build:packages && pnpm --filter @harness-arena/web run dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.typecheck.json && pnpm --filter @harness-arena/web run typecheck",
+    "arena": "node packages/cli/dist/bin.js",
+    "demo": "pnpm build:packages && node packages/cli/dist/bin.js demo",
+    "db:generate": "pnpm --filter @harness-arena/database run generate",
+    "db:migrate": "pnpm --filter @harness-arena/database run migrate",
+    "db:seed": "pnpm --filter @harness-arena/database run seed",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.8",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
+  }
+}

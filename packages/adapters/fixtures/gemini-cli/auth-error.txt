@@ -1,0 +1,123 @@
+Warning: True color (24-bit) support not detected. Using a terminal with true color enabled will result in a better visual experience.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Error authenticating: IneligibleTierError: This client is no longer supported for Gemini Code Assist for individuals. To continue using Gemini, please migrate to the Antigravity suite of products: https://antigravity.google
+    at throwIneligibleOrProjectIdError (file:////home/user/AppData/Roaming/npm/node_modules/@google/gemini-cli/bundle/chunk-32XQ54AJ.js:310030:11)
+    at _doSetupUser (file:////home/user/AppData/Roaming/npm/node_modules/@google/gemini-cli/bundle/chunk-32XQ54AJ.js:310019:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  ineligibleTiers: [
+    {
+      reasonCode: 'UNSUPPORTED_CLIENT',
+      reasonMessage: 'This client is no longer supported for Gemini Code Assist for individuals. To continue using Gemini, please migrate to the Antigravity suite of products: https://antigravity.google',
+      tierId: 'free-tier',
+      tierName: 'Gemini Code Assist for individuals'
+    }
+  ]
+}
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\backend-specialist.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\brainstormer.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\coder.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\copywriter.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\database-admin.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\debugger.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\devops-engineer.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\docs-manager.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\frontend-specialist.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\fullstack-developer.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\git-manager.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\planner.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\project-manager.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\researcher.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\reviewer.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\scout.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\security-auditor.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\tester.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+[ExtensionManager] Error loading agent from gemini-kit: Failed to load agent from /home/user\.gemini\extensions\gemini-kit\agents\ui-designer.md: Invalid agent definition: Missing mandatory YAML frontmatter. Agent Markdown files MUST start with YAML frontmatter enclosed in triple-dashes "---" (e.g., ---
+name: my-agent
+---).
+YOLO mode is enabled. All tool calls will be automatically approved.
+Ripgrep is not available. Falling back to GrepTool.
+MCP issues detected. Run /mcp list for status.
+Skill conflict detected: "context7-mcp" from "/home/user\.gemini\skills\context7-mcp\SKILL.md" is overriding the same skill from "/home/user\.gemini\extensions\context7\skills\context7-mcp\SKILL.md".
+Skill conflict detected: "ptest" from "/home/user\.agents\skills\ptest\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\ptest\SKILL.md".
+Skill conflict detected: "polish" from "/home/user\.agents\skills\polish\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\polish\SKILL.md".
+Skill conflict detected: "petstore-local" from "/home/user\.agents\skills\petstore-local\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\petstore-local\SKILL.md".
+Skill conflict detected: "petstore-dead" from "/home/user\.agents\skills\petstore-dead\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\petstore-dead\SKILL.md".
+Skill conflict detected: "notes-fixture" from "/home/user\.agents\skills\notes-fixture\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\notes-fixture\SKILL.md".
+Skill conflict detected: "motion-graphics" from "/home/user\.agents\skills\motion-graphics\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\motion-graphics\SKILL.md".
+Skill conflict detected: "media-use" from "/home/user\.agents\skills\media-use\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\media-use\SKILL.md".
+Skill conflict detected: "hyperframes-studio" from "/home/user\.agents\skills\hyperframes-studio\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-studio\SKILL.md".
+Skill conflict detected: "hyperframes-registry" from "/home/user\.agents\skills\hyperframes-registry\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-registry\SKILL.md".
+Skill conflict detected: "hyperframes-keyframes" from "/home/user\.agents\skills\hyperframes-keyframes\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-keyframes\SKILL.md".
+Skill conflict detected: "hyperframes-creative" from "/home/user\.agents\skills\hyperframes-creative\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-creative\SKILL.md".
+Skill conflict detected: "hyperframes-core" from "/home/user\.agents\skills\hyperframes-core\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-core\SKILL.md".
+Skill conflict detected: "hyperframes-cli" from "/home/user\.agents\skills\hyperframes-cli\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-cli\SKILL.md".
+Skill conflict detected: "hyperframes-audio" from "/home/user\.agents\skills\hyperframes-audio\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-audio\SKILL.md".
+Skill conflict detected: "hyperframes-animation" from "/home/user\.agents\skills\hyperframes-animation\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes-animation\SKILL.md".
+Skill conflict detected: "hyperframes" from "/home/user\.agents\skills\hyperframes\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\hyperframes\SKILL.md".
+Skill conflict detected: "gsap-vanilla" from "/home/user\.agents\skills\gsap-vanilla\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-vanilla\SKILL.md".
+Skill conflict detected: "gsap-utils" from "/home/user\.agents\skills\gsap-utils\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-utils\SKILL.md".
+Skill conflict detected: "gsap-timeline" from "/home/user\.agents\skills\gsap-timeline\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-timeline\SKILL.md".
+Skill conflict detected: "gsap-tanstack-router" from "/home/user\.agents\skills\gsap-tanstack-router\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-tanstack-router\SKILL.md".
+Skill conflict detected: "gsap-sveltekit" from "/home/user\.agents\skills\gsap-sveltekit\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-sveltekit\SKILL.md".
+Skill conflict detected: "gsap-scrolltrigger" from "/home/user\.agents\skills\gsap-scrolltrigger\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-scrolltrigger\SKILL.md".
+Skill conflict detected: "gsap-react-router" from "/home/user\.agents\skills\gsap-react-router\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-react-router\SKILL.md".
+Skill conflict detected: "gsap-react" from "/home/user\.agents\skills\gsap-react\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-react\SKILL.md".
+Skill conflict detected: "gsap-plugins" from "/home/user\.agents\skills\gsap-plugins\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-plugins\SKILL.md".
+Skill conflict detected: "gsap-performance" from "/home/user\.agents\skills\gsap-performance\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-performance\SKILL.md".
+Skill conflict detected: "gsap-nuxt" from "/home/user\.agents\skills\gsap-nuxt\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-nuxt\SKILL.md".
+Skill conflict detected: "gsap-nextjs" from "/home/user\.agents\skills\gsap-nextjs\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-nextjs\SKILL.md".
+Skill conflict detected: "gsap-frameworks" from "/home/user\.agents\skills\gsap-frameworks\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-frameworks\SKILL.md".
+Skill conflict detected: "gsap-core" from "/home/user\.agents\skills\gsap-core\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-core\SKILL.md".
+Skill conflict detected: "gsap-astro" from "/home/user\.agents\skills\gsap-astro\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\gsap-astro\SKILL.md".
+Skill conflict detected: "formclaw" from "/home/user\.agents\skills\formclaw\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\formclaw\SKILL.md".
+Skill conflict detected: "declick" from "/home/user\.agents\skills\declick\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\declick\SKILL.md".
+Skill conflict detected: "ctx" from "/home/user\.agents\skills\ctx\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\ctx\SKILL.md".
+Skill conflict detected: "clihub" from "/home/user\.agents\skills\clihub\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\clihub\SKILL.md".
+Skill conflict detected: "aesthetic-animaxxing" from "/home/user\.agents\skills\aesthetic-animaxxing\SKILL.md" is overriding the same skill from "/home/user\.gemini\skills\aesthetic-animaxxing\SKILL.md".
+Invalid hook event name: "PreToolUse" from project config. Skipping.
+[ERROR] [ImportProcessor] Failed to import import): ENOENT: no such file or directory, access '/home/user\.gemini\import)'
+[ERROR] [ImportProcessor] Failed to import google/clasp: ENOENT: no such file or directory, access '/home/user\.gemini\extensions\clasp\google\clasp'
+Hook execution for SessionStart: 0 succeeded, 1 failed (node "C:/Projects/agnostic-ai/engine/hooks/shim.cjs" --client gemini --event SessionStart -- node "/home/user/.claude/hooks/creds-resolve.cjs" ++ py -3.12 -m context_handoff_bundle.checkpoint --hook-stdin ++ node "/home/user/.claude/hooks/context-graph.cjs"), total duration: 2380ms
+Hook(s) [node "C:/Projects/agnostic-ai/engine/hooks/shim.cjs" --client gemini --event SessionStart -- node "/home/user/.claude/hooks/creds-resolve.cjs" ++ py -3.12 -m context_handoff_bundle.checkpoint --hook-stdin ++ node "/home/user/.claude/hooks/context-graph.cjs"] failed for event SessionStart. Press F12 to see the debug drawer for more details.
+
+Hook execution error: Hook timed out after 15ms
+An unexpected critical error occurred:IneligibleTierError: This client is no longer supported for Gemini Code Assist for individuals. To continue using Gemini, please migrate to the Antigravity suite of products: https://antigravity.google
+    at throwIneligibleOrProjectIdError (file:////home/user/AppData/Roaming/npm/node_modules/@google/gemini-cli/bundle/chunk-32XQ54AJ.js:310030:11)
+    at _doSetupUser (file:////home/user/AppData/Roaming/npm/node_modules/@google/gemini-cli/bundle/chunk-32XQ54AJ.js:310019:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

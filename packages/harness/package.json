@@ -1,0 +1,31 @@
+{
+  "name": "@harness-arena/harness",
+  "version": "0.1.0",
+  "description": "Harness resolution: GitHub URL parsing, repository inspection, arena.yaml loading, harness application to workspaces.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "@harness-arena/protocol": "workspace:*",
+    "execa": "^10.0.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {}
+}

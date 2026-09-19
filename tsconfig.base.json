@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@harness-arena/protocol": ["./packages/protocol/src/index.ts"],
+      "@harness-arena/core": ["./packages/core/src/index.ts"],
+      "@harness-arena/adapters": ["./packages/adapters/src/index.ts"],
+      "@harness-arena/harness": ["./packages/harness/src/index.ts"],
+      "@harness-arena/evaluator": ["./packages/evaluator/src/index.ts"],
+      "@harness-arena/database": ["./packages/database/src/index.ts"]
+    }
+  }
+}

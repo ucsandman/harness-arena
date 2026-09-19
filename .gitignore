@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.data/
+.harness-arena/
+*.log
+.DS_Store
+Thumbs.db
+.vercel
+.dashclaw-local/

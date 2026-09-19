@@ -1,0 +1,36 @@
+{
+  "name": "@harness-arena/mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing Harness Arena battles to MCP clients. An interface, not the execution engine.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "harness-arena-mcp": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "@harness-arena/core": "workspace:*",
+    "@harness-arena/adapters": "workspace:*",
+    "@harness-arena/harness": "workspace:*",
+    "@harness-arena/evaluator": "workspace:*",
+    "@harness-arena/protocol": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
+  }
+}
