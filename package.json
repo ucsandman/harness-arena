@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc -p tsconfig.typecheck.json && pnpm --filter @harness-arena/web run typecheck",
+    "typecheck": "pnpm build:packages && tsc -p tsconfig.typecheck.json && pnpm --filter @harness-arena/web run typecheck",
     "arena": "node packages/cli/dist/bin.js",
     "demo": "pnpm build:packages && node packages/cli/dist/bin.js demo",
     "db:generate": "pnpm --filter @harness-arena/database run generate",
