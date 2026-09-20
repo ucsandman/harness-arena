@@ -96,7 +96,7 @@ See `.env.example` at the repository root. Nothing here is required for a local 
 | `/challenges`, `/challenges/:id`, `/challenges/new` | open challenges, one challenge, and creating one                                           |
 | `/tournaments`                                      | brackets and how each match settled                                                        |
 | `/bounties`, `/bounties/:id`, `/bounties/new`       | open bounties, one bounty with its submissions, and creating one                           |
-| `/components`, `/components/:slug`                  | the component catalogue and what experiments say about each                                |
+| `/components`, `/components/:kind/:name`            | the component catalogue and what experiments say about each                                |
 | `/explore`                                          | discovery across harnesses, challenges, benchmarks and experiments                         |
 | `/dashboard`, `/settings`                           | the signed-in account: its battles, its devices                                            |
 | `/device`, `/login`                                 | device-code approval and sign-in                                                           |
@@ -149,7 +149,7 @@ Public reads, no bearer needed. Each one is cached and repeats where the numbers
 | `/api/v1/benchmarks`                | GET    | published packs                                                                        |
 | `/api/v1/benchmarks/:slug`          | GET    | one pack, `?version=bmv_…` for an exact content version                                |
 | `/api/v1/components`                | GET    | the component catalogue and what experiments say about each                            |
-| `/api/v1/components/:slug`          | GET    | one component, with the harnesses and experiments behind it                            |
+| `/api/v1/components/:kind/:name`    | GET    | one component, with the harnesses and experiments behind it                            |
 
 Bearer-authenticated writes for the competitive layer. None of them executes anything: the battles are
 run locally by whoever accepts the work and uploaded afterwards.
