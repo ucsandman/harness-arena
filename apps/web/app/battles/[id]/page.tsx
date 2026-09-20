@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Download, Terminal } from 'lucide-react';
 import type { BattleStatus } from '@harness-arena/protocol';
-import { getBattleForViewer } from '@harness-arena/database';
+import { getBattleForViewer, harnessSlug } from '@harness-arena/database';
 import { BattleReport } from '@/components/battle/BattleReport';
+import { IntegrityPanel } from '@/components/battle/IntegrityPanel';
+import { ShareBlock } from '@/components/battle/ShareBlock';
 import { BattleStatusBadge } from '@/components/battles/BattleList';
 import { CopyLinkButton } from '@/components/battles/CopyLinkButton';
 import { LiveBattle } from '@/components/battles/LiveBattle';
@@ -43,11 +45,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const record = found.battle.record;
   const a = record.runs.a;
   const b = record.runs.b;
+  const title = record.task.title;
+  const description = `${a.harness.name} (${a.agent.id}) vs ${b.harness.name} (${b.agent.id}) on one task at one commit.`;
+  const ogImage = `/battles/${id}/opengraph-image?v=1`;
   return {
-    title: record.task.title,
-    description: `${a.harness.name} (${a.agent.id}) vs ${b.harness.name} (${b.agent.id}) on one task at one commit.`,
+    title,
+    description,
     alternates: { canonical: `/battles/${id}` },
-    openGraph: { title: record.task.title, url: `/battles/${id}` },
+    openGraph: {
+      title,
+      description,
+      url: `/battles/${id}`,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -63,6 +79,9 @@ export default async function BattlePage({ params }: PageProps) {
   const isOwner = Boolean(user && found.battle.ownerUserId === user.id);
   const live = LIVE_STATUSES.has(record.status);
   const links = battleLinks(id);
+  const winner = record.verdict?.winner;
+  const winnerSlug =
+    winner === 'a' || winner === 'b' ? harnessSlug(record.runs[winner].harness) : null;
 
   return (
     <Container className="py-8" size="wide">
@@ -149,6 +168,16 @@ export default async function BattlePage({ params }: PageProps) {
           <BattleReport record={record} events={loaded.events} />
         )}
       </div>
+
+      <div className="mt-4">
+        <IntegrityPanel record={record} />
+      </div>
+
+      {found.battle.visibility === 'public' ? (
+        <div className="mt-4">
+          <ShareBlock record={record} winnerSlug={winnerSlug} />
+        </div>
+      ) : null}
 
       {loaded.capped || loaded.invalid > 0 ? (
         <p className="mt-3 text-2xs text-fg-subtle">

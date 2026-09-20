@@ -3,7 +3,8 @@ import { arenaEventSchema, battleStatusSchema, EVENT_LIMITS, sideSchema } from '
 import { battleIdSchema } from './ids.js';
 import { battleRecordSchema, battleSpecSchema, visibilitySchema } from './battle.js';
 import { benchmarkPackSchema } from './benchmarks.js';
-import { ratingCategorySchema, ratingPoolSchema } from './ratings.js';
+import { lineageEdgeSchema } from './arena.js';
+import { ratingCategorySchema, ratingHistoryPointSchema, ratingPoolSchema } from './ratings.js';
 
 /**
  * HTTP contract between the CLI and the web app. All endpoints live under /api/v1.
@@ -172,3 +173,160 @@ export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
 
 /** POST /api/v1/experiments/:id/battles and friends: link an uploaded battle to an arena object. */
 export const linkBattleRequestSchema = z.object({ battleId: battleIdSchema });
+
+// ---- harness profile, rating history, badges ----------------------------------------------------
+//
+// Appended by the competitive web workstream. These are the read shapes behind
+// /api/v1/harnesses/:slug, /api/v1/harnesses/:slug/history and /api/v1/badges/:slug/:kind, and they
+// are what the CLI's read commands parse. Every derived number travels with the sample it was
+// computed over (`n`, `battles`, `correctnessBattles`, `analyzedBattles`) so no consumer can render a
+// rate without its denominator, and a rating below the minimum sample is marked `provisional`.
+
+/** One (agent, category, pool) rating row. `pool` is never mixed: community and verified stay apart. */
+export const harnessRatingSchema = z.object({
+  agentId: z.string(),
+  category: ratingCategorySchema,
+  pool: ratingPoolSchema,
+  rating: z.number(),
+  deviation: z.number().nonnegative(),
+  peakRating: z.number(),
+  battles: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  ties: z.number().int().nonnegative(),
+  provisional: z.boolean(),
+  /** last outcomes, oldest first, as W/L/T */
+  form: z.string().regex(/^[WLT]*$/),
+  lastBattleAt: z.string().nullable(),
+});
+export type HarnessRating = z.infer<typeof harnessRatingSchema>;
+
+/** A commit of the harness and the record it earned. `commit` is null for an unpinned local harness. */
+export const harnessVersionSummarySchema = z.object({
+  id: z.string(),
+  commit: z.string().nullable(),
+  createdAt: z.string(),
+  battles: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  ties: z.number().int().nonnegative(),
+});
+export type HarnessVersionSummary = z.infer<typeof harnessVersionSummarySchema>;
+
+export const harnessCategoryPerformanceSchema = z.object({
+  category: ratingCategorySchema,
+  battles: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  ties: z.number().int().nonnegative(),
+  /** share of `correctnessBattles` where this harness won or tied every correctness gate that ran */
+  correctnessRate: z.number().min(0).max(1).nullable(),
+  /** the denominator; a rate over nothing is null, never 0 */
+  correctnessBattles: z.number().int().nonnegative(),
+});
+export type HarnessCategoryPerformanceEntry = z.infer<typeof harnessCategoryPerformanceSchema>;
+
+/** Median of (this harness / the opponent) on one metric, over the battles where both reported it. */
+export const efficiencyRatioSchema = z.object({
+  medianRatio: z.number().nullable(),
+  n: z.number().int().nonnegative(),
+});
+export type EfficiencyRatio = z.infer<typeof efficiencyRatioSchema>;
+
+export const harnessEfficiencyProfileSchema = z.object({
+  tokens: efficiencyRatioSchema,
+  cost: efficiencyRatioSchema,
+  duration: efficiencyRatioSchema,
+});
+export type HarnessEfficiencyProfile = z.infer<typeof harnessEfficiencyProfileSchema>;
+
+/** A harness this one has actually fought, with the record between them. */
+export const harnessOpponentSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  wins: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  ties: z.number().int().nonnegative(),
+});
+export type HarnessOpponent = z.infer<typeof harnessOpponentSchema>;
+
+export const harnessInsightKindSchema = z.enum([
+  'category_strength',
+  'category_weakness',
+  'version_delta',
+  'efficiency',
+]);
+export type HarnessInsightKind = z.infer<typeof harnessInsightKindSchema>;
+
+/** A sentence derived from the numbers above; `n` is the sample it rests on and is always shown. */
+export const harnessInsightSchema = z.object({
+  kind: harnessInsightKindSchema,
+  text: z.string(),
+  n: z.number().int().nonnegative(),
+});
+export type HarnessInsightEntry = z.infer<typeof harnessInsightSchema>;
+
+/** GET /api/v1/harnesses/:slug — everything the profile page renders, public data only. */
+export const harnessProfileResponseSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  sourceUrl: z.string().nullable(),
+  sourceKind: z.string(),
+  description: z.string().nullable(),
+  framework: z.string(),
+  /** GitHub login of the account that imported it, when it has one */
+  owner: z.string().nullable(),
+  ratings: z.array(harnessRatingSchema),
+  versions: z.array(harnessVersionSummarySchema),
+  categoryPerformance: z.array(harnessCategoryPerformanceSchema),
+  efficiencyProfile: harnessEfficiencyProfileSchema,
+  recentBattles: z.array(battleListItemSchema),
+  opponents: z.array(harnessOpponentSchema),
+  lineage: z.object({
+    ancestors: z.array(lineageEdgeSchema),
+    descendants: z.array(lineageEdgeSchema),
+  }),
+  insights: z.array(harnessInsightSchema),
+  /** public challenges naming this harness on either side */
+  challenges: z.number().int().nonnegative(),
+  /** decided public battles the category and efficiency sections were computed over */
+  analyzedBattles: z.number().int().nonnegative(),
+});
+export type HarnessProfileResponse = z.infer<typeof harnessProfileResponseSchema>;
+
+/** GET /api/v1/harnesses/:slug/history — the rating curve, straight off the audit trail. */
+export const ratingHistoryResponseSchema = z.object({
+  slug: z.string(),
+  agentId: z.string().nullable(),
+  category: ratingCategorySchema,
+  pool: ratingPoolSchema,
+  points: z.array(ratingHistoryPointSchema),
+});
+export type RatingHistoryResponse = z.infer<typeof ratingHistoryResponseSchema>;
+
+/**
+ * GET /api/v1/badges/:slug/:kind — an SVG a README can embed. Every kind states its sample or says
+ * `provisional`; `verified-rating` reads "no verified battles" while no hosted runner exists.
+ */
+export const badgeKindSchema = z.enum([
+  'rating',
+  'verified-rating',
+  'win-rate',
+  'correctness',
+  'battles',
+  'tokens',
+  'top',
+]);
+export type BadgeKind = z.infer<typeof badgeKindSchema>;
+
+export const BADGE_KINDS = badgeKindSchema.options;
+
+export const BADGE_KIND_LABELS: Record<BadgeKind, string> = {
+  rating: 'Community rating',
+  'verified-rating': 'Verified rating',
+  'win-rate': 'Win rate',
+  correctness: 'Correctness rate',
+  battles: 'Battles',
+  tokens: 'Token efficiency',
+  top: 'Category rank',
+};

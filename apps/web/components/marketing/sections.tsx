@@ -1,5 +1,7 @@
-import type { PrivacyExclusion } from '@harness-arena/protocol';
+import type { BattleRecord, PrivacyExclusion, VerdictBreakdownRow } from '@harness-arena/protocol';
+import { RATING_MIN_SAMPLE } from '@harness-arena/protocol';
 import {
+  ArrowRight,
   Binary,
   Blocks,
   BookOpen,
@@ -705,6 +707,252 @@ export function DevelopersSection() {
             </CardBody>
           </Card>
         ))}
+      </div>
+    </Section>
+  );
+}
+
+// ---- the demo matchup, the live leaderboard, and the challenge ---------------------------------
+
+/**
+ * Stage labels for the verdict hierarchy. Duplicated from the battle report on purpose: the marketing
+ * bundle must not import a report component, and six strings are cheaper than that coupling.
+ */
+const STAGE_LABEL: Record<VerdictBreakdownRow['factor'], string> = {
+  completion: 'Completion',
+  tests: 'Tests',
+  regressions: 'Regressions',
+  assertions: 'Assertions',
+  build: 'Build',
+  efficiency: 'Efficiency',
+};
+
+function stageResult(row: VerdictBreakdownRow, record: BattleRecord): { text: string; className: string } {
+  if (row.result === 'a') return { text: record.runs.a.label, className: 'text-side-a' };
+  if (row.result === 'b') return { text: record.runs.b.label, className: 'text-side-b' };
+  if (row.result === 'tie') return { text: 'tie', className: 'text-fg-muted' };
+  return { text: 'n/a', className: 'text-fg-subtle' };
+}
+
+/**
+ * The hero scoreboard: one real battle record, stage by stage. Everything shown is read off the
+ * record, including the demo flag, so the card can never present demo data as a real result.
+ */
+export function HeroMatchup({ record }: { record: BattleRecord }) {
+  const verdict = record.verdict;
+  const winner = verdict?.winner ?? null;
+  const winnerLabel =
+    winner === 'a'
+      ? record.runs.a.label
+      : winner === 'b'
+        ? record.runs.b.label
+        : winner === 'tie'
+          ? 'Tie'
+          : 'Inconclusive';
+
+  return (
+    <Card>
+      <CardHeader>
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <CardTitle className="truncate">
+            <span className="text-side-a">{record.runs.a.label}</span>
+            <span className="px-2 font-mono text-2xs text-fg-subtle">VS</span>
+            <span className="text-side-b">{record.runs.b.label}</span>
+          </CardTitle>
+          {record.demo ? <Badge variant="demo">Demo data</Badge> : null}
+        </span>
+        <span className="font-mono text-2xs text-fg-subtle">{record.spec.category ?? 'overall'}</span>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-3">
+        <p className="flex flex-wrap items-center gap-2 text-sm">
+          <Trophy size={15} className="text-accent" aria-hidden="true" />
+          <span className="font-semibold">
+            {winner === 'a' || winner === 'b' ? `${winnerLabel} wins` : winnerLabel}
+          </span>
+          {record.demo ? (
+            <span className="text-2xs text-fg-subtle">on the bundled demo battle, not a real result</span>
+          ) : null}
+        </p>
+        {verdict && verdict.breakdown.length > 0 ? (
+          <ol className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-1 text-2xs" aria-label="Score breakdown">
+            {verdict.breakdown.map((row) => {
+              const result = stageResult(row, record);
+              return (
+                <li key={row.factor} className="contents">
+                  <span className="font-mono uppercase tracking-wider text-fg-subtle">
+                    {STAGE_LABEL[row.factor]}
+                  </span>
+                  <span className={cn('font-mono font-semibold', result.className)}>{result.text}</span>
+                  <span className="text-fg-muted">{row.detail}</span>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className="text-xs text-fg-muted">This battle has no verdict breakdown to show.</p>
+        )}
+        <p className="text-2xs text-fg-subtle">
+          Correctness gates are consulted in order; efficiency only breaks a clean tie.{' '}
+          <a href="/docs/verdicts" className="text-accent hover:underline">
+            How a verdict is decided
+          </a>
+          .
+        </p>
+      </CardBody>
+    </Card>
+  );
+}
+
+export interface LandingLeaderboardRow {
+  rank: number;
+  harnessSlug: string;
+  harnessName: string;
+  agentId: string;
+  rating: number;
+  deviation: number;
+  battles: number;
+  wins: number;
+  losses: number;
+  ties: number;
+}
+
+/** The live community leaderboard, top five. An empty table says so instead of showing a shell. */
+export function CommunityLeaderboard({
+  rows,
+  provisional,
+}: {
+  rows: LandingLeaderboardRow[];
+  provisional: number;
+}) {
+  return (
+    <Section id="leaderboard">
+      <SectionHeading
+        eyebrow="Community leaderboard"
+        title="Ranked by decided battles, not by opinion"
+        description="Glicko-1 per (harness, agent, category) from public battles that passed the integrity checks. Self-reported local results only; the verified pool is empty because no hosted runner exists."
+      />
+      <Card className="mt-8">
+        {rows.length === 0 ? (
+          <CardBody className="flex flex-col gap-2 text-[0.8125rem] text-fg-muted">
+            <p className="text-sm font-semibold text-fg">Nothing is ranked yet.</p>
+            <p>
+              A harness enters this table after {RATING_MIN_SAMPLE} decided public battles. Until then every
+              rating is listed as provisional on the leaderboard and ranked nowhere.
+              {provisional > 0
+                ? ` ${provisional} provisional rating${provisional === 1 ? '' : 's'} exist so far.`
+                : ''}
+            </p>
+          </CardBody>
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left text-[0.8125rem]">
+              <caption className="sr-only">Top community ratings, overall category</caption>
+              <thead className="bg-surface-sunken text-2xs uppercase tracking-wide text-fg-muted">
+                <tr>
+                  <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    #
+                  </th>
+                  <th scope="col" className="px-3 py-2 font-semibold">
+                    Harness
+                  </th>
+                  <th scope="col" className="px-3 py-2 font-semibold">
+                    Agent
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    Rating
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-semibold">
+                    W / L / T
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((row) => (
+                  <tr key={`${row.harnessSlug}-${row.agentId}`}>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">{row.rank}</td>
+                    <td className="px-3 py-2">
+                      <a href={`/harnesses/${row.harnessSlug}`} className="font-medium hover:text-accent">
+                        {row.harnessName}
+                      </a>
+                    </td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-fg-muted">{row.agentId}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {Math.round(row.rating)}
+                      <span className="text-fg-subtle"> ±{Math.round(row.deviation)}</span>
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {row.wins} / {row.losses} / {row.ties}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-bg-subtle px-4 py-2.5 text-2xs text-fg-muted">
+          <span>
+            Provisional below {RATING_MIN_SAMPLE} decided battles, and never ranked.{' '}
+            <a href="/docs/ratings" className="text-accent hover:underline">
+              How ratings work
+            </a>
+            .
+          </span>
+          <a href="/leaderboard" className="font-medium text-accent hover:underline">
+            Full leaderboard
+          </a>
+        </div>
+      </Card>
+    </Section>
+  );
+}
+
+const CHALLENGE_COMMAND = [
+  `${BRAND.cli.bin} challenge create \\`,
+  '  --a https://github.com/you/your-harness \\',
+  '  --b vanilla \\',
+  '  --agent claude-code \\',
+  '  --task ./task.md --repo https://github.com/owner/repo',
+].join('\n');
+
+/** The call to action that names the actual command, with the honest note about who runs it. */
+export function ProveIt() {
+  return (
+    <Section id="prove-it">
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+        <div>
+          <SectionHeading
+            eyebrow="Challenges"
+            title="Think your harness is better? Prove it."
+            description="Open a challenge against any harness in the catalogue. Arena hosts no runner: you or whoever accepts it runs the battle locally with your own authenticated CLIs and uploads the result, which is labelled community and enters the ratings only if it passes the integrity checks."
+          />
+          <div className="mt-6 flex flex-wrap gap-2.5">
+            <Button href="/challenges/new" iconRight={<ArrowRight size={15} aria-hidden="true" />}>
+              Open a challenge
+            </Button>
+            <Button href="/challenges" variant="secondary">
+              Browse open challenges
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3">
+          <CodeBlock terminal code={CHALLENGE_COMMAND} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Verified arena</CardTitle>
+              <Badge variant="unavailable">designed, not hosted</Badge>
+            </CardHeader>
+            <CardBody className="text-xs leading-relaxed text-fg-muted">
+              A verified battle would be one Arena executed itself in an identical sandbox, with the same
+              agent version, limits, repository commit and pinned harness commit for every entrant. The
+              schema, the pool separation and the API accept them today; no hosted runner exists, so that
+              pool is empty and every number on this site is community-reported.{' '}
+              <a href="/leaderboard?pool=verified" className="text-accent hover:underline">
+                See the requirements
+              </a>
+              .
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </Section>
   );

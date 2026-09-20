@@ -286,6 +286,232 @@ arena clean --older-than 7 --yes
 Removes finished battle directories (`completed`, `failed`, `cancelled`) from `ARENA_HOME` only.
 Without a terminal it refuses to delete unless `--yes` is present.
 
+## The competitive layer
+
+Arena hosts no runner. A benchmark pack, a challenge, a tournament match and a bounty submission are
+all definitions: the battles behind them run on your machine, with the agent CLI and subscription you
+already have, and the record is uploaded afterwards. The server stores the definition, verifies that
+an uploaded battle really ran the harnesses it names, links it, and labels the result community.
+Nothing in this section runs on Arena hardware.
+
+The read commands (`leaderboard`, `rating`, `profile`, `h2h`, `badge`) need no login: they read public
+data. The write commands (`benchmark publish`, `challenge create`, `challenge run`, `tournament play`)
+need `arena login`, and say so instead of failing with an HTTP error.
+
+### `arena benchmark`
+
+A benchmark pack is a reusable set of tasks, immutable by content hash: the same file always publishes
+as the same `bmv_…` version id, so two people can prove they ran the same work.
+
+```bash
+arena benchmark list                                   # packs on this machine
+arena benchmark list --server --category debugging     # and the ones the server holds
+arena benchmark show acme-pack                         # tasks, categories, trials, version id
+arena benchmark validate ./packs/acme.json             # check a file and print the version id
+arena benchmark publish ./packs/acme.json              # needs `arena login`
+arena benchmark run acme-pack --a . --b vanilla --agent claude-code --trials 3
+```
+
+| Command                     | Flags                                                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `benchmark list`            | `--server [url]`, `--category <name>`, `--limit <n>`, `--json`                                                                                                                                             |
+| `benchmark show <pack>`     | `--server <url>`, `--version <id>`, `--json`                                                                                                                                                               |
+| `benchmark validate <file>` | `--json`                                                                                                                                                                                                   |
+| `benchmark publish <file>`  | `--server <url>`, `--json`                                                                                                                                                                                 |
+| `benchmark run <pack>`      | `--a <harness>` and `--b <harness>` (both required), `--agent <id>`, `--trials <n>`, `--task <id>`, `--upload <level>`, `--visibility <level>`, `--trust`, `--markdown <file>`, `--server <url>`, `--json` |
+
+`--json` shapes: `list` gives `{ home, local, problems, server, serverError }`; `show` gives
+`{ file, versionId, battles, pack }` for a local pack and the server's own document for a published
+one; `validate` gives `{ valid, file, slug, version, versionId, tasks, battles, categories }`;
+`publish` gives `{ created, slug, version, versionId, url, file, localVersionId }`, with
+`created: false` when that exact content was already published; `run` gives
+`{ pack, competitors, agent, rows, summary }`.
+
+Exit codes: `1` for a usage error, an unreadable pack, or a publish with no login, and `1` as well
+when a pack run leaves battles incomplete, because a partial pack result is not a result.
+
+### `arena experiment` and `arena compare`
+
+An experiment is control against treatment over the same tasks, with the statistics attached: a
+regression (two commits of one harness), an ablation (one component removed), or a comparison (two
+unrelated harnesses). Control is side A and treatment is side B in every battle.
+
+```bash
+# did this harness get better between two commits?
+arena compare . --from v0.3.0 --to HEAD --benchmark acme-pack --trials 3
+
+# the same thing spelled out, plus ablations and comparisons
+arena experiment run --kind regression --control .@v0.3.0 --treatment .@HEAD --benchmark acme-pack
+arena experiment run --kind ablation --control . --treatment . --component skill:tests-first --benchmark acme-pack
+arena experiment show exp_0123456789abcdef
+arena experiment list --limit 10
+```
+
+| Command                | Flags                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `experiment run`       | `--kind <kind>`, `--control <harness>`, `--treatment <harness>` (all three required), `--component <kind:name>`, `--benchmark <pack>`, `--spec-dir <dir>`, `--task <id>`, `--agent <id>`, `--trials <n>`, `--title <text>`, `--upload <level>`, `--visibility <level>`, `--trust`, `--markdown <file>`, `--server <url>`, `--json` |
+| `experiment show <id>` | `--server <url>`, `--json`                                                                                                                                                                                                                                                                                                         |
+| `experiment list`      | `--limit <n>`, `--json`                                                                                                                                                                                                                                                                                                            |
+| `compare <harness>`    | `--from <commit>` and `--to <commit>` (both required), then the same work, agent, upload and output flags as `experiment run`                                                                                                                                                                                                      |
+
+`--control` and `--treatment` accept `harness@commit`. An ablation must name the one thing that
+differs (`--component <kind>:<name>`), because an experiment with two changes measures neither.
+`--benchmark` and `--spec-dir` are mutually exclusive, and one of them is required.
+
+`experiment run --json` gives `{ id, title, kind, control, treatment, battles, summary, file, url }`.
+The summary carries its own sample: battles, comparable battles, per-side correctness rates with their
+denominators, token, cost and duration deltas, per-category rows, an evidence strength, and
+conclusions that each name the number of battles behind them.
+
+Exit codes: `1` for a usage error, and `1` when no battle reached a verdict, because an experiment
+that measured nothing must not read as a green result.
+
+### `arena challenge`
+
+A challenge is a published definition: two harnesses, one agent, one piece of work. Creating one runs
+nothing. Whoever accepts it runs it on their own machine and uploads the battle.
+
+```bash
+arena challenge create --a . --b vanilla --agent claude-code --task ./task.md --repo https://github.com/owner/project
+arena challenge create --a . --b vanilla --agent codex --benchmark acme-pack@bmv_0123456789abcdef01234567
+arena challenge list --status open --harness superclaude
+arena challenge show chl_0123456789abcdef
+arena challenge run chl_0123456789abcdef --trust      # runs HERE, then uploads
+```
+
+| Command               | Flags                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `challenge create`    | `--a <harness>`, `--b <harness>`, `--agent <id>` (all three required), `--benchmark <slug@versionId>`, `--task <file>`, `--repo <url or path>`, `--title <text>`, `--visibility <level>`, `--upload <level>`, `--no-rating`, `--server <url>`, `--json` |
+| `challenge list`      | `--status <status>`, `--harness <slug>`, `--limit <n>`, `--server <url>`, `--json`                                                                                                                                                                      |
+| `challenge show <id>` | `--server <url>`, `--json`                                                                                                                                                                                                                              |
+| `challenge run <id>`  | `--trust`, `--upload <level>`, `--server <url>`, `--json`                                                                                                                                                                                               |
+
+Give the work as `--benchmark <slug>@<versionId>` or as `--task <file>` together with
+`--repo <url|path>`. `--no-rating` publishes a challenge whose result must not move community
+ratings; eligibility is never a promise the other way, because the integrity checks in
+[RATINGS.md](RATINGS.md) still decide. A challenge whose privacy level is `none` uploads nothing and
+therefore completes nothing, and `arena challenge run` warns when that is the case.
+
+`--json` shapes: `create` gives `{ id, url, status, note }`; `list` gives `{ challenges, count, note }`;
+`show` gives `{ challenge, url, note }`; `run` gives `{ challengeId, url, battles, note }` with each
+battle as `{ id, status, winner, url }`. `note` is the same sentence on every response: Arena hosts no
+runner.
+
+Exit codes: `1` for a usage error, a missing login on `create` or `run`, a challenge that is cancelled
+or expired, or a server that refuses. A battle that fails during `challenge run` exits `2`, like any
+other battle.
+
+### `arena tournament`
+
+A single-elimination bracket over the same work. Arena settles matches from uploaded battles and plays
+none of them.
+
+```bash
+arena tournament show autumn-cup             # bracket, seeds, how each match settled
+arena tournament play autumn-cup --trust     # run every pending match on this machine
+```
+
+| Command                        | Flags                                                     |
+| ------------------------------ | --------------------------------------------------------- |
+| `tournament show <id-or-slug>` | `--server <url>`, `--json`                                |
+| `tournament play <id-or-slug>` | `--trust`, `--upload <level>`, `--server <url>`, `--json` |
+
+`show --json` gives `{ tournament, url, pending, note }`; `play --json` gives
+`{ tournament, url, played, remaining, stopped, note }`. A match with one entrant and no opponent is a
+bye, and a tie is settled by the higher seed: both are reported as `settledBy`, never hidden. `play`
+uploads, so it needs a login.
+
+### `arena leaderboard`
+
+Ranked harnesses for one category and one pool, read from the server. No login needed.
+
+```bash
+arena leaderboard
+arena leaderboard --category debugging --agent claude-code --limit 20
+arena leaderboard --pool verified
+```
+
+```
+Overall - Community pool
+
+  Rank  Harness      Agent        Rating    Peak  Battles  W/L/T   Form   Sample
+  1     superclaude  claude-code  1624 ±74  1650  24       14/7/3  WWLTW  24/10
+  2     tidy-agent   claude-code  1512 ±96  1540  18       9/7/2   LWWTW  18/10
+
+-- provisional: fewer than 10 decided battles, or a deviation too wide to order. Listed, never ranked. --
+  -  fresh-harness  claude-code  1500 ±320  1500  3  2/1/0  WWL  3/10
+
+Community ratings come from battles contributors ran on their own machines and uploaded. Arena executed none of them.
+```
+
+Flags: `--category <name>`, `--pool community|verified`, `--agent <id>`, `--limit <n>`,
+`--server <url>`, `--json`. The rating column is always `rating ±deviation`, the Sample column is
+always the decided battles over the minimum needed for a rank, and provisional rows are never mixed
+into the ranked ones. `--pool verified` prints the honest line the server sends when the pool holds
+nothing at all: Arena hosts no runner, so no battle has been executed under verified conditions.
+
+`--json` gives `{ server, category, pool, agentId, minSample, poolEmpty, ranked, provisional, entries, note }`.
+
+### `arena rating <slug>`
+
+One harness rating, and with `--history` the audit trail behind it.
+
+```bash
+arena rating superclaude
+arena rating superclaude --agent claude-code --category debugging --history
+```
+
+Flags: `--agent <id>`, `--category <name>`, `--pool community|verified` (default `community`),
+`--history`, `--server <url>`, `--json`. Prints the current rating with its deviation, the peak, the
+battle count, the win/loss/tie record, the win and tie rates with their denominators, recent form and
+the last battle; a provisional rating says so. `--history` adds one row per rating event: battle id,
+date, opponent, outcome, and the rating before and after. Those rows are `rating_events` straight from
+the database and are never edited, so the number can be recomputed by hand.
+
+`--json` gives `{ server, slug, name, category, pool, ratings, history, note }`, with `history` present
+only when `--history` was passed.
+
+### `arena profile <slug>`
+
+Everything the server holds about one harness: identity and source, every (agent, category, pool)
+rating, per-category performance with its correctness sample, the median token, cost and duration
+ratios against its opponents, the commits that have been tested, who it has fought, the insights with
+the sample each rests on, and declared lineage. Flags: `--server <url>`, `--json`. An unmeasured ratio
+prints `n/a`, never `0`.
+
+### `arena h2h <slug> <other>`
+
+The record between two harnesses, under the filters that produced it.
+
+```bash
+arena h2h superclaude vanilla --agent claude-code --category debugging --since 2026-08-01
+```
+
+Flags: `--agent <id>`, `--category <name>`, `--pool community|verified`, `--benchmark <slug>`,
+`--commit <sha>` (battles where the first harness ran this commit; a prefix is enough),
+`--since <date>`, `--until <date>`, `--server <url>`, `--json`. Prints wins, losses, ties,
+inconclusive battles, the win rate over the decided ones, the last battle and the most recent battle
+ids.
+
+### `arena badge <slug>`
+
+The badge URL and the Markdown snippet for a harness README. This command makes no request: it builds
+URLs, so it works offline.
+
+```bash
+arena badge superclaude
+arena badge superclaude --kind win-rate --category debugging --markdown
+```
+
+Flags: `--kind rating|verified-rating|win-rate|correctness|battles|tokens|top` (default `rating`),
+`--category <name>`, `--agent <id>`, `--markdown` (print only the snippet), `--server <url>`,
+`--json`. Every badge states its sample or reads provisional, and `verified-rating` reads "no verified
+battles" while no hosted runner exists.
+
+```markdown
+[![Community rating](https://arena.example/api/v1/badges/superclaude/rating)](https://arena.example/harnesses/superclaude)
+```
+
 ## `battle.json` reference
 
 Every field of `battleSpecSchema` (`packages/protocol/src/battle.ts`). Only `version`, `task`,

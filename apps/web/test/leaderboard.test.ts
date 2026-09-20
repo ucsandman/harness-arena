@@ -1,12 +1,17 @@
 import './setup-env';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { RATING_MIN_SAMPLE } from '@harness-arena/protocol';
+import { RATING_MIN_SAMPLE, VERIFIED_REQUIREMENTS } from '@harness-arena/protocol';
 import { applyBattleToRatings, getLeaderboard, upsertBattleFromRecord } from '@harness-arena/database';
 import LeaderboardPage from '../app/leaderboard/page';
+import { withRanks } from '../components/ratings/RatingBits';
 import { demoRecord, freshBattleId, makeUser, ratableRecord, testDb } from './helpers';
 
-async function renderLeaderboard(query: { category?: string; pool?: string }): Promise<string> {
+async function renderLeaderboard(query: {
+  category?: string;
+  pool?: string;
+  agent?: string;
+}): Promise<string> {
   return renderToStaticMarkup(await LeaderboardPage({ searchParams: Promise.resolve(query) }));
 }
 
@@ -72,7 +77,7 @@ describe('leaderboard page, verified pool card', () => {
     // nothing verified yet: the claim and the deliberate-emptiness sentence are both true
     const empty = await renderLeaderboard({ pool: 'verified' });
     expect(empty).toContain('No verified battles exist');
-    expect(empty).toContain('deliberately empty');
+    expect(empty).toContain('no hosted runner exists; this pool is empty');
 
     // a verification-eligible battle writes rows in the verified pool (poolForRecord)
     const record = ratableRecord({
@@ -90,7 +95,7 @@ describe('leaderboard page, verified pool card', () => {
 
     const populated = await renderLeaderboard({ pool: 'verified' });
     expect(populated).not.toContain('No verified battles exist');
-    expect(populated).not.toContain('deliberately empty');
+    expect(populated).not.toContain('no hosted runner exists; this pool is empty');
     expect(populated).toContain('Verified pool, not Arena-executed');
     expect(populated).toContain('ucsandman--agnostic-ai');
 
@@ -104,5 +109,78 @@ describe('leaderboard page, verified pool card', () => {
     const community = await renderLeaderboard({ pool: 'community' });
     expect(community).not.toContain('No verified battles exist');
     expect(community).not.toContain('Verified pool, not Arena-executed');
+  });
+});
+
+describe('leaderboard rank assignment', () => {
+  it('numbers ranked rows only, and never hands a provisional row a number', () => {
+    const rows = [
+      { provisional: false, slug: 'a' },
+      { provisional: false, slug: 'b' },
+      { provisional: true, slug: 'c' },
+      { provisional: false, slug: 'd' },
+      { provisional: true, slug: 'e' },
+    ];
+    const ranked = withRanks(rows);
+
+    expect(ranked.map((row) => row.rank)).toEqual([1, 2, null, 3, null]);
+    // the failure this guards: a provisional row in the middle must not consume a rank, so the
+    // ranked row after it is #3, not #4
+    expect(ranked.find((row) => row.slug === 'd')?.rank).toBe(3);
+    // and a table of nothing but provisional rows has no #1 at all
+    expect(withRanks([{ provisional: true }, { provisional: true }]).every((row) => row.rank === null)).toBe(
+      true,
+    );
+  });
+});
+
+describe('leaderboard page, competitive columns', () => {
+  it('shows peak, form, last battle and the sample state for every row', async () => {
+    // the two describes above seeded one community battle (agent "fake"), so both competitors hold a
+    // provisional community rating with exactly one decided battle
+    const dbh = await testDb();
+    const rows = await getLeaderboard(dbh, { category: 'overall', pool: 'community' });
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.provisional)).toBe(true);
+
+    const html = await renderLeaderboard({ pool: 'community' });
+
+    for (const heading of ['Peak', 'Battles', 'W / L / T', 'Form', 'Last battle', 'Sample']) {
+      expect(html).toContain(heading);
+    }
+    // every row here is provisional, so the divider is present and no row carries a rank number
+    expect(html).toContain(`Provisional — fewer than ${RATING_MIN_SAMPLE} decided battles, not ranked`);
+    expect(html).toContain('provisional');
+    expect(html).toContain('ucsandman--agnostic-ai');
+    // the constants the numbers came from, stated on the page rather than implied
+    expect(html).toContain('Glicko-1 on the battle verdict');
+    expect(html).toContain('/docs/ratings');
+  });
+
+  it('offers the agents that actually have rows, and ignores one that does not', async () => {
+    const all = await renderLeaderboard({ pool: 'community' });
+    expect(all).toContain('all agents');
+    expect(all).toContain('fake');
+
+    const filtered = await renderLeaderboard({ pool: 'community', agent: 'fake' });
+    expect(filtered).toContain('ucsandman--agnostic-ai');
+
+    // an agent with no row in this category is not a filter: the table must not silently empty out
+    const bogus = await renderLeaderboard({ pool: 'community', agent: 'no-such-agent' });
+    expect(bogus).toContain('ucsandman--agnostic-ai');
+    expect(bogus).not.toContain('Nothing rated in Overall yet');
+  });
+
+  it('invites a challenge and links the form that creates one', async () => {
+    const html = await renderLeaderboard({ pool: 'community' });
+    expect(html).toContain('Think your harness is better? Prove it.');
+    expect(html).toContain('/challenges/new');
+  });
+
+  it('lists every verified requirement, so "empty" reads as a standard and not a gap', async () => {
+    const html = await renderLeaderboard({ pool: 'verified' });
+    for (const requirement of VERIFIED_REQUIREMENTS) {
+      expect(html).toContain(requirement.label);
+    }
   });
 });

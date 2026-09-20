@@ -54,6 +54,35 @@ node packages/mcp/dist/bin.js
 | `arena_start_battle`    | Validate a spec and run one battle, returning `{ id, status }` to poll. `{ spec \| specPath, trust, waitMs }`      |
 | `arena_render_report`   | Write the self-contained HTML report and return its path. `{ id, outPath }`                                        |
 
+Benchmark packs and experiments, run on this machine the same way the CLI runs them:
+
+| Tool                     | What it does                                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arena_list_benchmarks`  | Benchmark packs available on this machine, with their tasks, categories, trials and content version id. `{ limit }`                                            |
+| `arena_run_benchmark`    | Run every task of a pack as a battle between two harnesses, locally. `{ file \| slug, a, b, agent, trials, taskId, trust, waitMs }`                            |
+| `arena_run_experiment`   | Control vs treatment over a pack, with the summary statistics attached. `{ kind, control, treatment, benchmark, taskId, agent, trials, title, trust, waitMs }` |
+| `arena_compare_versions` | Did one harness get better between two commits: a regression experiment. `{ harness, from, to, benchmark, taskId, agent, trials, trust, waitMs }`              |
+| `arena_get_experiment`   | An experiment this machine ran: its battles, its summary, and every conclusion with its sample. `{ id, limit }`                                                |
+
+Server tools. These talk to an Arena server and execute nothing: a challenge is a definition, and
+whoever accepts it runs it locally with `arena challenge run <id>`.
+
+| Tool                        | What it does                                                                                                                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arena_create_challenge`    | Publish a harness-vs-harness challenge; needs `arena login`. `{ title, harnessA, harnessB, agentId, prompt, repository, benchmarkSlug, benchmarkVersionId, visibility, ratingEligible }` |
+| `arena_get_challenge`       | One challenge: definition, status, sides, and the battles uploaded against it. `{ id }`                                                                                                  |
+| `arena_get_leaderboard`     | Ranked harnesses for a category and pool, each rating with its deviation, sample and form. `{ category, pool, agentId, limit }`                                                          |
+| `arena_get_harness_profile` | Everything the server holds about one harness: ratings, category performance, efficiency, versions, opponents, lineage, insights. `{ slug }`                                             |
+| `arena_get_rating`          | One rating with its deviation and record, and with `history: true` the rating events behind it. `{ slug, agentId, category, pool, history }`                                             |
+| `arena_get_head_to_head`    | The record between two harnesses under the filters given. `{ slug, opponent, agentId, category, pool }`                                                                                  |
+| `arena_get_insights`        | The deterministic insights for one harness, each carrying the sample it rests on. `{ slug }`                                                                                             |
+
+The five read tools need no login: they read public data. They take the server from `ARENA_SERVER_URL`,
+else the URL `arena login` stored in `ARENA_HOME/config.json`, and refuse with that instruction when
+neither exists rather than answering a rating question from memory. Every result they return is
+community-reported, because contributors ran those battles themselves; the rating arithmetic is
+documented at `/docs/ratings` on the server and in `docs/RATINGS.md`.
+
 Every tool answers with two content blocks: a one-line human summary, then the structured JSON (also
 attached as `structuredContent`). Errors come back as `isError` results with a message that says what to do
 next, never as a silent empty answer.

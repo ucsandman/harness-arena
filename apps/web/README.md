@@ -1,7 +1,8 @@
 # @harness-arena/web
 
-The Harness Arena web app: marketing pages, battle reports (live and replay), harness import and
-profiles, the leaderboard, docs, accounts, device login, and the ingestion API the `arena` CLI talks to.
+The Harness Arena web app: marketing pages, battle reports (live and replay), harness import,
+harness profiles with badges and head-to-head, leaderboards, benchmark packs, experiments, challenges,
+tournaments, docs, accounts, device login, and the API the `arena` CLI talks to.
 
 The web app never executes a harness, never clones a repository and never touches a provider
 credential. Battles run on the user's machine; this app stores what they choose to upload.
@@ -79,6 +80,33 @@ See `.env.example` at the repository root. Nothing here is required for a local 
 4. Tokens are listed and revocable on `/settings`, or by the device itself with
    `DELETE /api/v1/devices/current`.
 
+## Pages
+
+| Route                                               | What it shows                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `/`                                                 | landing page, rendering the seeded demo battle                                             |
+| `/battles`, `/battles/:id`                          | the battle feed and one report, live or replayed                                           |
+| `/battles/new`                                      | build a battle spec in the browser and hand it to the CLI                                  |
+| `/leaderboard`                                      | ranked harnesses per category and pool, provisional rows kept separate                     |
+| `/harnesses`, `/harnesses/:slug`                    | the catalogue and one harness profile: ratings, categories, efficiency, versions, insights |
+| `/harnesses/:slug/vs/:other`                        | the head-to-head record between two harnesses                                              |
+| `/harnesses/import`                                 | import a harness from GitHub (inspection only, nothing is executed)                        |
+| `/benchmarks`, `/benchmarks/:slug`                  | published benchmark packs and what is in one                                               |
+| `/experiments`, `/experiments/:id`                  | experiments and their summaries, each conclusion with its sample                           |
+| `/challenges`, `/challenges/:id`, `/challenges/new` | open challenges, one challenge, and creating one                                           |
+| `/tournaments`                                      | brackets and how each match settled                                                        |
+| `/bounties`, `/bounties/:id`, `/bounties/new`       | open bounties, one bounty with its submissions, and creating one                           |
+| `/components`, `/components/:slug`                  | the component catalogue and what experiments say about each                                |
+| `/explore`                                          | discovery across harnesses, challenges, benchmarks and experiments                         |
+| `/dashboard`, `/settings`                           | the signed-in account: its battles, its devices                                            |
+| `/device`, `/login`                                 | device-code approval and sign-in                                                           |
+| `/docs`, `/privacy`, `/security`                    | the rendered `docs/` tree and the policy pages                                             |
+
+Arena hosts no runner, and the data layer says so rather than leaving it to the page copy: every
+challenge, tournament and bounty response carries `ARENA_EXECUTION_NOTE` from the protocol verbatim,
+and the leaderboard response carries `poolEmpty`, so the verified pool reads as empty instead of
+rendering an empty table as a result.
+
 ## API (v1)
 
 All of it is validated against `@harness-arena/protocol`, bearer-authenticated with a device token,
@@ -106,6 +134,44 @@ completed, non-demo battle with a decided winner, so publishing a battle is what
 | `/api/v1/battles/:id/events`    | POST   | bearer, owner only; duplicate `seq` is a no-op   |
 | `/api/v1/battles/:id/artifacts` | POST   | bearer, owner only                               |
 | `/api/v1/battles/:id/stream`    | GET    | Server-sent events, visibility-checked           |
+
+Public reads, no bearer needed. Each one is cached and repeats where the numbers came from:
+
+| Route                               | Method | Notes                                                                                  |
+| ----------------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| `/api/v1/leaderboard`               | GET    | `?category=&pool=&agent=&limit=`; says when a pool is empty                            |
+| `/api/v1/harnesses/:slug`           | GET    | the whole profile: ratings, categories, efficiency, versions, lineage, insights        |
+| `/api/v1/harnesses/:slug/history`   | GET    | `?category=&pool=&agent=`; the rating events behind the curve                          |
+| `/api/v1/harnesses/:slug/vs/:other` | GET    | `?agent=&category=&pool=&benchmark=&commit=&since=&until=`                             |
+| `/api/v1/harnesses/:slug/insights`  | GET    | deterministic sentences, each with its sample                                          |
+| `/api/v1/harnesses/:slug/lineage`   | GET    | declared ancestry only; Arena never infers one                                         |
+| `/api/v1/badges/:slug/:kind`        | GET    | SVG for a README: rating, verified-rating, win-rate, correctness, battles, tokens, top |
+| `/api/v1/benchmarks`                | GET    | published packs                                                                        |
+| `/api/v1/benchmarks/:slug`          | GET    | one pack, `?version=bmv_…` for an exact content version                                |
+| `/api/v1/components`                | GET    | the component catalogue and what experiments say about each                            |
+| `/api/v1/components/:slug`          | GET    | one component, with the harnesses and experiments behind it                            |
+
+Bearer-authenticated writes for the competitive layer. None of them executes anything: the battles are
+run locally by whoever accepts the work and uploaded afterwards.
+
+| Route                              | Method    | Notes                                                                               |
+| ---------------------------------- | --------- | ----------------------------------------------------------------------------------- |
+| `/api/v1/benchmarks`               | POST      | publish a pack version; identical content is a no-op                                |
+| `/api/v1/challenges`               | GET       | open challenges, `?status=&harness=&limit=`                                         |
+| `/api/v1/challenges`               | POST      | create a challenge (a definition, nothing runs)                                     |
+| `/api/v1/challenges/:id`           | GET       | one challenge, visibility-checked                                                   |
+| `/api/v1/challenges/:id/accept`    | POST      | take a challenge on, then run it locally                                            |
+| `/api/v1/challenges/:id/cancel`    | POST      | creator only                                                                        |
+| `/api/v1/experiments`              | GET       | experiments; POST creates one                                                       |
+| `/api/v1/experiments/:id`          | GET       | one experiment and its summary                                                      |
+| `/api/v1/experiments/:id/battles`  | POST      | link an uploaded battle to the experiment                                           |
+| `/api/v1/experiments/:id/finalize` | POST      | compute the summary from the linked battles                                         |
+| `/api/v1/tournaments`              | GET       | brackets; POST creates one                                                          |
+| `/api/v1/tournaments/:id`          | GET       | one bracket, its matches and how each settled                                       |
+| `/api/v1/tournaments/:id/start`    | POST      | seed the bracket and open it for play                                               |
+| `/api/v1/bounties`                 | GET       | open bounties; POST creates one                                                     |
+| `/api/v1/bounties/:id`             | GET       | one bounty and its submissions                                                      |
+| `/api/v1/bounties/:id/submissions` | GET, POST | submissions for a bounty, and claiming it with the battles that meet its conditions |
 
 ## Tests
 

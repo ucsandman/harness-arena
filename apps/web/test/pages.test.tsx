@@ -3,10 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type * as AuthModule from '@/lib/auth';
 import type { ArenaEvent, ArenaEventOf, Side } from '@harness-arena/protocol';
-import { harnesses, upsertBattleFromRecord, type User } from '@harness-arena/database';
+import {
+  applyBattleToRatings,
+  getLeaderboard,
+  harnesses,
+  upsertBattleFromRecord,
+  type User,
+} from '@harness-arena/database';
 import { TestResults } from '../components/battle/TestResults';
 import { SAMPLE_EVENTS, SAMPLE_RECORD } from '../lib/sample-battle';
-import { demoRecord, freshBattleId, makeUser, testDb } from './helpers';
+import { demoRecord, freshBattleId, makeUser, ratableRecord, testDb } from './helpers';
 
 /** The dashboard is behind requireUser; the session cookie needs a request, so the user is injected. */
 let currentUser: User | null = null;
@@ -105,5 +111,106 @@ describe('dashboard stats', () => {
     expect(html).toContain('>1</span>');
     expect(html).not.toContain('found in your newest 200 harnesses');
     expect(html).not.toContain('Only your newest 200 harnesses are searched');
+  });
+});
+
+/**
+ * The harness profile is the page a maintainer links from a README, so its failure mode is a number
+ * with no sample behind it. These tests pin the honest-empty states first (no rating, no efficiency
+ * data, an empty verified pool) and only then the populated ones, and check that a demo battle never
+ * turns into a rating.
+ */
+const { default: HarnessProfilePage } = await import('../app/harnesses/[slug]/page');
+
+const PROFILE_SLUG = 'ucsandman--agnostic-ai';
+
+async function renderProfile(slug: string): Promise<string> {
+  return renderToStaticMarkup(
+    await HarnessProfilePage({
+      params: Promise.resolve({ slug }),
+      searchParams: Promise.resolve({}),
+    }),
+  );
+}
+
+describe('harness profile, before anything is rated', () => {
+  it('says it has no rating rather than printing a default one', async () => {
+    const dbh = await testDb();
+    // the dashboard test above uploaded private battles for this harness, so the catalogue row exists
+    // with no public decided battle behind it: the profile must not invent a 1500
+    const rows = await getLeaderboard(dbh, { category: 'overall', pool: 'community' });
+    expect(rows.some((row) => row.harnessSlug === PROFILE_SLUG)).toBe(false);
+
+    const html = await renderProfile(PROFILE_SLUG);
+    expect(html).toContain('No decided battles yet, so this harness has no community rating');
+    // a rating row renders a "<agent> · overall" stat; with nothing rated there must be none, so the
+    // page cannot be showing the 1500 default as though it were earned
+    expect(html).not.toContain('· overall');
+  });
+
+  it('states the verified pool is empty for this harness, and why', async () => {
+    const html = await renderProfile(PROFILE_SLUG);
+    expect(html).toContain('no hosted runner exists, so this pool is empty for every');
+    expect(html).toContain('Community results never feed it');
+  });
+
+  it('prints n/a with the battle count instead of a zero efficiency ratio', async () => {
+    const html = await renderProfile(PROFILE_SLUG);
+    expect(html).toContain('n/a (0 battles)');
+    expect(html).toContain('Efficiency against its opponents');
+  });
+
+  it('offers a challenge and README badges that point at real routes', async () => {
+    const html = await renderProfile(PROFILE_SLUG);
+    expect(html).toContain('Challenge this harness');
+    expect(html).toContain(`/challenges/new?b=${PROFILE_SLUG}`);
+    expect(html).toContain('README badges');
+    // the snippet a maintainer pastes must be a working absolute URL, with no double slash
+    expect(html).toContain('http://localhost:3000/api/v1/badges/');
+    expect(html).not.toContain('localhost:3000//');
+    expect(html).toContain(`/api/v1/badges/${PROFILE_SLUG}/rating`);
+    expect(html).toContain(`/api/v1/badges/${PROFILE_SLUG}/verified-rating`);
+  });
+});
+
+describe('harness profile, once a battle is rated', () => {
+  it('shows the rating, its sample, the category record and the history it came from', async () => {
+    const dbh = await testDb();
+    const user = await makeUser('profile-owner', 9702);
+    const record = ratableRecord({ id: freshBattleId(), demo: false });
+    await upsertBattleFromRecord(dbh, { record, ownerUserId: user.id, visibility: 'public' });
+    const applied = await applyBattleToRatings(dbh, record);
+    expect(applied.applied).toBe(true);
+
+    const html = await renderProfile(PROFILE_SLUG);
+    // one decided battle is under the minimum sample, so the page must label it, not rank it
+    expect(html).toContain('provisional');
+    expect(html).toContain('Category performance');
+    expect(html).toContain('Debugging');
+    expect(html).toContain('Rating history');
+    expect(html).toContain(`/battles/${record.id}`);
+    expect(html).toContain('Head-to-head');
+    expect(html).toContain('/harnesses/ucsandman--agnostic-ai/vs/vanilla');
+    expect(html).toContain('Versions tested');
+  });
+
+  it('never lets a demo battle move the rating it displays', async () => {
+    const dbh = await testDb();
+    const before = await getLeaderboard(dbh, { category: 'overall', pool: 'community' });
+    const mine = before.find((row) => row.harnessSlug === PROFILE_SLUG);
+    expect(mine?.battles).toBe(1);
+
+    const demo = demoRecord({ id: freshBattleId() });
+    await upsertBattleFromRecord(dbh, { record: demo, visibility: 'public', demo: true });
+    const skipped = await applyBattleToRatings(dbh, demo);
+    expect(skipped.applied).toBe(false);
+    expect(skipped.reason).toBe('demo');
+
+    const after = await getLeaderboard(dbh, { category: 'overall', pool: 'community' });
+    expect(after.find((row) => row.harnessSlug === PROFILE_SLUG)?.battles).toBe(1);
+
+    // and the page shows the demo battle as demo data, never as a result behind the rating
+    const html = await renderProfile(PROFILE_SLUG);
+    expect(html).toContain('Demo data');
   });
 });

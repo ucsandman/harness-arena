@@ -9,8 +9,11 @@ import { UserMenu } from './UserMenu';
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/battles', label: 'Battles' },
-  { href: '/harnesses', label: 'Harnesses' },
   { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/harnesses', label: 'Harnesses' },
+  { href: '/benchmarks', label: 'Benchmarks' },
+  { href: '/challenges', label: 'Challenges' },
+  { href: '/tournaments', label: 'Tournaments' },
   { href: '/docs', label: 'Docs' },
 ];
 
@@ -27,12 +30,12 @@ export async function Header() {
           <Logo name={BRAND.name} />
         </Link>
 
-        <nav aria-label="Main" className="hidden md:flex md:items-center md:gap-1">
+        <nav aria-label="Main" className="hidden lg:flex lg:items-center lg:gap-0.5">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg"
+              className="rounded-md px-2 py-1.5 text-[0.8125rem] font-medium text-fg-muted transition-colors hover:bg-bg-subtle hover:text-fg"
             >
               {item.label}
             </Link>

@@ -1,5 +1,7 @@
 export { BattleReport } from './BattleReport';
 export { VerdictBanner } from './VerdictBanner';
+export { IntegrityPanel } from './IntegrityPanel';
+export { ShareBlock } from './ShareBlock';
 export { MetricsTable } from './MetricsTable';
 export { InsightsList } from './InsightsList';
 export { Timeline } from './Timeline';

@@ -31,19 +31,19 @@ Arena shows what the harness would apply and which commands it wants to run befo
 
 ## What is in the box
 
-| Path                 | Purpose                                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| `packages/protocol`  | Zod schemas: battle spec and record, versioned event protocol, metrics, `arena.yaml`, API        |
-| `packages/adapters`  | One adapter per agent CLI plus a fake adapter that replays fixtures for tests and the demo       |
-| `packages/harness`   | Harness sources (local, git, GitHub API), inspection, compatibility report, apply                |
-| `packages/evaluator` | Deterministic evaluators (repo tests, assertions, build, diff scope) and the verdict             |
-| `packages/core`      | Battle engine: worktrees, process lifecycle, telemetry, redaction, report, uploader              |
-| `packages/cli`       | `arena`: battle, run, demo, replay, status, list, agents, harnesses, login, doctor, regression   |
-| `packages/mcp`       | MCP server exposing Arena as tools for any agent                                                 |
-| `packages/database`  | Drizzle schema, migrations, queries, ratings (PGlite for dev and tests, Postgres in production)  |
-| `apps/web`           | Next.js site: battles feed, live and replayed reports, harness import, leaderboard, device login |
-| `docs/`              | Architecture, protocol, harness protocol, CLI, adapters, security, privacy, contributing         |
-| `examples/`          | Battle specs, an example harness with `arena.yaml`, the exported demo battle                     |
+| Path                 | Purpose                                                                                                                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/protocol`  | Zod schemas: battle spec and record, versioned event protocol, metrics, `arena.yaml`, API                                                                                                                                              |
+| `packages/adapters`  | One adapter per agent CLI plus a fake adapter that replays fixtures for tests and the demo                                                                                                                                             |
+| `packages/harness`   | Harness sources (local, git, GitHub API), inspection, compatibility report, apply                                                                                                                                                      |
+| `packages/evaluator` | Deterministic evaluators (repo tests, assertions, build, diff scope) and the verdict                                                                                                                                                   |
+| `packages/core`      | Battle engine: worktrees, process lifecycle, telemetry, redaction, report, uploader                                                                                                                                                    |
+| `packages/cli`       | `arena`: battle, run, demo, replay, status, list, agents, harnesses, login, doctor, regression, clean, plus the competitive commands (benchmark, experiment, compare, challenge, tournament, leaderboard, rating, profile, h2h, badge) |
+| `packages/mcp`       | MCP server exposing Arena as tools for any agent: battles, benchmark packs, experiments, challenges, ratings                                                                                                                           |
+| `packages/database`  | Drizzle schema, migrations, queries, Glicko ratings with their audit trail, head-to-head, insights, benchmarks, challenges, tournaments, bounties, lineage, components (PGlite for dev and tests, Postgres in production)              |
+| `apps/web`           | Next.js site: battles feed, live and replayed reports, harness import, profiles and badges, leaderboards, challenges, tournaments, bounties, device login                                                                              |
+| `docs/`              | Architecture, protocol, harness protocol, CLI, adapters, verdicts, ratings, benchmarks, experiments, challenges, lineage, security, privacy, contributing                                                                              |
+| `examples/`          | Battle specs, an example harness with `arena.yaml`, the exported demo battle                                                                                                                                                           |
 
 ## CLI
 
@@ -60,6 +60,16 @@ arena harnesses inspect X   compatibility report for a GitHub URL or local path 
 arena login / logout        device-code login to the web app (optional)
 arena doctor [--fix]        environment check; --fix removes orphaned workspaces and stale locks
 arena regression <dir>      CI mode: baseline vs candidate over a directory of specs
+arena benchmark <cmd>       benchmark packs: list, show, validate, publish, run
+arena experiment run        control vs treatment over a pack, with the statistics attached
+arena compare <harness>     did this harness get better between two commits?
+arena challenge <cmd>       create a challenge, or run one on this machine
+arena tournament <cmd>      read a bracket, or play its pending matches here
+arena leaderboard           ranked harnesses for a category and pool
+arena rating <slug>         one rating, with --history for the events behind it
+arena profile <slug>        everything the server knows about one harness
+arena h2h <slug> <other>    the record between two harnesses
+arena badge <slug>          badge URL and Markdown snippet for a README
 arena clean                 delete old battle directories under ARENA_HOME
 ```
 
@@ -76,6 +86,65 @@ Exit codes: `0` completed, `1` usage or environment error, `2` battle failed or 
 | Verified cloud     | Arena-run sandbox          | User-provided key or credits                   | Modeled, not hosted |
 
 Ratings from local battles land in the **community** pool. The **verified** pool exists in the schema and on the leaderboard page but stays empty until verified execution exists.
+
+## Compete
+
+Arena hosts no runner. Everything below is a definition held on the server; the battles behind it run
+on a contributor machine, with the CLI and subscription that person already has, and the record is
+uploaded afterwards. That is why every result is labelled community.
+
+**Leaderboards.** `arena leaderboard --category debugging --pool community` ranks harnesses per
+(harness, agent, category, pool). The **community** pool holds self-reported local battles. The
+**verified** pool holds battles Arena executed itself under standardised conditions, and it is empty:
+no hosted runner exists, and the leaderboard says so instead of showing an empty table as a result. A
+rating with fewer than 10 decided battles, or a deviation above 120, is listed as provisional and
+never ranked.
+
+**Harness profiles and badges.** `arena profile <slug>` prints ratings per agent and category,
+per-category correctness with its sample, median token, cost and duration ratios against real
+opponents, the commits that were tested, and deterministic insights that each name the number of
+battles behind them. `arena badge <slug> --kind win-rate --markdown` prints a snippet for a README:
+
+```markdown
+![Arena rating](https://<site>/api/v1/badges/<slug>/rating)
+```
+
+**Challenges.** `arena challenge create --a . --b vanilla --agent claude-code --task ./task.md --repo <url>`
+publishes a matchup. Nobody has run anything yet; whoever takes it on runs
+`arena challenge run <id>` on their own machine and uploads the battle, which the server verifies
+against the challenge before linking it.
+
+**Benchmark packs.** A pack is a reusable set of tasks, immutable by content hash, so the same file
+always publishes as the same `bmv_…` version id and two people can prove they ran the same work:
+`arena benchmark validate ./packs/acme.json`, `arena benchmark publish ./packs/acme.json`,
+`arena benchmark run acme-pack --a . --b vanilla --agent claude-code --trials 3`.
+
+**Experiments.** A regression asks whether a harness got better between two commits:
+`arena compare . --from v0.3.0 --to HEAD --benchmark acme-pack --trials 3`. An ablation asks what one
+component is worth:
+`arena experiment run --kind ablation --control . --treatment . --component skill:tests-first --benchmark acme-pack`.
+Both report correctness, tokens, cost and duration with their denominators, and conclusions that name
+their sample.
+
+**Tournaments and bounties.** `arena tournament show <slug>` reads a single-elimination bracket;
+`arena tournament play <slug>` runs its pending matches here and uploads them, which is what settles
+them. A bounty states a baseline and the conditions a submission must beat; Arena moves no money and
+evaluates the conditions deterministically over the linked battles.
+
+**How a rating is computed.** Every decided battle updates both sides with Glicko-1 from the same
+pre-battle numbers, so a win over a strong, well-established opponent moves a rating more than a win
+over a provisional one, and every change is an immutable `rating_events` row carrying the battle, the
+exact harness commit, the opponent and the before and after numbers. Ratings age: the deviation grows
+with inactivity, so a harness nobody has tested in months is shown with a wide interval instead of a
+stale certainty ([docs/RATINGS.md](docs/RATINGS.md)).
+
+**Anti-gaming.** A battle is fingerprinted over its task, repository commit, agents, models, harness
+commits and evaluation, so re-running the same matchup is a repeated trial and earns no second rating
+change; self-play, a harness with no resolved commit, deleted test files, demo data and an
+inconclusive verdict all block a battle from the ratings outright. Softer signals (modified test
+files, a dirty repository, different agents or models, parallel execution, custom efficiency weights)
+are shown next to the result rather than hidden, and the integrity check that counts is the one the
+server runs at upload, not the one the uploader sends.
 
 ## Web app
 
@@ -96,7 +165,7 @@ The CLI talks to the app through `POST /api/v1/device/code` and `/token` (device
 claude mcp add harness-arena -- node /path/to/harness-arena/packages/mcp/dist/bin.js
 ```
 
-Tools: `arena_list_agents`, `arena_list_battles`, `arena_get_battle`, `arena_get_results`, `arena_compare_runs`, `arena_list_harnesses`, `arena_inspect_harness`, `arena_start_battle`, `arena_render_report`. See [packages/mcp/README.md](packages/mcp/README.md).
+Tools: `arena_list_agents`, `arena_list_battles`, `arena_get_battle`, `arena_get_results`, `arena_compare_runs`, `arena_list_harnesses`, `arena_inspect_harness`, `arena_start_battle`, `arena_render_report`, `arena_list_benchmarks`, `arena_run_benchmark`, `arena_run_experiment`, `arena_compare_versions`, `arena_get_experiment`, `arena_create_challenge`, `arena_get_challenge`, `arena_get_leaderboard`, `arena_get_harness_profile`, `arena_get_rating`, `arena_get_head_to_head`, `arena_get_insights`. The five read tools need no login and take the server from `ARENA_SERVER_URL` or from the URL `arena login` stored. See [packages/mcp/README.md](packages/mcp/README.md).
 
 ## Making a repository battle-ready
 

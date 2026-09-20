@@ -55,6 +55,18 @@ export const DOC_PAGES: readonly DocPage[] = [
     file: 'docs/ADAPTERS.md',
   },
   {
+    slug: 'ratings',
+    title: 'Ratings and leaderboards',
+    description: 'The Glicko-1 arithmetic, the two pools, and what keeps a battle out of the ratings.',
+    file: 'docs/RATINGS.md',
+  },
+  {
+    slug: 'verdicts',
+    title: 'Verdicts',
+    description: 'The decision hierarchy: correctness gates first, efficiency only on a clean tie.',
+    file: 'docs/VERDICTS.md',
+  },
+  {
     slug: 'benchmarks',
     title: 'Benchmark packs',
     description:
