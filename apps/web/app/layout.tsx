@@ -11,6 +11,8 @@ import { THEME_INIT_SCRIPT } from '@/lib/theme';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
+  // Google Search Console URL-prefix property; removing this revokes the verification (docs/DECISIONS.md)
+  verification: { google: 'Eok1iYyy78qZjURJX8m1WEFQJk3H3vKkpwPaFhl5znc' },
   title: {
     default: `${BRAND.name}: ${BRAND.tagline}`,
     template: `%s - ${BRAND.name}`,
