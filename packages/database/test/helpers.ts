@@ -24,6 +24,13 @@ export interface HarnessFixture {
   commit?: string | null;
 }
 
+export interface ChangedFileFixture {
+  path: string;
+  kind: 'create' | 'modify' | 'delete' | 'rename';
+  linesAdded?: number;
+  linesRemoved?: number;
+}
+
 export interface RecordFixtureOptions {
   id?: string;
   status?: BattleStatus;
@@ -42,6 +49,26 @@ export interface RecordFixtureOptions {
   finalResponseA?: string;
   repositorySource?: string;
   repositoryKind?: 'github' | 'git' | 'local' | 'empty';
+  /** null drops the resolved repository commit, which blocks rating eligibility */
+  repositoryCommit?: string | null;
+  repositoryDirty?: boolean;
+  /** both sides run concurrently */
+  parallel?: boolean;
+  modelA?: string | null;
+  modelB?: string | null;
+  changedFilesA?: ChangedFileFixture[];
+  changedFilesB?: ChangedFileFixture[];
+  tokensA?: number;
+  tokensB?: number;
+  costA?: number;
+  costB?: number;
+  /** verdict hierarchy rows; the integrity checks and the profile's correctness rate read them */
+  breakdown?: { factor: string; result: 'a' | 'b' | 'tie' | 'n/a'; detail?: string }[];
+  privacyUpload?: 'none' | 'metrics' | 'events' | 'full';
+  /** non-default efficiency weights raise the custom_efficiency_config warning */
+  efficiencyMinAdvantage?: number;
+  benchmark?: { slug: string; versionId: string; version: string; taskId: string; trial?: number };
+  createdAt?: string;
 }
 
 const vanilla: HarnessFixture = { name: 'vanilla', source: 'vanilla', kind: 'vanilla', commit: null };
@@ -51,8 +78,23 @@ function runInput(
   side: 'a' | 'b',
   agentId: string,
   harness: HarnessFixture,
-  extras: { diff?: string; finalResponse?: string } = {},
+  extras: {
+    diff?: string;
+    finalResponse?: string;
+    model?: string | null;
+    changedFiles?: ChangedFileFixture[];
+    tokens?: number;
+    cost?: number;
+  } = {},
 ) {
+  const changedFiles = (
+    extras.changedFiles ?? [{ path: 'src/index.ts', kind: 'modify' as const, linesAdded: 4, linesRemoved: 1 }]
+  ).map((file) => ({
+    path: file.path,
+    kind: file.kind,
+    linesAdded: file.linesAdded ?? 1,
+    linesRemoved: file.linesRemoved ?? 0,
+  }));
   return {
     // Run ids are unique per battle, exactly as the engine generates them.
     id: `run_${battleId.slice(4)}${side}`,
@@ -62,7 +104,7 @@ function runInput(
     agent: {
       id: agentId,
       version: '1.0.0',
-      model: 'test-model',
+      model: extras.model === undefined ? 'test-model' : extras.model,
       capabilities: { tokens: 'observed', cost: 'observed', model: 'observed' },
     },
     harness: {
@@ -83,12 +125,18 @@ function runInput(
       ...emptyMetrics(),
       duration_ms: { value: side === 'a' ? 300_000 : 240_000, status: 'calculated', source: 'core:timer' },
       tests_passed: { value: side === 'a' ? 12 : 11, status: 'observed', source: 'evaluator:tests' },
-      cost_usd: { value: null, status: 'unavailable' },
+      ...(extras.tokens === undefined
+        ? {}
+        : { tokens_total: { value: extras.tokens, status: 'observed', source: 'adapter:usage' } }),
+      cost_usd:
+        extras.cost === undefined
+          ? { value: null, status: 'unavailable' }
+          : { value: extras.cost, status: 'observed', source: 'adapter:usage' },
     },
     artifacts: {
       diff: extras.diff ?? null,
       finalResponse: extras.finalResponse ?? null,
-      changedFiles: [{ path: 'src/index.ts', kind: 'modify', linesAdded: 4, linesRemoved: 1 }],
+      changedFiles,
     },
     error: null,
     eventCount: 3,
@@ -121,6 +169,12 @@ export function buildRecord(opts: RecordFixtureOptions = {}): BattleRecord {
         },
       },
       visibility: opts.visibility ?? 'private',
+      parallel: opts.parallel ?? false,
+      privacy: { upload: opts.privacyUpload ?? 'none' },
+      ...(opts.efficiencyMinAdvantage === undefined
+        ? {}
+        : { evaluation: { efficiency: { minAdvantage: opts.efficiencyMinAdvantage } } }),
+      ...(opts.benchmark ? { benchmark: { trial: 1, ...opts.benchmark } } : {}),
       ...(opts.category ? { category: opts.category } : {}),
     },
     task: {
@@ -131,9 +185,12 @@ export function buildRecord(opts: RecordFixtureOptions = {}): BattleRecord {
     repository: {
       source: opts.repositorySource ?? 'https://github.com/acme/widget',
       kind: opts.repositoryKind ?? 'github',
-      commit: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0',
+      commit:
+        opts.repositoryCommit === undefined
+          ? 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0'
+          : opts.repositoryCommit,
       ref: 'main',
-      dirty: false,
+      dirty: opts.repositoryDirty ?? false,
     },
     environment: {
       os: { platform: 'linux', release: '6.1.0', arch: 'x64' },
@@ -150,8 +207,17 @@ export function buildRecord(opts: RecordFixtureOptions = {}): BattleRecord {
       a: runInput(id, 'a', opts.agentA ?? 'claude-code', opts.harnessA ?? vanilla, {
         diff: opts.diffA,
         finalResponse: opts.finalResponseA,
+        model: opts.modelA,
+        changedFiles: opts.changedFilesA,
+        tokens: opts.tokensA,
+        cost: opts.costA,
       }),
-      b: runInput(id, 'b', opts.agentB ?? 'claude-code', opts.harnessB ?? vanilla),
+      b: runInput(id, 'b', opts.agentB ?? 'claude-code', opts.harnessB ?? vanilla, {
+        model: opts.modelB,
+        changedFiles: opts.changedFilesB,
+        tokens: opts.tokensB,
+        cost: opts.costB,
+      }),
     },
     evaluation: null,
     verdict: winner
@@ -162,6 +228,9 @@ export function buildRecord(opts: RecordFixtureOptions = {}): BattleRecord {
           reasons: ['Side A passed one more test.'],
           decisiveFactors: ['tests_passed'],
           caveats: [],
+          ...(opts.breakdown
+            ? { breakdown: opts.breakdown.map((row) => ({ detail: 'fixture', ...row })) }
+            : {}),
           judge: null,
         }
       : null,
@@ -171,7 +240,7 @@ export function buildRecord(opts: RecordFixtureOptions = {}): BattleRecord {
       sandbox: null,
     },
     demo: opts.demo ?? false,
-    createdAt: '2026-09-19T09:59:00.000Z',
+    createdAt: opts.createdAt ?? '2026-09-19T09:59:00.000Z',
     startedAt: '2026-09-19T10:00:00.000Z',
     completedAt: '2026-09-19T10:05:00.000Z',
     error: null,

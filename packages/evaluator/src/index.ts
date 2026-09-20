@@ -62,4 +62,5 @@ export { makeSideContext, makeTestOutcome } from './testing.js';
 
 export * from './evaluators/index.js';
 export * from './stats.js';
+export * from './experiments.js';
 export * from './integrity.js';

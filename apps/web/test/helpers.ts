@@ -75,6 +75,26 @@ export function demoRecord(overrides: Partial<BattleRecord> = {}): BattleRecord 
   return battleRecordSchema.parse({ ...record, ...reIdentified, ...overrides });
 }
 
+/**
+ * The demo battle as a RATEABLE result: same record, with a commit on side A's harness.
+ *
+ * `arena demo` never fetches a harness (stubHarness in packages/core/src/engine.ts), so the exported
+ * record carries kind 'github' with commit null, and the integrity checks block it on
+ * `harness_commit_missing` — a rating can only be attributed to a harness version. Every real upload
+ * has that commit, so a test about the rating path pins one here instead of asserting a battle the
+ * server is right to refuse.
+ */
+export function ratableRecord(overrides: Partial<BattleRecord> = {}): BattleRecord {
+  const base = demoRecord(overrides);
+  return battleRecordSchema.parse({
+    ...base,
+    runs: {
+      a: { ...base.runs.a, harness: { ...base.runs.a.harness, commit: 'c0ffee1' } },
+      b: base.runs.b,
+    },
+  });
+}
+
 export function demoEvents(battleId?: string, count?: number): ArenaEvent[] {
   const files = demoFilesFor(repoRoot());
   const { events } = readEventsFile(files.eventsFile);

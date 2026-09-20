@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { and, eq, sql } from 'drizzle-orm';
 import { EVENT_LIMITS, METRIC_KEYS, battleRecordSchema } from '@harness-arena/protocol';
+import { checkIntegrity } from '@harness-arena/evaluator';
 import type { ArenaDb } from '../src/client.js';
 import {
   battleRuns,
@@ -117,6 +118,88 @@ describe('upsertBattleFromRecord', () => {
     const record = buildRecord();
     const broken = { ...record, id: 'not-a-battle-id' } as typeof record;
     await expect(upsertBattleFromRecord(handle.db, { record: broken })).rejects.toThrow();
+  });
+});
+
+describe('integrity on upload', () => {
+  const pinned = {
+    name: 'superclaude',
+    source: 'https://github.com/acme/superclaude',
+    kind: 'github' as const,
+    commit: 'abc1234',
+  };
+
+  it('stores the server-recomputed report, the fingerprint and the benchmark provenance', async () => {
+    const record = buildRecord({
+      harnessA: pinned,
+      winner: 'a',
+      benchmark: {
+        slug: 'debug-pack',
+        versionId: 'bmv_0123456789abcdef01234567',
+        version: '1.0.0',
+        taskId: 'fix-null-deref',
+        trial: 2,
+      },
+    });
+    const result = await upsertBattleFromRecord(handle.db, { record });
+    expect(result.ratingEligible).toBe(true);
+    expect(result.integrity.eligible).toBe(true);
+
+    const [row] = await handle.db.select().from(battles).where(eq(battles.id, record.id));
+    expect(row?.ratingEligible).toBe(true);
+    expect(row?.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+    expect(row?.integrity?.fingerprint).toBe(row?.fingerprint);
+    expect(row?.integrity?.checkedWith).toBe(record.arenaVersion);
+    expect(row?.benchmarkVersionId).toBe('bmv_0123456789abcdef01234567');
+    expect(row?.benchmarkTaskId).toBe('fix-null-deref');
+    expect(row?.benchmarkTrial).toBe(2);
+    // the stored record carries the report, so the API serves it without recomputing
+    expect(row?.record.integrity?.eligible).toBe(true);
+    const stored = await getBattle(handle.db, record.id);
+    expect(stored?.battle.record.integrity?.checkedWith).toBe(record.arenaVersion);
+  });
+
+  it('never trusts the integrity report the client uploaded', async () => {
+    const honest = buildRecord({ harnessA: pinned, demo: true });
+    const lying = {
+      ...honest,
+      integrity: { eligible: true, flags: [], fingerprint: 'not-a-hash', checkedWith: 'client' },
+    } as typeof honest;
+
+    const result = await upsertBattleFromRecord(handle.db, { record: lying });
+    expect(result.ratingEligible).toBe(false);
+    expect(result.integrity.flags.map((flag) => flag.code)).toContain('demo');
+    expect(result.integrity.fingerprint).not.toBe('not-a-hash');
+
+    const [row] = await handle.db.select().from(battles).where(eq(battles.id, honest.id));
+    expect(row?.record.integrity?.eligible).toBe(false);
+    expect(row?.integrity?.checkedWith).toBe(honest.arenaVersion);
+  });
+
+  it('reaches the same verdict as the evaluator for the same record', async () => {
+    const record = buildRecord({ harnessA: pinned, winner: 'a' });
+    const result = await upsertBattleFromRecord(handle.db, { record });
+    expect(result.integrity).toEqual(checkIntegrity(record, { checkedWith: record.arenaVersion }));
+  });
+
+  it('holds a running battle back until it completes', async () => {
+    const record = buildRecord({ harnessA: pinned, status: 'running', winner: null });
+    const running = await upsertBattleFromRecord(handle.db, { record });
+    expect(running.ratingEligible).toBe(false);
+    expect(running.integrity.flags.map((flag) => flag.code)).toContain('no_decision');
+
+    const finished = buildRecord({ id: record.id, harnessA: pinned, status: 'completed', winner: 'a' });
+    const done = await upsertBattleFromRecord(handle.db, { record: finished });
+    expect(done.ratingEligible).toBe(true);
+    const [row] = await handle.db.select().from(battles).where(eq(battles.id, record.id));
+    expect(row?.ratingEligible).toBe(true);
+  });
+
+  it("applies the seeder's demo override to the integrity verdict", async () => {
+    const record = buildRecord({ harnessA: pinned, winner: 'a' });
+    const result = await upsertBattleFromRecord(handle.db, { record, demo: true });
+    expect(result.integrity.flags.map((flag) => flag.code)).toContain('demo');
+    expect(result.ratingEligible).toBe(false);
   });
 });
 

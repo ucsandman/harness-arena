@@ -105,6 +105,27 @@ renders an unavailable metric as `0`.
 insights, environment) are in `packages/protocol/src/battle.ts`. A `ReportBundle` is a record plus its
 events; it is what `report.html` embeds and what the web app renders.
 
+## Verdict, integrity and provenance
+
+`Verdict` (`packages/protocol/src/evaluation.ts`) carries the stage-by-stage `breakdown`, the full
+`efficiency` tie-breaker (winner, advantage, threshold, per-metric values and weights, exclusions) and
+the optional judge opinion. `evaluation.efficiency` in the spec configures the weights and the minimum
+advantage. See [Verdicts](/docs/verdicts).
+
+`BattleRecord.integrity` (`packages/protocol/src/integrity.ts`) lists the rating-eligibility flags
+with a severity each, the duplicate fingerprint and the version that computed them. The server
+recomputes it on upload and stores its own copy; a client's copy is informational.
+
+`spec.benchmark` (`battleBenchmarkRefSchema`) names the pack slug, the immutable version id, the task
+id and the trial number when a battle came from a benchmark pack. `spec.arena` names the challenge,
+experiment, tournament match or bounty submission the battle was run for; the server links the battle
+only after verifying the competitors match.
+
+Benchmark packs (`packages/protocol/src/benchmarks.ts`), challenges, experiments, tournaments,
+bounties, lineage and head-to-head records (`packages/protocol/src/arena.ts`) and the statistics
+shapes (`packages/protocol/src/stats.ts`) are protocol types too: every API response is validated
+against them, and the CLI prints them with `--json`.
+
 ## Versioning
 
 - `v` on every event and `protocolVersion` on every record. Breaking changes bump the number; additive

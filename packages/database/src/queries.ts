@@ -1,12 +1,15 @@
-import { and, desc, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type {
   ArenaEvent,
   BattleListItem,
   BattleRecord,
+  IntegrityReport,
   MetricKey,
   MetricValue,
+  RatingCategory,
   RunRecord,
+  Verdict,
   Visibility,
 } from '@harness-arena/protocol';
 import { EVENT_LIMITS, battleIdSchema, makeId } from '@harness-arena/protocol';
@@ -36,6 +39,7 @@ import {
   harnessVersions,
   harnesses,
   metrics,
+  ratingEvents,
   ratings,
   repositories,
   sessions,
@@ -54,6 +58,8 @@ import {
   taskIdFor,
   toDate,
 } from './derive.js';
+import { battleFingerprint, computeBattleIntegrity, ratingEligibleFor } from './integrity.js';
+import { ratingCategoriesFor } from './ratings.js';
 
 /**
  * Every helper takes the database (or a transaction handle) as its first argument, so the web app
@@ -318,6 +324,10 @@ export interface UpsertBattleResult {
   taskId: string;
   repositoryId: string | null;
   harnessIds: { a: string; b: string };
+  /** the server's own integrity verdict, as stored on the battle */
+  integrity: IntegrityReport;
+  /** integrity.eligible AND the battle finished: may this battle move a rating */
+  ratingEligible: boolean;
 }
 
 async function upsertAgent(db: ArenaDatabase, agentId: string): Promise<void> {
@@ -446,6 +456,35 @@ export async function upsertBattleFromRecord(
 
     const visibility = input.visibility ?? record.spec.visibility;
     const demo = input.demo ?? record.demo;
+
+    // Integrity is recomputed here on every upload and the client's own `record.integrity` is
+    // discarded: eligibility is the server's verdict or it is worth nothing. A duplicate is another
+    // battle that already carries this exact matchup fingerprint AND was itself rated, so re-running
+    // the same matchup is fine until the first one counts.
+    const checked: BattleRecord = { ...record, demo };
+    const fingerprint = battleFingerprint(checked);
+    let duplicateOf: string | null = null;
+    if (fingerprint) {
+      const [duplicate] = await tx
+        .select({ id: battles.id })
+        .from(battles)
+        .where(
+          and(
+            eq(battles.fingerprint, fingerprint),
+            ne(battles.id, record.id),
+            eq(battles.ratingEligible, true),
+            inArray(battles.winner, ['a', 'b', 'tie']),
+          ),
+        )
+        .orderBy(asc(battles.createdAt), asc(battles.id))
+        .limit(1);
+      duplicateOf = duplicate?.id ?? null;
+    }
+    const integrity = computeBattleIntegrity(checked, { duplicateOf });
+    const storedRecord: BattleRecord = { ...checked, integrity };
+    const ratingEligible = ratingEligibleFor(storedRecord, integrity);
+    const benchmark = record.spec.benchmark ?? null;
+
     const battleValues = {
       id: record.id,
       ownerUserId: input.ownerUserId ?? null,
@@ -461,10 +500,16 @@ export async function upsertBattleFromRecord(
       repositoryId,
       repositoryCommit: record.repository.commit,
       spec: record.spec,
-      record,
+      record: storedRecord,
       winner: record.verdict?.winner ?? null,
       confidence: record.verdict?.confidence ?? null,
       category: record.spec.category ?? null,
+      benchmarkVersionId: benchmark?.versionId ?? null,
+      benchmarkTaskId: benchmark?.taskId ?? null,
+      benchmarkTrial: benchmark?.trial ?? null,
+      integrity,
+      ratingEligible,
+      fingerprint,
       arenaVersion: record.arenaVersion,
       createdAt: toDate(record.createdAt) ?? new Date(),
       startedAt: toDate(record.startedAt),
@@ -494,6 +539,12 @@ export async function upsertBattleFromRecord(
           winner: battleValues.winner,
           confidence: battleValues.confidence,
           category: battleValues.category,
+          benchmarkVersionId: battleValues.benchmarkVersionId,
+          benchmarkTaskId: battleValues.benchmarkTaskId,
+          benchmarkTrial: battleValues.benchmarkTrial,
+          integrity: battleValues.integrity,
+          ratingEligible: battleValues.ratingEligible,
+          fingerprint: battleValues.fingerprint,
           arenaVersion: battleValues.arenaVersion,
           startedAt: battleValues.startedAt,
           completedAt: battleValues.completedAt,
@@ -569,6 +620,8 @@ export async function upsertBattleFromRecord(
       taskId,
       repositoryId,
       harnessIds: { a: harnessIds.a as string, b: harnessIds.b as string },
+      integrity,
+      ratingEligible,
     };
   });
 }
@@ -958,9 +1011,46 @@ export async function listHarnesses(
   return scoped.orderBy(desc(harnesses.updatedAt), harnesses.slug).limit(limit);
 }
 
+/** How many recent decided battles the profile's derived numbers are computed over. */
+export const PROFILE_BATTLE_WINDOW = 200;
+
+const EFFICIENCY_PROFILE_KEYS = ['tokens_total', 'cost_usd', 'duration_ms'] as const;
+type EfficiencyProfileKey = (typeof EFFICIENCY_PROFILE_KEYS)[number];
+
+export interface HarnessCategoryPerformance {
+  category: RatingCategory;
+  /** decided public battles this harness fought in the category */
+  battles: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  /**
+   * Share of `correctnessBattles` where this harness's side won or tied EVERY correctness gate that
+   * actually ran (completion, tests, regressions, assertions, build). Null when no battle in the
+   * category recorded a verdict breakdown, because a rate over nothing is not a rate.
+   */
+  correctnessRate: number | null;
+  /** the denominator: decided battles whose verdict ran at least one correctness gate */
+  correctnessBattles: number;
+}
+
+export interface HarnessEfficiencyRatio {
+  metric: EfficiencyProfileKey;
+  /** median of (this harness's value / the opponent's value) over battles where both reported it */
+  median: number | null;
+  n: number;
+}
+
+export type HarnessVersionPerformance = HarnessVersion & {
+  battles: number;
+  wins: number;
+  losses: number;
+  ties: number;
+};
+
 export interface HarnessProfile {
   harness: Harness;
-  versions: HarnessVersion[];
+  versions: HarnessVersionPerformance[];
   recentBattles: BattleListItem[];
   ratings: {
     category: string;
@@ -973,14 +1063,38 @@ export interface HarnessProfile {
     losses: number;
     ties: number;
     provisional: boolean;
+    peakRating: number;
+    form: string;
+    lastBattleAt: Date | null;
   }[];
+  categoryPerformance: HarnessCategoryPerformance[];
+  efficiencyProfile: HarnessEfficiencyRatio[];
+  /** decided public battles the two derived sections above were computed over */
+  analyzedBattles: number;
+}
+
+/** A side passed a battle when it won or tied every correctness gate that ran; null when none ran. */
+function passedCorrectness(verdict: Verdict | null, side: 'a' | 'b'): boolean | null {
+  const gates = (verdict?.breakdown ?? []).filter(
+    (row) => row.factor !== 'efficiency' && row.result !== 'n/a',
+  );
+  if (gates.length === 0) return null;
+  return gates.every((row) => row.result === side || row.result === 'tie');
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  if (sorted.length % 2 === 1) return sorted[mid] as number;
+  return ((sorted[mid - 1] as number) + (sorted[mid] as number)) / 2;
 }
 
 export async function getHarnessProfile(db: ArenaDatabase, slug: string): Promise<HarnessProfile | null> {
   const harness = await getHarnessBySlug(db, slug);
   if (!harness) return null;
 
-  const versions = await db
+  const versionRows = await db
     .select()
     .from(harnessVersions)
     .where(eq(harnessVersions.harnessId, harness.id))
@@ -1012,12 +1126,147 @@ export async function getHarnessProfile(db: ArenaDatabase, slug: string): Promis
       losses: ratings.losses,
       ties: ratings.ties,
       provisional: ratings.provisional,
+      peakRating: ratings.peakRating,
+      form: ratings.form,
+      lastBattleAt: ratings.lastBattleAt,
     })
     .from(ratings)
     .where(eq(ratings.harnessId, harness.id))
     .orderBy(ratings.pool, ratings.category);
 
-  return { harness, versions, recentBattles: battleRows.map(toListItem), ratings: ratingRows };
+  // Decided public battles this harness fought, newest first and capped: everything derived below
+  // (category performance, efficiency ratios) is computed over exactly this window and says so.
+  const decided = await db
+    .select({
+      id: battles.id,
+      category: battles.category,
+      winner: battles.winner,
+      aHarnessId: runA.harnessId,
+      bHarnessId: runB.harnessId,
+      verdict: evaluations.verdict,
+    })
+    .from(battles)
+    .innerJoin(runA, and(eq(runA.battleId, battles.id), eq(runA.side, 'a')))
+    .innerJoin(runB, and(eq(runB.battleId, battles.id), eq(runB.side, 'b')))
+    .leftJoin(evaluations, eq(evaluations.battleId, battles.id))
+    .where(
+      and(
+        eq(battles.visibility, 'public'),
+        eq(battles.status, 'completed'),
+        inArray(battles.winner, ['a', 'b', 'tie']),
+        or(eq(runA.harnessId, harness.id), eq(runB.harnessId, harness.id)),
+      ),
+    )
+    .orderBy(desc(battles.createdAt), desc(battles.id))
+    .limit(PROFILE_BATTLE_WINDOW);
+
+  const sideOf = new Map<string, 'a' | 'b'>();
+  const byCategory = new Map<RatingCategory, HarnessCategoryPerformance>();
+  for (const row of decided) {
+    const side: 'a' | 'b' = row.aHarnessId === harness.id ? 'a' : 'b';
+    sideOf.set(row.id, side);
+    const passed = passedCorrectness(row.verdict ?? null, side);
+    // Same accounting as the ratings: every battle counts towards `overall` and towards its own
+    // category, so the `overall` row is the harness's whole record and a category can be compared
+    // against it.
+    for (const category of ratingCategoriesFor(row.category)) {
+      const entry = byCategory.get(category) ?? {
+        category,
+        battles: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        correctnessRate: null,
+        correctnessBattles: 0,
+      };
+      entry.battles += 1;
+      if (row.winner === 'tie') entry.ties += 1;
+      else if (row.winner === side) entry.wins += 1;
+      else entry.losses += 1;
+      if (passed !== null) {
+        entry.correctnessBattles += 1;
+        // correctnessRate accumulates successes here and is divided through below.
+        entry.correctnessRate = (entry.correctnessRate ?? 0) + (passed ? 1 : 0);
+      }
+      byCategory.set(category, entry);
+    }
+  }
+  const categoryPerformance = [...byCategory.values()]
+    .map((entry) => ({
+      ...entry,
+      correctnessRate:
+        entry.correctnessBattles === 0 ? null : (entry.correctnessRate ?? 0) / entry.correctnessBattles,
+    }))
+    .sort((a, b) => (a.category === 'overall' ? -1 : b.category === 'overall' ? 1 : b.battles - a.battles));
+
+  const battleIds = [...sideOf.keys()];
+  const ratios = new Map<EfficiencyProfileKey, number[]>(
+    EFFICIENCY_PROFILE_KEYS.map((key) => [key, [] as number[]]),
+  );
+  if (battleIds.length > 0) {
+    const metricRows = await db
+      .select({ battleId: metrics.battleId, side: metrics.side, key: metrics.key, value: metrics.value })
+      .from(metrics)
+      .where(
+        and(
+          inArray(metrics.battleId, battleIds),
+          inArray(metrics.key, [...EFFICIENCY_PROFILE_KEYS]),
+          ne(metrics.status, 'unavailable'),
+        ),
+      );
+    const seen = new Map<string, { a?: number; b?: number }>();
+    for (const row of metricRows) {
+      if (typeof row.value !== 'number' || !Number.isFinite(row.value)) continue;
+      const slot = seen.get(`${row.battleId}|${row.key}`) ?? {};
+      slot[row.side] = row.value;
+      seen.set(`${row.battleId}|${row.key}`, slot);
+    }
+    for (const [compound, pair] of seen) {
+      const [battleId, key] = compound.split('|') as [string, EfficiencyProfileKey];
+      const side = sideOf.get(battleId);
+      if (!side) continue;
+      const mine = side === 'a' ? pair.a : pair.b;
+      const theirs = side === 'a' ? pair.b : pair.a;
+      if (mine === undefined || theirs === undefined || theirs <= 0) continue;
+      ratios.get(key)?.push(mine / theirs);
+    }
+  }
+  const efficiencyProfile: HarnessEfficiencyRatio[] = EFFICIENCY_PROFILE_KEYS.map((metric) => {
+    const values = ratios.get(metric) ?? [];
+    return { metric, median: median(values), n: values.length };
+  });
+
+  // Per-version record, from the audit trail: `overall` only, so a battle that also moved a category
+  // rating is counted once.
+  const versionOutcomes = await db
+    .select({
+      versionId: ratingEvents.harnessVersionId,
+      outcome: ratingEvents.outcome,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(ratingEvents)
+    .where(and(eq(ratingEvents.harnessId, harness.id), eq(ratingEvents.category, 'overall')))
+    .groupBy(ratingEvents.harnessVersionId, ratingEvents.outcome);
+
+  const versions: HarnessVersionPerformance[] = versionRows.map((version) => {
+    const rows = versionOutcomes.filter((row) => row.versionId === version.id);
+    const count = (outcome: 'win' | 'loss' | 'tie'): number =>
+      rows.filter((row) => row.outcome === outcome).reduce((sum, row) => sum + Number(row.count), 0);
+    const wins = count('win');
+    const losses = count('loss');
+    const ties = count('tie');
+    return { ...version, battles: wins + losses + ties, wins, losses, ties };
+  });
+
+  return {
+    harness,
+    versions,
+    recentBattles: battleRows.map(toListItem),
+    ratings: ratingRows,
+    categoryPerformance,
+    efficiencyProfile,
+    analyzedBattles: decided.length,
+  };
 }
 
 export { applyBattleToRatings, getLeaderboard } from './ratings.js';

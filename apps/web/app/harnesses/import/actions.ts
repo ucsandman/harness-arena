@@ -29,6 +29,8 @@ export async function saveHarnessAction(formData: FormData): Promise<void> {
     url: result.url,
     name: `${result.owner}/${result.repo}`,
     ownerUserId: user.id,
+    // GitHub's fork flag is the only ancestry Arena records without someone declaring it
+    githubRepo: result.repository,
   });
 
   revalidatePath('/harnesses');

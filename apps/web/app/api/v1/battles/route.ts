@@ -5,6 +5,7 @@ import {
   type Visibility,
 } from '@harness-arena/protocol';
 import {
+  afterBattleUpsert,
   applyBattleToRatings,
   getBattle,
   listUserBattles,
@@ -60,12 +61,18 @@ export async function POST(request: Request): Promise<Response> {
     return apiError('forbidden', 'that battle id belongs to another account');
   }
 
-  await upsertBattleFromRecord(dbh, {
+  const upserted = await upsertBattleFromRecord(dbh, {
     record,
     ownerUserId: auth.auth.user.id,
     deviceId: auth.auth.device.id,
     visibility,
   });
+  await afterBattleUpsert(
+    dbh,
+    record,
+    { a: { harnessId: upserted.harnessIds.a }, b: { harnessId: upserted.harnessIds.b } },
+    { ownerUserId: auth.auth.user.id },
+  );
   // ratings move on a public, completed, non-demo battle only: a private result has nothing to audit
   if (visibility === 'public' && record.status === 'completed' && !record.demo) {
     await applyBattleToRatings(dbh, record);

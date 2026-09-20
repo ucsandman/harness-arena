@@ -11,6 +11,7 @@ export * from './client.js';
 export * from './ratings.js';
 export * from './queries.js';
 export * from './derive.js';
+export * from './integrity.js';
 export * from './seed.js';
 export * from './benchmarks.js';
 export * from './experiments.js';

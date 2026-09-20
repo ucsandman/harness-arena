@@ -55,6 +55,19 @@ export const DOC_PAGES: readonly DocPage[] = [
     file: 'docs/ADAPTERS.md',
   },
   {
+    slug: 'benchmarks',
+    title: 'Benchmark packs',
+    description:
+      'Versioned sets of tasks, identified by content hash, that two harnesses can be run against.',
+    file: 'docs/BENCHMARKS.md',
+  },
+  {
+    slug: 'experiments',
+    title: 'Experiments',
+    description: 'Control vs treatment over the same tasks, and how much a result is actually worth.',
+    file: 'docs/EXPERIMENTS.md',
+  },
+  {
     slug: 'security',
     title: 'Security model',
     description: 'Trust boundaries, harness trust prompts, and what Arena never touches.',
@@ -71,6 +84,18 @@ export const DOC_PAGES: readonly DocPage[] = [
     title: 'Contributing',
     description: 'Develop, test and extend Arena.',
     file: 'docs/CONTRIBUTING.md',
+  },
+  {
+    slug: 'challenges',
+    title: 'Challenges, tournaments and bounties',
+    description: 'Who runs what, how a battle is linked to a definition, and what enters ratings.',
+    file: 'docs/CHALLENGES.md',
+  },
+  {
+    slug: 'lineage',
+    title: 'Lineage and components',
+    description: 'Where ancestry claims come from, and how a component earns evidence.',
+    file: 'docs/LINEAGE.md',
   },
 ];
 

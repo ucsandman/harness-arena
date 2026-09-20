@@ -412,3 +412,165 @@ export const headToHeadSchema = z.object({
   filter: headToHeadFilterSchema,
 });
 export type HeadToHead = z.infer<typeof headToHeadSchema>;
+
+// ---- API responses for the competitive layer ----------------------------------------------------
+//
+// Appended by the challenges/tournaments/bounties/lineage/components workstream. Everything below is
+// what /api/v1/{challenges,tournaments,bounties,components} and /api/v1/harnesses/:slug/lineage
+// return, and every one of those payloads repeats ARENA_EXECUTION_NOTE so no client can present a
+// linked battle as something Arena ran.
+
+/** Repeated verbatim on every competitive response, in the CLI help and in the MCP tool descriptions. */
+export const ARENA_EXECUTION_NOTE =
+  'Arena hosts no runner. A challenge, a tournament match and a bounty submission are executed locally, ' +
+  'with the arena CLI, by whoever accepts them, and the battle is uploaded afterwards. The server stores ' +
+  'the definition, verifies the competitors and links the battle; every result is community-reported.';
+
+export const challengeResponseSchema = z.object({
+  challenge: challengeSchema,
+  url: z.string(),
+  note: z.string(),
+});
+export type ChallengeResponse = z.infer<typeof challengeResponseSchema>;
+
+export const challengeListResponseSchema = z.object({
+  challenges: z.array(challengeSchema),
+  count: z.number().int().nonnegative(),
+  note: z.string(),
+});
+export type ChallengeListResponse = z.infer<typeof challengeListResponseSchema>;
+
+export const tournamentResponseSchema = z.object({
+  tournament: tournamentSchema,
+  url: z.string(),
+  note: z.string(),
+});
+export type TournamentResponse = z.infer<typeof tournamentResponseSchema>;
+
+export const tournamentListItemSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  status: tournamentStatusSchema,
+  format: tournamentFormatSchema,
+  entrants: z.number().int().nonnegative(),
+  rounds: z.number().int().nonnegative(),
+  /** entrant index of the champion, once the final settles */
+  winner: z.number().int().nonnegative().nullable(),
+  createdAt: z.string(),
+});
+export type TournamentListItem = z.infer<typeof tournamentListItemSchema>;
+
+export const tournamentListResponseSchema = z.object({
+  tournaments: z.array(tournamentListItemSchema),
+  count: z.number().int().nonnegative(),
+  note: z.string(),
+});
+export type TournamentListResponse = z.infer<typeof tournamentListResponseSchema>;
+
+export const bountyResponseSchema = z.object({
+  bounty: bountySchema,
+  submissions: z.array(bountySubmissionSchema),
+  url: z.string(),
+  note: z.string(),
+});
+export type BountyResponse = z.infer<typeof bountyResponseSchema>;
+
+export const bountyListResponseSchema = z.object({
+  bounties: z.array(bountySchema),
+  count: z.number().int().nonnegative(),
+  note: z.string(),
+});
+export type BountyListResponse = z.infer<typeof bountyListResponseSchema>;
+
+/** POST /api/v1/bounties/:id/submissions — the harness that claims the bounty. */
+export const createBountySubmissionRequestSchema = z.object({ harness: competitorRefSchema });
+export type CreateBountySubmissionRequest = z.infer<typeof createBountySubmissionRequestSchema>;
+
+export const bountySubmissionResponseSchema = z.object({
+  submission: bountySubmissionSchema,
+  url: z.string(),
+  note: z.string(),
+});
+export type BountySubmissionResponse = z.infer<typeof bountySubmissionResponseSchema>;
+
+export const bountySubmissionListResponseSchema = z.object({
+  submissions: z.array(bountySubmissionSchema),
+  count: z.number().int().nonnegative(),
+  note: z.string(),
+});
+export type BountySubmissionListResponse = z.infer<typeof bountySubmissionListResponseSchema>;
+
+export const lineageResponseSchema = z.object({
+  harnessSlug: z.string(),
+  /** edges this harness declares about its own parents */
+  ancestors: z.array(lineageEdgeSchema),
+  /** edges other harnesses declare that name this one as the parent */
+  descendants: z.array(lineageEdgeSchema),
+  /** how a reader should weigh each evidence value */
+  evidenceNote: z.string(),
+});
+export type LineageResponse = z.infer<typeof lineageResponseSchema>;
+
+export const LINEAGE_EVIDENCE_NOTE =
+  'Arena never infers ancestry. `github_fork` comes from GitHub fork metadata read at import, ' +
+  '`manifest` from the harness own arena.yaml `lineage:` block, `declared` from a person saying so.';
+
+/** What experiments say about a component. Null averages with n = 0 mean "nobody has measured it". */
+export const componentEvidenceSchema = z.object({
+  /** experiments naming this component as the one thing that changed */
+  experiments: z.number().int().nonnegative(),
+  /** of those, the completed ones that carry a summary: the n behind the averages */
+  summarized: z.number().int().nonnegative(),
+  /** mean correctness delta in percentage points, treatment minus control */
+  correctnessDeltaPoints: z.number().nullable(),
+  /** mean token change in percent, treatment against control */
+  tokenDeltaPercent: z.number().nullable(),
+});
+export type ComponentEvidence = z.infer<typeof componentEvidenceSchema>;
+
+export const componentSummarySchema = z.object({
+  slug: z.string(),
+  kind: componentKindSchema,
+  name: z.string(),
+  description: z.string().nullable(),
+  source: z.string().nullable(),
+  /** harnesses whose arena.yaml declares it */
+  harnesses: z.number().int().nonnegative(),
+  evidence: componentEvidenceSchema,
+  createdAt: z.string(),
+});
+export type ComponentSummary = z.infer<typeof componentSummarySchema>;
+
+export const componentDetailSchema = componentSummarySchema.extend({
+  harnessList: z.array(
+    z.object({
+      slug: z.string(),
+      name: z.string(),
+      commit: z.string().nullable(),
+      path: z.string().nullable(),
+    }),
+  ),
+  experimentList: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      kind: experimentKindSchema,
+      status: experimentStatusSchema,
+      battles: z.number().int().nonnegative(),
+      correctnessDeltaPoints: z.number().nullable(),
+      tokenDeltaPercent: z.number().nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type ComponentDetail = z.infer<typeof componentDetailSchema>;
+
+export const componentListResponseSchema = z.object({
+  components: z.array(componentSummarySchema),
+  count: z.number().int().nonnegative(),
+});
+export type ComponentListResponse = z.infer<typeof componentListResponseSchema>;
+
+export const componentDetailResponseSchema = z.object({ component: componentDetailSchema });
+export type ComponentDetailResponse = z.infer<typeof componentDetailResponseSchema>;

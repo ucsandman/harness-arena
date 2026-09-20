@@ -87,7 +87,23 @@ Auth: GitHub OAuth (authorization-code flow with a state cookie) → server-side
 
 ## Ratings
 
-`ratings` are per (harness, agent, category, pool). Pools: `community` (local, self-reported battles) and `verified` (future cloud battles). Community results never feed the verified pool. Ratings display as provisional below a minimum sample size, and the leaderboard is a foundation, not a claim.
+`ratings` are per (harness, agent, category, pool), Glicko-1 with a real deviation update and idle-time inflation. Pools: `community` (local, self-reported battles) and `verified` (Arena-executed; no runner is hosted, so the pool is empty and says so). Community results never feed the verified pool. Every rating change is a `rating_events` row pinned to the exact harness commit, the opponent and the opponent's rating at the time. A battle reaches the ratings only when the server-side integrity checks (`packages/protocol/src/integrity.ts`, recomputed in `upsertBattleFromRecord`) find no blocking flag: demo, undecided, self-play, missing harness or repository commit, deleted tests, duplicate fingerprint. Ratings display as provisional below a minimum sample size, and the leaderboard is a foundation, not a claim. Full arithmetic: [Ratings](/docs/ratings); verdict hierarchy: [Verdicts](/docs/verdicts).
+
+## Competitive layer
+
+The tables in `packages/database/src/schema/arena.ts` store definitions and links, never executions:
+
+| Object     | Definition                                                                                           | Who executes                                               | Result                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Benchmark  | immutable pack version (`bmv_` + content hash) of tasks with categories, commits, evaluation, trials | whoever runs `arena benchmark run`                         | battles carry `spec.benchmark` provenance                                    |
+| Challenge  | two harness refs, an agent, a target (pack or task), privacy, rating eligibility                     | whoever accepts it with `arena challenge run`              | one battle, linked by `spec.arena.challengeId`                               |
+| Experiment | control vs treatment (regression, ablation, comparison), the changed component, a pack, trials       | `arena experiment run`                                     | linked battles + a deterministic summary (`packages/evaluator/src/stats.ts`) |
+| Tournament | entrants seeded by rating, single-elimination bracket                                                | `arena tournament play` runs pending matches               | matches settle from verdicts; ties go to the higher seed and say so          |
+| Bounty     | baseline, target, success condition (must win, token/cost/time ratios), reward text                  | submitters run battles locally                             | condition evaluated deterministically over linked battles                    |
+| Lineage    | forked_from / derived_from / based_on edges                                                          | declared in `arena.yaml` or read from GitHub fork metadata | never inferred                                                               |
+| Component  | a skill, hook, MCP config, subagent, prompt pack, settings or memory system a harness declares       | ablation experiments name it                               | evidence = experiment summaries that changed exactly that component          |
+
+`battle_links` is the one join between battles and these objects. The upload path (`POST /api/v1/battles`, `PATCH /api/v1/battles/:id`) calls `afterBattleUpsert`, which verifies the battle's competitors match the target before linking, then settles the challenge, tournament match or bounty submission.
 
 ## Renaming
 

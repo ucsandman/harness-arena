@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { RATING_MIN_SAMPLE } from '@harness-arena/protocol';
 import { applyBattleToRatings, getLeaderboard, upsertBattleFromRecord } from '@harness-arena/database';
 import LeaderboardPage from '../app/leaderboard/page';
-import { demoRecord, freshBattleId, makeUser, testDb } from './helpers';
+import { demoRecord, freshBattleId, makeUser, ratableRecord, testDb } from './helpers';
 
 async function renderLeaderboard(query: { category?: string; pool?: string }): Promise<string> {
   return renderToStaticMarkup(await LeaderboardPage({ searchParams: Promise.resolve(query) }));
@@ -15,8 +15,9 @@ describe('leaderboard data', () => {
     const dbh = await testDb();
     const user = await makeUser('rating-owner', 9601);
 
-    // the exported demo battle, re-identified and marked as a real (non-demo) result
-    const record = demoRecord({ id: freshBattleId(), demo: false });
+    // the exported demo battle, re-identified, marked as a real (non-demo) result and pinned to a
+    // harness commit, which the integrity checks require before a battle may move a rating
+    const record = ratableRecord({ id: freshBattleId(), demo: false });
     expect(record.verdict?.winner).toBe('a');
     expect(record.spec.category).toBe('debugging');
 
@@ -74,10 +75,13 @@ describe('leaderboard page, verified pool card', () => {
     expect(empty).toContain('deliberately empty');
 
     // a verification-eligible battle writes rows in the verified pool (poolForRecord)
-    const record = demoRecord({
+    const record = ratableRecord({
       id: freshBattleId(),
       demo: false,
       verification: { kind: 'cloud', eligible: true, sandbox: 'arena-cloud-1' },
+      // a different task commit from the battle in the test above: same competitors on the same task
+      // and the same commit would be the same matchup, which the integrity checks call a duplicate
+      repository: { ...demoRecord().repository, commit: 'feedfacefeedfacefeedface' },
     });
     await upsertBattleFromRecord(dbh, { record, ownerUserId: user.id, visibility: 'public' });
     const applied = await applyBattleToRatings(dbh, record);

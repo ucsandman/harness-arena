@@ -25,6 +25,13 @@ export const TOOL_NAMES = [
   'arena_inspect_harness',
   'arena_start_battle',
   'arena_render_report',
+  'arena_list_benchmarks',
+  'arena_run_benchmark',
+  'arena_run_experiment',
+  'arena_compare_versions',
+  'arena_get_experiment',
+  'arena_create_challenge',
+  'arena_get_challenge',
 ] as const;
 
 export type ToolName = (typeof TOOL_NAMES)[number];

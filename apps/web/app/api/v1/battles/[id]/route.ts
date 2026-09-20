@@ -5,6 +5,7 @@ import {
   battleDetailResponseSchema,
 } from '@harness-arena/protocol';
 import {
+  afterBattleUpsert,
   applyBattleToRatings,
   countEvents,
   getBattleForViewer,
@@ -111,12 +112,18 @@ export async function PATCH(request: Request, ctx: Context): Promise<Response> {
     : base;
   const visibility = patch.visibility ?? owned.battle.visibility;
 
-  await upsertBattleFromRecord(dbh, {
+  const upserted = await upsertBattleFromRecord(dbh, {
     record: next,
     ownerUserId: auth.auth.user.id,
     deviceId: auth.auth.device.id,
     visibility,
   });
+  await afterBattleUpsert(
+    dbh,
+    next,
+    { a: { harnessId: upserted.harnessIds.a }, b: { harnessId: upserted.harnessIds.b } },
+    { ownerUserId: auth.auth.user.id },
+  );
   if (patch.visibility) await setBattleVisibility(dbh, id, auth.auth.user.id, patch.visibility);
   // ratings move on a public, completed, non-demo battle only, so publishing is what counts it
   if (visibility === 'public' && next.status === 'completed' && !next.demo) {

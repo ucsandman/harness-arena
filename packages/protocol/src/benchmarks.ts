@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { canonicalJson } from './canonical.js';
 import { ratingCategorySchema } from './ratings.js';
 import {
   evaluationSpecSchema,
@@ -90,20 +91,8 @@ export function benchmarkCategories(pack: Pick<BenchmarkPack, 'tasks'>): string[
   return out;
 }
 
-/**
- * Stable JSON: keys sorted at every level, no whitespace. Two packs with the same content produce the
- * same string regardless of key order in the source file.
- */
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
+/** Stable JSON over the pack content; defined in `canonical.ts` and re-exported here unchanged. */
+export { canonicalJson } from './canonical.js';
 
 export { battleBenchmarkRefSchema } from './battle.js';
 export type { BattleBenchmarkRef } from './battle.js';

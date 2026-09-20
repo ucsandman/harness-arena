@@ -1,0 +1,93 @@
+# Harness Arena smoke pack
+#
+# Three tiny tasks that run anywhere with no network, no agent CLI and no model spend: every task
+# starts from an empty repository and is checked by assertions only, so `arena benchmark run
+# examples/benchmarks/arena-smoke/pack.yaml --a vanilla --b vanilla --agent fake` finishes in seconds
+# and always produces the same battles.
+#
+# It proves the plumbing (expansion, provenance, trials, categories, the verdict path), not agent
+# skill. A pack that measures skill pins a real repository and a commit: see ../README.md.
+benchmark: 1
+slug: arena-smoke
+name: Arena smoke pack
+version: '1.0.0'
+description: >-
+  Three deterministic tasks over an empty repository, one per category, used to verify that a harness
+  runs end to end before spending a real budget on a real benchmark.
+author: harness-arena
+license: MIT
+visibility: public
+
+tasks:
+  - id: debugging-notes
+    title: Write a debugging note
+    category: debugging
+    tags: [smoke, notes]
+    trials: 1
+    task:
+      kind: prompt
+      title: Write a debugging note
+      prompt: >-
+        Create a file called NOTES.md in the repository root. Write one short paragraph describing how
+        you would find the cause of a test that fails only on the second run. Change nothing else.
+    repository:
+      source: empty
+    limits:
+      timeoutMs: 120000
+    evaluation:
+      assertions:
+        - type: file-exists
+          path: NOTES.md
+          label: the debugging note exists
+        - type: max-files-changed
+          max: 3
+          label: nothing beyond the note was touched
+
+  - id: refactoring-notes
+    title: Write a refactoring note
+    category: refactoring
+    tags: [smoke, notes]
+    trials: 1
+    task:
+      kind: prompt
+      title: Write a refactoring note
+      prompt: >-
+        Create a file called NOTES.md in the repository root. Write one short paragraph describing how
+        you would split a 400-line function into smaller pieces without changing its behaviour. Change
+        nothing else.
+    repository:
+      source: empty
+    limits:
+      timeoutMs: 120000
+    evaluation:
+      assertions:
+        - type: file-exists
+          path: NOTES.md
+          label: the refactoring note exists
+        - type: max-files-changed
+          max: 3
+          label: nothing beyond the note was touched
+
+  - id: testing-notes
+    title: Write a testing note
+    category: testing
+    tags: [smoke, notes]
+    trials: 1
+    task:
+      kind: prompt
+      title: Write a testing note
+      prompt: >-
+        Create a file called NOTES.md in the repository root. Write one short paragraph describing the
+        first three test cases you would add to a date-parsing function. Change nothing else.
+    repository:
+      source: empty
+    limits:
+      timeoutMs: 120000
+    evaluation:
+      assertions:
+        - type: file-exists
+          path: NOTES.md
+          label: the testing note exists
+        - type: max-files-changed
+          max: 3
+          label: nothing beyond the note was touched

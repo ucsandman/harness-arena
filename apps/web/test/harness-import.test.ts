@@ -1,7 +1,7 @@
 import './setup-env';
 import { describe, expect, it } from 'vitest';
 import type { FetchImpl } from '@harness-arena/harness';
-import { getHarnessBySlug, listHarnesses } from '@harness-arena/database';
+import { getHarnessBySlug, getLineage, listHarnesses } from '@harness-arena/database';
 import { inspectGithubHarness, saveHarness } from '@/lib/harness-import';
 import { makeUser, testDb } from './helpers';
 
@@ -31,6 +31,8 @@ function json(body: unknown, status = 200): Response {
 interface StubOptions {
   repoStatus?: number;
   settings?: string;
+  /** merged into the GET /repos/{owner}/{repo} body, e.g. fork metadata */
+  repoBody?: Record<string, unknown>;
 }
 
 function githubStub(opts: StubOptions = {}): { fetchImpl: FetchImpl; calls: string[] } {
@@ -40,7 +42,7 @@ function githubStub(opts: StubOptions = {}): { fetchImpl: FetchImpl; calls: stri
     calls.push(target);
     if (/\/repos\/[^/]+\/[^/]+$/.test(target)) {
       if (opts.repoStatus && opts.repoStatus !== 200) return json({ message: 'Not Found' }, opts.repoStatus);
-      return json({ default_branch: 'main' });
+      return json({ default_branch: 'main', ...(opts.repoBody ?? {}) });
     }
     if (target.includes('/git/trees/')) return json({ tree: TREE, truncated: false });
     if (target.includes('/commits/')) return json({ sha: COMMIT_SHA });
@@ -156,6 +158,65 @@ describe('harness import', () => {
     await saveHarness(dbh, { ...unowned, ownerUserId: null });
     await saveHarness(dbh, { ...unowned, ownerUserId: second.id });
     expect((await getHarnessBySlug(dbh, 'owner--unclaimed'))?.ownerUserId).toBe(second.id);
+  });
+
+  it('records one github_fork edge when GitHub says the repository is a fork', async () => {
+    const dbh = await testDb();
+    const { fetchImpl } = githubStub({
+      repoBody: { fork: true, parent: { html_url: 'https://github.com/acme/upstream' } },
+    });
+
+    // the parent is catalogued first, so the edge resolves to a row rather than staying a bare URL
+    const upstream = await inspectGithubHarness({ url: 'https://github.com/acme/upstream', fetchImpl });
+    if (!upstream.ok) throw new Error(upstream.message);
+    await saveHarness(dbh, {
+      inspection: upstream.inspection,
+      url: upstream.url,
+      name: 'acme/upstream',
+    });
+
+    const child = await inspectGithubHarness({ url: 'https://github.com/owner/forked', fetchImpl });
+    if (!child.ok) throw new Error(child.message);
+    expect(child.repository).toEqual({
+      fork: true,
+      parent: { html_url: 'https://github.com/acme/upstream' },
+    });
+
+    const saved = await saveHarness(dbh, {
+      inspection: child.inspection,
+      url: child.url,
+      name: `${child.owner}/${child.repo}`,
+      githubRepo: child.repository,
+    });
+    expect(saved.lineageEdges).toBe(1);
+
+    const lineage = await getLineage(dbh, 'owner--forked');
+    expect(lineage?.ancestors).toHaveLength(1);
+    expect(lineage?.ancestors[0]?.relation).toBe('forked_from');
+    expect(lineage?.ancestors[0]?.evidence).toBe('github_fork');
+    expect(lineage?.ancestors[0]?.parentSlug).toBe('acme--upstream');
+    expect(lineage?.ancestors[0]?.parentSource).toBe('https://github.com/acme/upstream');
+
+    // and the upstream sees it coming the other way
+    const upstreamLineage = await getLineage(dbh, 'acme--upstream');
+    expect(upstreamLineage?.descendants.map((edge) => edge.harnessSlug)).toEqual(['owner--forked']);
+  });
+
+  it('records no lineage for a repository GitHub does not call a fork', async () => {
+    const dbh = await testDb();
+    const { fetchImpl } = githubStub();
+    const result = await inspectGithubHarness({ url: 'https://github.com/owner/original', fetchImpl });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.repository).toEqual({ fork: false, parent: null });
+
+    const saved = await saveHarness(dbh, {
+      inspection: result.inspection,
+      url: result.url,
+      name: `${result.owner}/${result.repo}`,
+      githubRepo: result.repository,
+    });
+    expect(saved.lineageEdges).toBe(0);
+    expect((await getLineage(dbh, 'owner--original'))?.ancestors).toEqual([]);
   });
 
   it('explains a bad URL and a missing repository without leaking internals', async () => {

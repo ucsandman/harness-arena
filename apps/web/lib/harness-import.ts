@@ -12,6 +12,10 @@ import {
   harnessSlug,
   harnessVersions,
   harnesses,
+  lineageFromGithub,
+  lineageFromManifest,
+  recordLineage,
+  upsertComponentsFromManifest,
   type ArenaDatabase,
 } from '@harness-arena/database';
 
@@ -23,9 +27,21 @@ import {
 
 export type ImportErrorCode = 'invalid_url' | 'not_found' | 'rate_limit' | 'auth' | 'network' | 'error';
 
+/**
+ * The two fields of the GitHub repository payload Arena reads for ancestry. A fork is the only
+ * relationship Arena ever learns without someone declaring it, and it comes from GitHub, not from a
+ * guess about file contents (docs/LINEAGE.md).
+ */
+export interface GithubRepoMeta {
+  fork: boolean;
+  parent: { html_url: string } | null;
+}
+
 export interface ImportSuccess {
   ok: true;
   inspection: HarnessInspection;
+  /** fork metadata as GitHub reported it, or null when the repository could not be read */
+  repository: GithubRepoMeta | null;
   owner: string;
   repo: string;
   url: string;
@@ -88,6 +104,40 @@ async function resolveCommitSha(opts: {
   }
 }
 
+/**
+ * Fork metadata from `GET /repos/{owner}/{repo}`. Best effort: a repository Arena cannot read simply
+ * has no fork edge, and an import is never failed over it. Only `fork` and `parent.html_url` are
+ * kept; nothing else of the payload is stored.
+ */
+async function fetchRepoMeta(opts: {
+  owner: string;
+  repo: string;
+  token?: string | null;
+  apiBase?: string;
+  fetchImpl?: FetchImpl;
+}): Promise<GithubRepoMeta | null> {
+  const base = (opts.apiBase ?? 'https://api.github.com').replace(/\/+$/, '');
+  const doFetch = opts.fetchImpl ?? globalThis.fetch;
+  const headers: Record<string, string> = {
+    accept: 'application/vnd.github+json',
+    'user-agent': 'harness-arena',
+    'x-github-api-version': '2022-11-28',
+  };
+  if (opts.token) headers.authorization = `Bearer ${opts.token}`;
+  try {
+    const res = await doFetch(`${base}/repos/${opts.owner}/${opts.repo}`, { headers });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { fork?: unknown; parent?: { html_url?: unknown } | null };
+    const parentUrl = body.parent?.html_url;
+    return {
+      fork: body.fork === true,
+      parent: typeof parentUrl === 'string' && parentUrl.length > 0 ? { html_url: parentUrl } : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function inspectGithubHarness(input: InspectInput): Promise<ImportResult> {
   const parts = parseGitHubUrl(input.url);
   if (!parts) return { ok: false, code: 'invalid_url', message: FRIENDLY.invalid_url };
@@ -112,6 +162,13 @@ export async function inspectGithubHarness(input: InspectInput): Promise<ImportR
       ...(input.apiBase ? { apiBase: input.apiBase } : {}),
       ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
     });
+    const repository = await fetchRepoMeta({
+      owner: parts.owner,
+      repo: parts.repo,
+      token: input.token ?? null,
+      ...(input.apiBase ? { apiBase: input.apiBase } : {}),
+      ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
+    });
     const inspection = await inspectHarness(
       { kind: 'github', url: parts.url, owner: parts.owner, repo: parts.repo, ref, path: parts.path },
       files,
@@ -119,6 +176,7 @@ export async function inspectGithubHarness(input: InspectInput): Promise<ImportR
     );
     return {
       ok: true,
+      repository,
       inspection,
       owner: parts.owner,
       repo: parts.repo,
@@ -146,12 +204,18 @@ export interface SaveHarnessInput {
   url: string;
   name: string;
   ownerUserId?: string | null;
+  /** from inspectGithubHarness; a fork here becomes one `github_fork` lineage edge (docs/LINEAGE.md) */
+  githubRepo?: GithubRepoMeta | null;
 }
 
 export interface SavedHarness {
   slug: string;
   harnessId: string;
   created: boolean;
+  /** ancestry edges written from GitHub fork metadata and from the manifest's own `lineage:` block */
+  lineageEdges: number;
+  /** components the manifest declares, attached to this version */
+  components: number;
 }
 
 /**
@@ -192,7 +256,7 @@ export async function saveHarness(db: ArenaDatabase, input: SaveHarnessInput): P
     .returning({ id: harnesses.id });
   if (!row) throw new Error(`saveHarness: no harness row for ${slug}`);
 
-  await db
+  const [version] = await db
     .insert(harnessVersions)
     .values({
       id: makeId('harnessVersion'),
@@ -204,7 +268,17 @@ export async function saveHarness(db: ArenaDatabase, input: SaveHarnessInput): P
     .onConflictDoUpdate({
       target: [harnessVersions.harnessId, harnessVersions.commit],
       set: { manifest: input.inspection.manifest.manifest, inspection: input.inspection },
-    });
+    })
+    .returning({ id: harnessVersions.id });
 
-  return { slug, harnessId: row.id, created: existing === null };
+  // Ancestry and components, from the two sources Arena accepts: GitHub's own fork flag, and the
+  // harness's own arena.yaml. Nothing is inferred from file contents (docs/LINEAGE.md).
+  const manifest = input.inspection.manifest.manifest;
+  const lineageEdges = await recordLineage(db, row.id, [
+    ...lineageFromGithub(input.githubRepo ?? { fork: false }),
+    ...lineageFromManifest(manifest),
+  ]);
+  const components = version ? await upsertComponentsFromManifest(db, version.id, manifest) : 0;
+
+  return { slug, harnessId: row.id, created: existing === null, lineageEdges, components };
 }

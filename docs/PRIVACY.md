@@ -29,6 +29,13 @@ After `arena login`, each battle has an upload level (`--upload <level>` or `pri
 At every level the agent environment variables supplied in the battle spec are sent as **names with
 `[REDACTED]` values**, and the local path of the raw provider log is never sent.
 
+A battle uploaded at `none` cannot exist on the server, so it cannot be rated, linked to a challenge
+or counted in an experiment. `metrics` is enough for all of those: ratings, head-to-head records,
+experiment summaries and badges are computed from the record alone. Public leaderboards, harness
+profiles, challenge pages and battle cards show only battles whose visibility is `public`; a private
+battle still moves its owner's rating (the verdict is a fact about the battle) but never appears in
+public lists or head-to-head pages.
+
 Exclusions apply on top of any level (`--exclude a,b,c` or `privacy.exclude`):
 
 | Exclusion        | Effect                                                                                                             |

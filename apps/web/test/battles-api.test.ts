@@ -13,6 +13,7 @@ import { resetRateLimits } from '@/lib/api';
 import {
   demoEvents,
   demoRecord,
+  ratableRecord,
   freshBattleId,
   getRequest,
   jsonOf,
@@ -151,7 +152,7 @@ describe('battles API', () => {
     const dbh = await testDb();
     const id = freshBattleId();
     // an upload claiming Arena-executed provenance, with a decided verdict and a private spec
-    const record = demoRecord({
+    const record = ratableRecord({
       id,
       demo: false,
       verification: { kind: 'cloud', eligible: true, sandbox: 'arena-cloud-1' },
