@@ -16,6 +16,7 @@
     "@harness-arena/database": "workspace:*",
     "@harness-arena/harness": "workspace:*",
     "@harness-arena/protocol": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "geist": "^1.7.2",
     "lucide-react": "^1.47.0",

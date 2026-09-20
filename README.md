@@ -1,5 +1,7 @@
 # Harness Arena
 
+Live: **https://harness-arena-xi.vercel.app** (community leaderboard, profiles, badges, challenges, tournaments, bounties). Battles run on your machine; the site only stores what you upload.
+
 Run two AI coding-agent setups on the same task, on your own machine, with the coding-agent CLIs you already pay for. Harness Arena captures what each side did, evaluates the result deterministically, and renders a battle report you can keep private or share.
 
 A **harness** is everything around the model: `CLAUDE.md`, `AGENTS.md`, hooks, skills, subagents, MCP servers, settings. Arena is where harnesses compete.
@@ -156,6 +158,10 @@ pnpm --filter @harness-arena/web run dev
 ```
 
 Without `DATABASE_URL` the app and the seed use an embedded PGlite database in `ARENA_DATA_DIR` (set one absolute path for both). GitHub OAuth needs `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`; for local work set `ARENA_DEV_LOGIN=1` to get a dev sign-in form instead. Details in [apps/web/README.md](apps/web/README.md).
+
+### Deploy (Vercel + Neon)
+
+The public instance is a Vercel project with root directory `apps/web` and build command `pnpm -w run build` (packages first, then `next build`), backed by a Neon Postgres database. Migrations run on the first request (`apps/web/lib/db.ts`), so a fresh database needs nothing but `DATABASE_URL`. Environment on Vercel: `DATABASE_URL`, `ARENA_WEB_URL`, `ARENA_SITE_URL`, `NEXT_PUBLIC_SITE_URL` (all three the public URL), `ARENA_TRUSTED_PROXY_HOPS=1` (Vercel is one proxy), and the GitHub OAuth pair. Seed the catalogue and the demo battle once with `DATABASE_URL=<url> pnpm db:seed`. Every push to `main` deploys after CI.
 
 The CLI talks to the app through `POST /api/v1/device/code` and `/token` (device login), then `POST /api/v1/battles`, `.../events`, `.../artifacts` and `PATCH .../battles/:id`. What leaves your machine is governed by `privacy.upload` (`none`, `metrics`, `events`, `full`) and the exclusion list; see [docs/PRIVACY.md](docs/PRIVACY.md).
 
