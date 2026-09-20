@@ -52,9 +52,14 @@ export {
   CONFIDENCE_MIN,
   FACTOR_CONFIDENCE,
   UNAVAILABLE_PENALTY,
+  EFFICIENCY_WEIGHTS,
+  EFFICIENCY_MIN_ADVANTAGE,
+  efficiencyTieBreak,
 } from './verdict.js';
-export type { VerdictSideInput } from './verdict.js';
+export type { DecideVerdictOptions, EfficiencyOutcome, VerdictSideInput } from './verdict.js';
 
 export { makeSideContext, makeTestOutcome } from './testing.js';
 
 export * from './evaluators/index.js';
+export * from './stats.js';
+export * from './integrity.js';

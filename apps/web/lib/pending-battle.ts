@@ -129,6 +129,7 @@ export function buildPendingRecord(spec: BattleSpec, opts: BuildPendingOptions =
     // a battle run on someone's own machine is self-reported, so it can never enter the verified pool
     verification: { kind: 'local', eligible: false, sandbox: null },
     demo: false,
+    integrity: null,
     createdAt: now.toISOString(),
     startedAt: null,
     completedAt: null,

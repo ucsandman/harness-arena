@@ -189,7 +189,7 @@ describe('arena_get_results', () => {
   it('returns the verdict, evaluation and insights', async () => {
     const answer = await callTool(session.client, 'arena_get_results', { id: battleId });
     expect(answer.isError).toBe(false);
-    expect(answer.data.verdict.winner).toBe('tie');
+    expect(answer.data.verdict.winner).toBe('a');
     expect(answer.data.verdict.method).toBe('deterministic');
     expect(answer.data.insights.length).toBeGreaterThan(0);
     expect(answer.data.insightsSource).toBe('record');
@@ -231,7 +231,7 @@ describe('arena_compare_runs', () => {
     expect(['a', 'b']).toContain(duration?.better);
 
     expect(answer.data.labels).toEqual({ a: 'Agnostic AI', b: 'Vanilla Claude Code' });
-    expect(answer.data.winner).toBe('tie');
+    expect(answer.data.winner).toBe('a');
     expect(answer.summary).toContain('n/a');
   });
 });

@@ -21,9 +21,14 @@ and overlapping them would distort the durations they measure), catches per-eval
 `error` results, and pairs every protocol metric through `compareMetrics`.
 
 `decideVerdict(report, sides)` applies fixed rules in order: completion, repository tests, regressions,
-assertions, build checks. If everything is equal it returns `tie`; if no deterministic evaluator ran at
-all it returns `inconclusive` and says what to configure. Efficiency (duration, tokens, cost) never
-picks a winner: it is reported as a caveat. A judge opinion never overrides deterministic evidence.
+assertions, build checks. Correctness is a gate: a fast, cheap, broken run never beats a correct one.
+When both sides are equally correct, efficiency breaks the tie with a weighted relative advantage over the
+metrics both sides reported (tokens 40%, cost 35%, wall time 25%; estimated values excluded), and only when
+that advantage is at least 5%, so timing noise never decides a battle. Below that it returns `tie`; if no
+deterministic evaluator ran at all it returns `inconclusive` and says what to configure. Raw test count is
+never rewarded (nine passing tests do not beat four passing tests); if added coverage matters, make it a
+task assertion. Every verdict carries a `breakdown` row per stage (`a`, `b`, `tie` or `n/a`). A judge
+opinion never overrides any of it.
 
 ## Test output parsing
 

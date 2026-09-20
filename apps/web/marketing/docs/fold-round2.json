@@ -1,0 +1,67 @@
+{
+  "viewport": {
+    "w": 1440,
+    "h": 900
+  },
+  "hero": 317,
+  "heroText": "4:52.0",
+  "heroTracking": -0.01,
+  "heroWeight": "400",
+  "body": 18,
+  "scale": 17.61,
+  "sizeCount": 3,
+  "sizes": [
+    317,
+    18,
+    13
+  ],
+  "families": [
+    "Pathway Extreme",
+    "Science Gothic"
+  ],
+  "elements": 17,
+  "textBlocks": 11,
+  "paintedBlocks": 7,
+  "inkCoverage": 0.459,
+  "biggestObject": 0.147,
+  "fullBleed": false,
+  "centerShare": 0.09,
+  "textColors": 2,
+  "surfaceColors": 4,
+  "radii": 0,
+  "measureMax": 13,
+  "images": 0,
+  "contrastFails": 0,
+  "contrastWorst": [
+    {
+      "ratio": 10.5,
+      "need": 4.5,
+      "size": 18,
+      "approx": false,
+      "text": "side a · agnostic-ai · · 14 turns "
+    },
+    {
+      "ratio": 10.5,
+      "need": 4.5,
+      "size": 18,
+      "approx": false,
+      "text": "4:52"
+    },
+    {
+      "ratio": 10.5,
+      "need": 4.5,
+      "size": 18,
+      "approx": false,
+      "text": "side b · vanilla claude-code · · 2"
+    },
+    {
+      "ratio": 10.5,
+      "need": 4.5,
+      "size": 18,
+      "approx": false,
+      "text": "3:17"
+    }
+  ],
+  "label": "round2",
+  "url": "file:///C:/Projects/harness-arena/apps/web/marketing/index.html"
+}

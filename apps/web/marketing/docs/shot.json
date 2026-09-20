@@ -1,0 +1,19 @@
+{
+  "title": "Harness Arena",
+  "prompt": "A single photograph. the sheet with both times written in the same hand, thumb pressing the timer button at the mark. In frame: steel timer, brushed steel and black rubber, clipboard, tan masonite, wet red rubber track, white painted lane lines, two pairs of spikes, one orange one black, aluminium bleachers, cold grey, a timing sheet, cream paper, blue pen, chain-link fence, galvanised. 50mm macro at 35cm, f/2.0, camera at chest height, tilted 40 degrees down; focus on the near rim, everything past 12cm falls off. One light only: low October sun behind fog, from the far end of the straight, left of camera, from the upper left, 5200K. About 18 percent of the frame is lit; the rest falls to a deep neutral black that keeps its detail. Shutter 1/250s, everything just short of frozen. Shot on 35mm film at ISO 800: fine grain, no lifted shadows, no HDR, no colour grading beyond the lamp's own 5200K cast. Leave the right 40 percent of the frame in near darkness and empty. Nothing enters it. Out of frame but contributing light: one row of amber seven-segment digits glowing on a dark panel far behind the stands, 2000K, faint; a grey overcast skylight from above, 6500K, even. It is never visible, only felt on the far edge of the subject. No people's faces, no text, no logos, no props beyond what is listed.",
+  "negative": "scoreboard, stopwatch, podium, trophy, medal, finish tape, starting pistol, confetti, stadium floodlights, studio softbox, two light sources, colour gel, bokeh balls, glossy advertising retouch, text, watermark, illustration, CGI look",
+  "camera": {
+    "lens": "50mm macro",
+    "distance": "35cm",
+    "fstop": "f/2.0",
+    "angle": "camera at chest height, tilted 40 degrees down",
+    "dof": "focus on the near rim, everything past 12cm falls off",
+    "shutter": "1/250s, everything just short of frozen"
+  },
+  "material": "rubber track surface, wet",
+  "kelvin": 5200,
+  "keyClock": 10,
+  "litPct": 18,
+  "safeSide": "right",
+  "grain": 0.045
+}

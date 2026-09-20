@@ -77,6 +77,32 @@ export const harnessManifestSchema = z
       })
       .strict()
       .optional(),
+    /**
+     * Declared ancestry. Arena records these as `manifest` evidence and never infers a relationship
+     * on its own; GitHub fork metadata is recorded separately as `github_fork` evidence.
+     */
+    lineage: z
+      .object({
+        forkedFrom: z.url().optional(),
+        derivedFrom: z.array(z.url()).max(10).optional(),
+        basedOn: z.array(z.url()).max(10).optional(),
+      })
+      .strict()
+      .optional(),
+    /** Reusable parts of this harness, so ablations and the component catalogue can name them. */
+    components: z
+      .array(
+        z.object({
+          kind: z.enum(['instructions', 'skill', 'hook', 'mcp', 'subagent', 'prompt', 'settings', 'memory']),
+          name: z.string().min(1).max(120),
+          path: z.string().max(500).optional(),
+          description: z.string().max(500).optional(),
+          /** where the component came from, when it is not original to this harness */
+          source: z.url().optional(),
+        }),
+      )
+      .max(100)
+      .optional(),
     /** free-form, for harness authors; ignored by Arena */
     metadata: z.record(z.string(), z.unknown()).optional(),
   })

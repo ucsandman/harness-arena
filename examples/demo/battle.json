@@ -67,6 +67,14 @@
       ],
       "judge": {
         "enabled": false
+      },
+      "efficiency": {
+        "weights": {
+          "tokens_total": 0.4,
+          "cost_usd": 0.35,
+          "duration_ms": 0.25
+        },
+        "minAdvantage": 0.05
       }
     },
     "privacy": {
@@ -1308,19 +1316,79 @@
     "completedAt": "2026-09-19T21:26:10.489Z"
   },
   "verdict": {
-    "winner": "tie",
-    "confidence": 0.4,
+    "winner": "a",
+    "confidence": 0.45,
     "method": "deterministic",
     "reasons": [
-      "Every deterministic check that ran came out equal for both sides."
+      "Both sides passed every correctness check that ran. Side A wins the efficiency tie-breaker with a weighted advantage of 21%: tokens A by 24% (311400 vs 412000, weight 0.4); cost A by 56% ($2.8100 vs $6.4200, weight 0.35); duration B by 33% (292.0s vs 197.0s, weight 0.25)."
     ],
-    "decisiveFactors": [],
+    "decisiveFactors": [
+      "efficiency"
+    ],
     "caveats": [
-      "Side B was better on duration (292.0s vs 197.0s, 33% apart); efficiency does not decide the winner.",
-      "Side A was better on tokens (311400 vs 412000, 24% apart); efficiency does not decide the winner.",
-      "Side A was better on cost ($2.8100 vs $6.4200, 56% apart); efficiency does not decide the winner.",
       "Deterministic evaluators that did not run: build-checks (no build, lint or typecheck commands configured (evaluation.build/lint/typecheck))."
     ],
+    "breakdown": [
+      {
+        "factor": "completion",
+        "result": "tie",
+        "detail": "both sides completed"
+      },
+      {
+        "factor": "tests",
+        "result": "tie",
+        "detail": "both suites passed"
+      },
+      {
+        "factor": "regressions",
+        "result": "tie",
+        "detail": "0 vs 0"
+      },
+      {
+        "factor": "assertions",
+        "result": "tie",
+        "detail": "2/2 on both sides"
+      },
+      {
+        "factor": "build",
+        "result": "n/a",
+        "detail": "no build checks ran for both sides"
+      },
+      {
+        "factor": "efficiency",
+        "result": "a",
+        "detail": "side A by 21% weighted (tokens 40%, cost 35%, duration 25%)"
+      }
+    ],
+    "efficiency": {
+      "winner": "a",
+      "advantage": 0.21314114005681972,
+      "minAdvantage": 0.05,
+      "metrics": [
+        {
+          "key": "tokens_total",
+          "a": 311400,
+          "b": 412000,
+          "weight": 0.4,
+          "advantage": 0.2441747572815534
+        },
+        {
+          "key": "cost_usd",
+          "a": 2.81,
+          "b": 6.42,
+          "weight": 0.35,
+          "advantage": 0.5623052959501558
+        },
+        {
+          "key": "duration_ms",
+          "a": 292000,
+          "b": 197000,
+          "weight": 0.25,
+          "advantage": -0.3253424657534247
+        }
+      ],
+      "excluded": []
+    },
     "judge": null
   },
   "insights": [

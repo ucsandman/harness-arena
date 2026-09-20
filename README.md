@@ -6,7 +6,7 @@ A **harness** is everything around the model: `CLAUDE.md`, `AGENTS.md`, hooks, s
 
 - **No model costs for anyone but you.** Battles run through the official CLIs (Claude Code, Codex CLI, Gemini CLI, OpenCode) with your existing login. Arena never reads, copies, proxies or uploads those credentials.
 - **Telemetry is never fabricated.** Every metric carries `observed`, `calculated`, `estimated` or `unavailable`. A CLI that does not report cost shows `n/a`, never `0`.
-- **Deterministic verdicts.** Tests, assertions and build checks decide `a`, `b`, `tie` or `inconclusive`. An LLM judge is modeled but off by default and always labeled subjective.
+- **Correctness first. Efficiency breaks clean ties.** Tests, assertions and build checks gate the verdict; a broken run never beats a correct one. Between equally correct sides, weighted tokens, cost and wall time (40/35/25, at least 5% apart) pick the winner, otherwise `tie`. Every verdict ships its stage-by-stage breakdown. An LLM judge is modeled but off by default and always labeled subjective.
 - **Fair by construction.** Same commit, fresh git worktrees, identical prompt, hooks disabled, your working tree never touched.
 
 ## Quick start

@@ -14,6 +14,16 @@ export const ID_PREFIX = {
   evaluation: 'evl',
   artifact: 'art',
   agent: 'agt',
+  benchmark: 'bmk',
+  benchmarkVersion: 'bmv',
+  challenge: 'chl',
+  experiment: 'exp',
+  tournament: 'trn',
+  tournamentMatch: 'tmt',
+  bounty: 'bty',
+  bountySubmission: 'bsb',
+  component: 'cmp',
+  lineage: 'lin',
 } as const;
 
 export type IdKind = keyof typeof ID_PREFIX;

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness Arena</title>
+<meta name="description" content="Find out whether your AI coding setup actually makes your agent better. Race your CLAUDE.md, skills, hooks and MCPs against vanilla on the same task. Correctness first, efficiency breaks clean ties.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Science+Gothic:CTRS,slnt,wdth,wght@0..85,-10..0,50..200,100..900&family=Pathway+Extreme:opsz,wdth,wght@8..144,75..100,100..900&display=swap">
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  body { background: radial-gradient(110vmax 80vmax at 8% 0%, oklch(0.24 0.004 90) 0%, oklch(0.15 0.003 90) 30%, var(--bg) 60%), var(--bg); min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { width: min(1140px, 100% - 48px); margin: 0 auto; }
+  .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-variation-settings: "wdth" 100; }
+  .k { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  code { font: 0.92em ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--ink); }
+  .line { border-top: 1px solid oklch(0.26 0 90); }
+
+  header { border-bottom: 1px solid oklch(0.26 0 90); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .wordmark { font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+  nav a { margin-left: 26px; font-size: 15px; color: var(--muted); }
+  nav a:hover { color: var(--ink); }
+
+  /* hero */
+  .hero { padding: 80px 0 64px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+  .hero h1 { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.06; letter-spacing: -0.02em; font-weight: 700; text-wrap: balance; }
+  .hero .lede { margin-top: 22px; font-size: 19px; color: var(--muted); max-width: 52ch; text-wrap: pretty; }
+  .hero .lede strong { color: var(--ink); font-weight: 500; }
+  .def { margin-top: 18px; padding: 12px 14px; border-left: 2px solid var(--accent); font-size: 15px; color: var(--muted); max-width: 52ch; }
+  .def b { color: var(--ink); font-weight: 600; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 30px; }
+  .btn { display: inline-flex; align-items: center; height: 48px; padding: 0 22px; font-weight: 600; font-size: 16px; border: 1px solid var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--bg); }
+  .btn.ghost { color: var(--ink); border-color: oklch(0.36 0 90); }
+  .btn.ghost:hover { border-color: var(--ink); }
+  .cmd { margin-top: 14px; font: 14px/1.6 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--muted); }
+  .cmd b { color: var(--accent); font-weight: 400; }
+  .agents { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; font-size: 15px; }
+  .agents .k { width: 100%; margin-bottom: 2px; }
+  .agents span:not(.k) { color: var(--ink); }
+  .agents span:not(.k)::before { content: "·"; color: oklch(0.45 0 90); margin-right: 10px; }
+  .agents .k + span::before { content: none; }
+
+  /* arena panel */
+  .arena { border: 1px solid oklch(0.32 0 90); background: oklch(0.145 0.003 90); box-shadow: 0 30px 80px -40px oklch(0 0 0 / 0.9); }
+  .arena .top { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid oklch(0.26 0 90); font: 12px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--muted); }
+  .arena .top .live { display: inline-flex; align-items: center; gap: 8px; }
+  .arena .top .live i { width: 7px; height: 7px; background: var(--accent); display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+  .arena .top .live.done i { animation: none; background: var(--muted); }
+  .vs { display: grid; grid-template-columns: 1fr 44px 1fr; align-items: center; padding: 18px 16px 14px; gap: 8px; }
+  .vs .side .k { margin-bottom: 4px; }
+  .vs .side b { display: block; font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .vs .side small { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .vs .side:last-child { text-align: right; }
+  .vs .x { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--accent); text-align: center; }
+  .task { padding: 0 16px 14px; font-size: 14px; color: var(--muted); }
+  .task code { color: var(--ink); }
+  .rows { border-top: 1px solid oklch(0.26 0 90); }
+  .row { display: grid; grid-template-columns: 1.15fr 1fr 1fr; align-items: baseline; padding: 11px 16px; border-bottom: 1px solid oklch(0.22 0 90); }
+  .row .k { letter-spacing: 0.04em; text-transform: none; font-size: 14px; }
+  .row .k small { display: block; font-size: 12px; color: oklch(0.48 0 90); letter-spacing: 0; }
+  .row .num { font-size: 24px; }
+  .row .num:last-child { text-align: right; }
+  .row .num.wait { color: oklch(0.38 0 90); }
+  .breakdown { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid oklch(0.26 0 90); }
+  .breakdown span { padding: 10px 16px; border-right: 1px solid oklch(0.22 0 90); font-size: 12px; }
+  .breakdown span:last-child { border-right: 0; }
+  .breakdown i { display: block; font-style: normal; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+  .breakdown b { display: block; font-family: var(--font-display); font-size: 15px; color: var(--muted); text-transform: uppercase; opacity: 0; }
+  .breakdown b[data-r="a"] { color: var(--accent); }
+  .breakdown.show b { opacity: 1; transition: opacity 300ms; }
+  .verdict { display: grid; grid-template-columns: 1.15fr 2fr; padding: 14px 16px; border-top: 3px double oklch(0.45 0 90); background: oklch(0.17 0.004 90); align-items: baseline; }
+  .verdict .k { color: var(--ink); text-transform: none; letter-spacing: 0.04em; font-size: 14px; font-weight: 600; }
+  .verdict .v { font-family: var(--font-display); font-size: 24px; color: var(--accent); text-align: right; min-height: 1.2em; }
+  .verdict .why { grid-column: 1 / -1; font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1.4em; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  /* workflow */
+  .flow { padding: 72px 0 0; }
+  .flow ol { list-style: none; display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid oklch(0.26 0 90); counter-reset: s; }
+  .flow li { padding: 18px 16px 20px; border-right: 1px solid oklch(0.26 0 90); position: relative; }
+  .flow li:last-child { border-right: 0; }
+  .flow li::before { counter-increment: s; content: counter(s, decimal-leading-zero); font-family: var(--font-display); color: var(--accent); font-size: 13px; letter-spacing: 0.1em; display: block; margin-bottom: 10px; }
+  .flow li b { display: block; font-weight: 600; font-size: 16px; line-height: 1.3; }
+  .flow li span { display: block; margin-top: 6px; font-size: 14px; color: var(--muted); }
+  .flow li::after { content: "→"; position: absolute; right: -9px; top: 18px; color: oklch(0.45 0 90); background: var(--bg); font-size: 14px; z-index: 1; }
+  .flow li:last-child::after { content: none; }
+
+  /* sections */
+  section.block { padding: 88px 0 0; }
+  h2 { font-size: 30px; letter-spacing: -0.015em; font-weight: 700; margin-bottom: 12px; max-width: 26ch; text-wrap: balance; }
+  .sub { color: var(--muted); font-size: 17px; max-width: 60ch; margin-bottom: 40px; text-wrap: pretty; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid oklch(0.26 0 90); border-left: 1px solid oklch(0.26 0 90); }
+  .grid > div { padding: 22px 22px 26px; border-right: 1px solid oklch(0.26 0 90); border-bottom: 1px solid oklch(0.26 0 90); }
+  .grid h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
+  .grid .key h3 { font-size: 18px; color: var(--ink); }
+  .grid .key h3::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--accent); margin-right: 10px; vertical-align: 1px; }
+  .grid .key p { color: oklch(0.72 0 90); }
+  .grid p { color: var(--muted); font-size: 15px; text-wrap: pretty; }
+  .grid p code { font-size: 13px; }
+
+  .cli { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  pre { font: 14px/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace; background: oklch(0.15 0.003 90); border: 1px solid oklch(0.26 0 90); padding: 18px 20px; overflow-x: auto; color: var(--ink); }
+  pre b { color: var(--accent); font-weight: 400; }
+  pre i { color: var(--muted); font-style: normal; }
+  .cli p { margin-top: 12px; color: var(--muted); font-size: 15px; }
+
+  .close { padding-top: 112px; }
+  .close h2 { max-width: 20ch; }
+  .close .cta { margin-top: 24px; }
+  footer { margin-top: 96px; border-top: 1px solid oklch(0.26 0 90); padding: 28px 0; font-size: 15px; color: var(--muted); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer a { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) { .arena .top .live i { animation: none; } }
+
+  @media (max-width: 960px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 40px; }
+    .flow ol { grid-template-columns: repeat(3, 1fr); }
+    .flow li:nth-child(3)::after { content: none; }
+    .flow li:nth-child(3) { border-right: 0; }
+    .flow li:nth-child(-n+3) { border-bottom: 1px solid oklch(0.26 0 90); }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .cli { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { width: min(1140px, 100% - 32px); }
+    .hero { padding: 56px 0 40px; }
+    nav a { margin-left: 16px; font-size: 14px; }
+    nav a[href="#how"] { display: none; }
+    .flow ol { grid-template-columns: 1fr; }
+    .flow li { border-right: 0; border-bottom: 1px solid oklch(0.26 0 90); }
+    .flow li:last-child { border-bottom: 0; }
+    .flow li::after { content: none; }
+    .grid { grid-template-columns: 1fr; }
+    .row .num { font-size: 20px; }
+    .vs .side b { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="wordmark" href="#">Harness Arena</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#cli">CLI</a>
+      <a href="https://github.com/ucsandman/harness-arena">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Find out whether your AI coding setup actually makes your agent better.</h1>
+        <p class="lede">Race your harness against vanilla, or against another harness, on the exact same coding task. <strong>Same commit. Same prompt. Your existing agent subscriptions. Correctness first. Efficiency breaks clean ties.</strong></p>
+        <p class="def"><b>Harness</b> = everything around the model: CLAUDE.md, AGENTS.md, skills, hooks, MCP servers, subagents and settings. Arena races harnesses, not models.</p>
+        <div class="cta">
+          <a class="btn primary" href="#cli">Run your first battle</a>
+          <a class="btn ghost" href="https://github.com/ucsandman/harness-arena">View on GitHub</a>
+        </div>
+        <p class="cmd">$ arena <b>battle</b> ./my-harness vanilla --agent claude-code --tests "npm test"</p>
+        <div class="agents">
+          <span class="k">Works with your existing subscriptions</span>
+          <span>Claude Code</span><span>Codex CLI</span><span>Gemini CLI</span><span>OpenCode</span>
+        </div>
+      </div>
+
+      <div class="arena" id="arena" aria-label="Demo battle, replayed">
+        <div class="top"><span>arena report demo-session-expiry</span><span class="live" id="live"><i></i><span id="livetext">replaying demo</span></span></div>
+        <div class="vs">
+          <div class="side"><span class="k">Side A</span><b>Your harness</b><small>CLAUDE.md + hooks + skills</small></div>
+          <div class="x">VS</div>
+          <div class="side"><span class="k">Side B</span><b>Vanilla Claude Code</b><small>no harness</small></div>
+        </div>
+        <div class="task">Task: <code>Fix the failing session-expiry test in the auth module</code> · same commit, fresh worktrees, hooks off</div>
+        <div class="rows">
+          <div class="row"><div class="k">Tests<small>pass · A added a regression test</small></div><div class="num wait" data-a="4 / 4" data-n="4" data-of="4">·</div><div class="num wait" data-b="3 / 3" data-n="3" data-of="3">·</div></div>
+          <div class="row"><div class="k">Assertions<small>pass · API and package.json untouched</small></div><div class="num wait" data-a="2 / 2" data-n="2" data-of="2">·</div><div class="num wait" data-b="2 / 2" data-n="2" data-of="2">·</div></div>
+          <div class="row"><div class="k">Wall time<small>observed</small></div><div class="num wait" data-a="4:52" data-secs="292">·</div><div class="num wait" data-b="3:17" data-secs="197">·</div></div>
+          <div class="row"><div class="k">Turns<small>observed</small></div><div class="num wait" data-a="14">·</div><div class="num wait" data-b="27">·</div></div>
+          <div class="row"><div class="k">Tokens<small>observed</small></div><div class="num wait" data-a="311k" data-n="311400">·</div><div class="num wait" data-b="412k" data-n="412000">·</div></div>
+          <div class="row"><div class="k">Cost<small>reported by the CLI</small></div><div class="num wait" data-a="$2.81" data-n="2.81" data-money="1">·</div><div class="num wait" data-b="$6.42" data-n="6.42" data-money="1">·</div></div>
+        </div>
+        <div class="breakdown" id="breakdown">
+          <span><i>correctness</i><b data-r="tie">tie</b></span>
+          <span><i>assertions</i><b data-r="tie">tie</b></span>
+          <span><i>build</i><b data-r="na">n/a</b></span>
+          <span><i>efficiency</i><b data-r="a">side a</b></span>
+        </div>
+        <div class="verdict">
+          <span class="k">Verdict</span>
+          <span class="v" id="verdict"></span>
+          <span class="why" id="why"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="flow" id="how">
+    <div class="wrap">
+      <ol>
+        <li><b>Same repo, same task</b><span>One commit, one prompt, one test command.</span></li>
+        <li><b>Harness A vs Harness B</b><span>A GitHub URL, a local path, or <code>vanilla</code>.</span></li>
+        <li><b>Isolated worktrees</b><span>Fresh checkout per side. Your tree is never touched.</span></li>
+        <li><b>Agents run locally</b><span>Through the CLI you already have. Hooks off.</span></li>
+        <li><b>Verdict engine</b><span>Correctness gates, then a weighted efficiency tie-breaker.</span></li>
+        <li><b>Battle report</b><span>Every metric sourced. Keep it private or share it.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <h2>Fair by construction. Honest by default.</h2>
+      <p class="sub">The obvious benchmark objections are handled before the first battle runs.</p>
+      <div class="grid">
+        <div class="key"><h3>Your CLIs, your login</h3><p>Battles run through Claude Code, Codex CLI, Gemini CLI or OpenCode as installed. Arena never reads, proxies or uploads credentials. BYOK via <code>agent.env</code> is supported and values are never stored.</p></div>
+        <div class="key"><h3>Correctness first, efficiency breaks clean ties</h3><p>Tests, regressions, assertions and build checks gate the verdict; a broken run never beats a correct one. Equally correct sides are separated by weighted tokens, cost and time (40/35/25), only when at least 5% apart. Raw test count is never rewarded. An LLM judge is modeled, off by default, and always labelled subjective.</p></div>
+        <div><h3>No fabricated telemetry</h3><p>Every metric is tagged observed, calculated, estimated or unavailable. A CLI that does not report cost shows n/a, never 0.</p></div>
+        <div class="key"><h3>Import any harness from GitHub</h3><p><code>arena harnesses inspect &lt;url&gt;</code> builds a compatibility report over the REST API. No clone, no execution, no token required.</p></div>
+        <div><h3>See before you trust</h3><p>Arena shows what a harness would apply and which install or prepare commands it wants. Nothing runs until you trust it.</p></div>
+        <div><h3>Regression mode for CI</h3><p><code>arena regression &lt;dir&gt;</code> runs baseline against candidate over a directory of specs. Every command takes <code>--json</code>.</p></div>
+        <div class="key"><h3>Private by default, shareable by choice</h3><p><code>privacy.upload</code> is <code>none</code>, <code>metrics</code>, <code>events</code> or <code>full</code>, with an exclusion list. A redactor scrubs every string that leaves memory.</p></div>
+        <div><h3>MCP server</h3><p>Nine tools for any agent: list agents, inspect harnesses, start battles, compare runs, render reports. One <code>claude mcp add</code>.</p></div>
+        <div><h3>Community leaderboard</h3><p>Ratings from local battles land in the community pool. A verified pool exists for sandboxed execution and stays empty until that ships.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="cli">
+    <div class="wrap">
+      <h2>From clone to first battle.</h2>
+      <p class="sub">Node 22, pnpm 10 and git. Windows, macOS and Linux.</p>
+      <div class="cli">
+        <div>
+<pre><i># install</i>
+git clone https://github.com/ucsandman/harness-arena
+cd harness-arena &amp;&amp; pnpm install &amp;&amp; pnpm build:packages
+
+<i># the demo above, no model involved</i>
+node packages/cli/dist/bin.js <b>demo</b> --open</pre>
+          <p>Replays a deterministic fake battle and opens the report. Labelled demo, never counted toward ratings.</p>
+        </div>
+        <div>
+<pre><i># a real battle with your Claude Code login</i>
+node packages/cli/dist/bin.js <b>battle</b> \
+  https://github.com/you/your-harness vanilla \
+  --agent claude-code \
+  --repo https://github.com/you/some-repo \
+  --task "Fix the flaky retry in src/http.ts" \
+  --tests "npm test"</pre>
+          <p>Arena prints what the harness applies and which commands it wants. They run only after you pass <code>--trust</code> or approve the prompt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="block close">
+    <div class="wrap">
+      <h2>Stop guessing whether your harness helps. Race it.</h2>
+      <div class="cta">
+        <a class="btn primary" href="#cli">Run your first battle</a>
+        <a class="btn ghost" href="https://github.com/ucsandman/harness-arena">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Harness Arena. MIT licence. Local battles, the demo, the report, the CLI, the MCP server and the web app are implemented and tested.</span>
+    <a href="https://github.com/ucsandman/harness-arena">github.com/ucsandman/harness-arena</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#arena .row'));
+  var verdict = document.getElementById('verdict'), why = document.getElementById('why');
+  var live = document.getElementById('live'), livetext = document.getElementById('livetext');
+  function finish() {
+    rows.forEach(function (r) { r.querySelectorAll('.num').forEach(function (c) { c.textContent = c.dataset.a || c.dataset.b; c.classList.remove('wait'); }); });
+    document.getElementById('breakdown').classList.add('show'); verdict.textContent = 'Side A'; why.textContent = 'Both sides passed every test and assertion. A wins the efficiency tie-breaker by 21% weighted: 24% fewer tokens and 56% lower cost outweigh B finishing 33% faster.';
+    live.classList.add('done'); livetext.textContent = 'demo replayed from fixtures';
+  }
+  if (reduce) return finish();
+  function fmt(c, v) {
+    if (c.dataset.secs) { var s = Math.round(v); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+    if (c.dataset.money) return '$' + v.toFixed(2);
+    if (c.dataset.of) return Math.round(v) + ' / ' + c.dataset.of;
+    if (c.dataset.n) return Math.round(v / 1000) + 'k';
+    return String(Math.round(v));
+  }
+  function tween(c, target, ms, done) {
+    var t0 = performance.now(); c.classList.remove('wait');
+    (function step(now) {
+      var p = Math.min(1, (now - t0) / ms); var e = 1 - Math.pow(1 - p, 3);
+      c.textContent = fmt(c, target * e);
+      if (p < 1) requestAnimationFrame(step); else { c.textContent = c.dataset.a || c.dataset.b; done && done(); }
+    })(t0);
+  }
+  var i = 0;
+  function next() {
+    if (i >= rows.length) {
+      setTimeout(function () { document.getElementById('breakdown').classList.add('show'); verdict.textContent = 'Side A'; why.textContent = 'Both sides passed every test and assertion. A wins the efficiency tie-breaker by 21% weighted: 24% fewer tokens and 56% lower cost outweigh B finishing 33% faster.'; live.classList.add('done'); livetext.textContent = 'demo replayed from fixtures'; }, 350);
+      return;
+    }
+    var cells = rows[i].querySelectorAll('.num'); i++;
+    var a = cells[0], b = cells[1];
+    var ta = parseFloat(a.dataset.secs || a.dataset.n || a.dataset.a), tb = parseFloat(b.dataset.secs || b.dataset.n || b.dataset.b);
+    tween(a, ta, 700); tween(b, tb, 700, function () { setTimeout(next, 120); });
+  }
+  setTimeout(next, 500);
+})();
+</script>
+</body>
+</html>

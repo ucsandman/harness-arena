@@ -16,6 +16,7 @@ import type {
   BattleSpec,
   EvaluationReport,
   EventType,
+  IntegrityReport,
   MetricKey,
   MetricValue,
   RunMetrics,
@@ -66,6 +67,16 @@ export const battles = pgTable(
     confidence: real('confidence'),
     /** free-form category hint from the spec; ratings map it onto a RatingCategory */
     category: text('category'),
+    /** benchmark provenance, when the battle ran a pack task */
+    benchmarkVersionId: text('benchmark_version_id'),
+    benchmarkTaskId: text('benchmark_task_id'),
+    benchmarkTrial: integer('benchmark_trial'),
+    /** integrity checks as recomputed by this server on upload; null until evaluated */
+    integrity: jsonb('integrity').$type<IntegrityReport>(),
+    /** projection of integrity.eligible: may this battle move a rating */
+    ratingEligible: boolean('rating_eligible').notNull().default(false),
+    /** sha256 fingerprint of the matchup (task, commits, agents, harness versions, evaluation) */
+    fingerprint: text('fingerprint'),
     eventCount: integer('event_count').notNull().default(0),
     eventsCapped: boolean('events_capped').notNull().default(false),
     arenaVersion: text('arena_version').notNull(),
@@ -78,6 +89,8 @@ export const battles = pgTable(
     index('battles_owner_created_idx').on(t.ownerUserId, t.createdAt),
     index('battles_visibility_created_idx').on(t.visibility, t.createdAt),
     index('battles_status_idx').on(t.status),
+    index('battles_benchmark_idx').on(t.benchmarkVersionId, t.benchmarkTaskId),
+    index('battles_fingerprint_idx').on(t.fingerprint),
   ],
 );
 

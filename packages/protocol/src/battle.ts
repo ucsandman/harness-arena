@@ -2,8 +2,14 @@ import { z } from 'zod';
 import { battleIdSchema, runIdSchema } from './ids.js';
 import { battleStatusSchema, runStatusSchema, sideSchema } from './events.js';
 import { runMetricsSchema } from './metrics.js';
-import { evaluationReportSchema, verdictSchema, insightSchema } from './evaluation.js';
+import {
+  efficiencyConfigSchema,
+  evaluationReportSchema,
+  verdictSchema,
+  insightSchema,
+} from './evaluation.js';
 import { environmentInfoSchema } from './environment.js';
+import { integrityReportSchema } from './integrity.js';
 import { harnessManifestSchema } from './manifest.js';
 import { agentIdSchema } from './agents.js';
 
@@ -195,6 +201,8 @@ export const evaluationSpecSchema = z.object({
   lint: z.array(z.string()).max(10).optional(),
   typecheck: z.array(z.string()).max(10).optional(),
   assertions: z.array(assertionSchema).max(100).default([]),
+  /** how efficiency breaks a tie between equally correct sides (weights and minimum gap) */
+  efficiency: efficiencyConfigSchema.prefault({}),
   judge: z
     .object({
       enabled: z.boolean().default(false),
@@ -233,6 +241,42 @@ export const privacySettingsSchema = z.object({
 });
 export type PrivacySettings = z.infer<typeof privacySettingsSchema>;
 
+// ---- provenance ---------------------------------------------------------------------------------
+
+/** Provenance a battle carries when it was produced by running a benchmark pack task. */
+export const battleBenchmarkRefSchema = z.object({
+  slug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+  /** `bmv_` + 24 hex chars: sha256 of the canonical pack content */
+  versionId: z.string().regex(/^bmv_[0-9a-f]{24}$/),
+  /** the pack's human version label at the time */
+  version: z.string().max(40),
+  taskId: z.string().regex(/^[a-z0-9][a-z0-9._-]*$/),
+  /** 1-based trial number when the task ran more than once */
+  trial: z.number().int().min(1).default(1),
+});
+export type BattleBenchmarkRef = z.infer<typeof battleBenchmarkRefSchema>;
+
+/** Which competitive object this battle was run for, if any. Set by the CLI, verified by the server. */
+export const battleArenaLinksSchema = z.object({
+  challengeId: z
+    .string()
+    .regex(/^chl_[0-9a-z]{8,32}$/)
+    .optional(),
+  experimentId: z
+    .string()
+    .regex(/^exp_[0-9a-z]{8,32}$/)
+    .optional(),
+  tournamentMatchId: z
+    .string()
+    .regex(/^tmt_[0-9a-z]{8,32}$/)
+    .optional(),
+  bountySubmissionId: z
+    .string()
+    .regex(/^bsb_[0-9a-z]{8,32}$/)
+    .optional(),
+});
+export type BattleArenaLinks = z.infer<typeof battleArenaLinksSchema>;
+
 // ---- spec -------------------------------------------------------------------------------------
 
 export const battleSpecSchema = z.object({
@@ -251,6 +295,10 @@ export const battleSpecSchema = z.object({
   tags: z.array(z.string().max(40)).max(20).default([]),
   /** category hint for ratings (debugging, refactoring, greenfield, ...) */
   category: z.string().max(40).optional(),
+  /** set when the battle is one task of a benchmark pack run */
+  benchmark: battleBenchmarkRefSchema.optional(),
+  /** set when the battle was run for a challenge, experiment, tournament match or bounty */
+  arena: battleArenaLinksSchema.optional(),
 });
 export type BattleSpec = z.infer<typeof battleSpecSchema>;
 export type BattleSpecInput = z.input<typeof battleSpecSchema>;
@@ -350,6 +398,8 @@ export const battleRecordSchema = z.object({
   verification: verificationSchema,
   /** deterministic demo data; never mixed with real results */
   demo: z.boolean().default(false),
+  /** rating eligibility as computed by the evaluator's integrity checks; the server recomputes it */
+  integrity: integrityReportSchema.nullable().default(null),
   createdAt: z.string(),
   startedAt: z.string().nullable(),
   completedAt: z.string().nullable(),

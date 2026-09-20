@@ -154,21 +154,107 @@ describe('decideVerdict / assertions and build', () => {
   });
 });
 
-describe('decideVerdict / tie and inconclusive', () => {
-  it('ties when deterministic evidence is equal, and names the efficiency gaps as caveats', () => {
+function closeReport(results: EvaluatorResult[]): EvaluationReport {
+  // 2% apart on every efficiency metric: under the 5% minimum, so efficiency must not decide.
+  const comparisons = compareMetrics(
+    metricsWith({
+      duration_ms: calculated(1000, 'core'),
+      tokens_total: observed(10_000, 'cli'),
+      cost_usd: observed(1.0, 'cli'),
+    }),
+    metricsWith({
+      duration_ms: calculated(1020, 'core'),
+      tokens_total: observed(10_200, 'cli'),
+      cost_usd: observed(1.02, 'cli'),
+    }),
+  );
+  return makeReport(results, { comparisons });
+}
+
+describe('decideVerdict / efficiency tie-breaker', () => {
+  it('breaks a clean tie on weighted efficiency and names every metric', () => {
     const verdict = decideVerdict(efficiencyReport([allTestsPass('a'), allTestsPass('b')]), sides());
     expect(verdict).toMatchObject({
-      winner: 'tie',
+      winner: 'a',
       method: 'deterministic',
-      confidence: 0.5,
-      decisiveFactors: [],
+      confidence: 0.55,
+      decisiveFactors: ['efficiency'],
     });
-    const caveats = verdict.caveats.join('\n');
-    expect(caveats).toContain('Side A was better on duration (1.0s vs 2.0s, 50% apart)');
-    expect(caveats).toContain('efficiency does not decide the winner');
-    expect(caveats).toContain('tokens');
+    expect(verdict.reasons[0]).toContain('Both sides passed every correctness check');
+    expect(verdict.reasons[0]).toContain('tokens A by 67%');
+    expect(verdict.reasons[0]).toContain('duration A by 50%');
+    expect(verdict.caveats.join(' ')).toContain('cost (not reported by both sides)');
+    expect(verdict.breakdown.map((r) => `${r.factor}=${r.result}`)).toEqual([
+      'completion=tie',
+      'tests=tie',
+      'regressions=tie',
+      'assertions=n/a',
+      'build=n/a',
+      'efficiency=a',
+    ]);
   });
 
+  it('stays a tie when the weighted advantage is under the minimum', () => {
+    const verdict = decideVerdict(closeReport([allTestsPass('a'), allTestsPass('b')]), sides());
+    expect(verdict).toMatchObject({ winner: 'tie', confidence: 0.5, decisiveFactors: [] });
+    expect(verdict.reasons[0]).toContain('efficiency did not separate them');
+    expect(verdict.caveats.join(' ')).toContain('under the 5% minimum');
+    expect(verdict.breakdown.at(-1)).toMatchObject({ factor: 'efficiency', result: 'tie' });
+  });
+
+  it('weights tokens 40, cost 35, time 25 so a big time win can lose to tokens plus cost', () => {
+    // A: 25% fewer tokens, 56% cheaper. B: 33% faster. Weighted: 0.4*0.25 + 0.35*0.56 - 0.25*0.33 > 0.
+    const comparisons = compareMetrics(
+      metricsWith({
+        duration_ms: calculated(292_000, 'core'),
+        tokens_total: observed(311_400, 'cli'),
+        cost_usd: observed(2.81, 'cli'),
+      }),
+      metricsWith({
+        duration_ms: calculated(197_000, 'core'),
+        tokens_total: observed(412_000, 'cli'),
+        cost_usd: observed(6.42, 'cli'),
+      }),
+    );
+    const report = makeReport([allTestsPass('a'), allTestsPass('b')], { comparisons });
+    const verdict = decideVerdict(report, sides());
+    expect(verdict).toMatchObject({ winner: 'a', decisiveFactors: ['efficiency'] });
+    expect(verdict.reasons[0]).toContain('duration B by 33%');
+  });
+
+  it('never rewards a larger test count when both suites pass', () => {
+    const report = closeReport([
+      testsResult('a', { passed: 9, failed: 0, total: 9, regressions: 0, exitCode: 0 }, 'passed'),
+      allTestsPass('b'),
+    ]);
+    expect(decideVerdict(report, sides()).winner).toBe('tie');
+  });
+
+  it('is not consulted when one side produced no usable test evidence', () => {
+    const noEvidence = testsResult(
+      'b',
+      { passed: null, failed: null, total: null, regressions: null, exitCode: null },
+      'failed',
+    );
+    const verdict = decideVerdict(efficiencyReport([allTestsPass('a'), noEvidence]), sides());
+    expect(verdict.winner).toBe('tie');
+    expect(verdict.decisiveFactors).toEqual([]);
+    expect(verdict.breakdown.at(-1)).toMatchObject({ factor: 'efficiency', result: 'n/a' });
+  });
+
+  it('never breaks a tie on an estimated metric', () => {
+    const comparisons = compareMetrics(
+      metricsWith({ cost_usd: { value: 1, status: 'estimated', source: 'core:pricing' } }),
+      metricsWith({ cost_usd: { value: 9, status: 'estimated', source: 'core:pricing' } }),
+    );
+    const report = makeReport([allTestsPass('a'), allTestsPass('b')], { comparisons });
+    const verdict = decideVerdict(report, sides());
+    expect(verdict.winner).toBe('tie');
+    expect(verdict.caveats.join(' ')).toContain('estimated, not observed');
+  });
+});
+
+describe('decideVerdict / tie and inconclusive', () => {
   it('is inconclusive when no deterministic evaluator ran, and says what to add', () => {
     const verdict = decideVerdict(efficiencyReport([diffSignals]), sides());
     expect(verdict).toMatchObject({ winner: 'inconclusive', method: 'insufficient' });
@@ -239,7 +325,7 @@ describe('decideVerdict / judge', () => {
   });
 
   it('is reported alongside a tie without becoming the winner', () => {
-    const report = efficiencyReport([allTestsPass('a'), allTestsPass('b'), judgeResult('a', 0.7)]);
+    const report = closeReport([allTestsPass('a'), allTestsPass('b'), judgeResult('a', 0.7)]);
     const verdict = decideVerdict(report, sides());
     expect(verdict).toMatchObject({ winner: 'tie', method: 'deterministic+judge' });
     expect(verdict.judge?.winner).toBe('a');
@@ -248,5 +334,54 @@ describe('decideVerdict / judge', () => {
 
   it('is null when no judge ran', () => {
     expect(decideVerdict(makeReport([allTestsPass('a'), allTestsPass('b')]), sides()).judge).toBeNull();
+  });
+});
+
+describe('decideVerdict / efficiency configuration', () => {
+  const bothPass = [allTestsPass('a'), allTestsPass('b')];
+
+  it('exposes the efficiency stage in full, with the configuration that produced it', () => {
+    const verdict = decideVerdict(efficiencyReport(bothPass), sides());
+    expect(verdict.efficiency).toMatchObject({ winner: 'a', minAdvantage: 0.05 });
+    expect(verdict.efficiency?.metrics.map((m) => m.key).sort()).toEqual(['duration_ms', 'tokens_total']);
+    expect(verdict.efficiency?.excluded).toEqual([{ key: 'cost_usd', reason: 'not reported by both sides' }]);
+    expect(verdict.efficiency?.advantage).toBeGreaterThan(0.05);
+  });
+
+  it('reports the efficiency stage as n/a when a correctness gate decided the battle', () => {
+    const verdict = decideVerdict(makeReport([diffSignals]), sides('completed', 'timed_out'));
+    expect(verdict.efficiency).toMatchObject({ winner: 'n/a', advantage: 0, metrics: [], excluded: [] });
+  });
+
+  it('honours a custom minimum advantage', () => {
+    const report = efficiencyReport(bothPass);
+    const strict = decideVerdict(report, sides(), {
+      efficiency: { weights: { tokens_total: 0.4, cost_usd: 0.35, duration_ms: 0.25 }, minAdvantage: 0.9 },
+    });
+    expect(strict.winner).toBe('tie');
+    expect(strict.caveats.join(' ')).toContain('under the 90% minimum');
+    expect(strict.efficiency).toMatchObject({ winner: 'tie', minAdvantage: 0.9 });
+  });
+
+  it('honours custom weights and drops a zero-weight metric from the comparison', () => {
+    // A: 37% fewer tokens. B: 33% faster. With time weighted at 1 and tokens at 0, B wins.
+    const comparisons = compareMetrics(
+      metricsWith({ duration_ms: calculated(300_000, 'core'), tokens_total: observed(250_000, 'cli') }),
+      metricsWith({ duration_ms: calculated(200_000, 'core'), tokens_total: observed(400_000, 'cli') }),
+    );
+    const report = makeReport(bothPass, { comparisons });
+    const timeOnly = decideVerdict(report, sides(), {
+      efficiency: { weights: { tokens_total: 0, cost_usd: 0, duration_ms: 1 }, minAdvantage: 0.05 },
+    });
+    expect(timeOnly).toMatchObject({ winner: 'b', decisiveFactors: ['efficiency'] });
+    expect(timeOnly.efficiency?.metrics.map((m) => m.key)).toEqual(['duration_ms']);
+    expect(timeOnly.efficiency?.excluded).toContainEqual({
+      key: 'tokens_total',
+      reason: 'weight is 0 in evaluation.efficiency',
+    });
+    expect(timeOnly.breakdown.at(-1)?.detail).toContain('duration 100%');
+
+    const defaults = decideVerdict(report, sides());
+    expect(defaults.winner).toBe('a');
   });
 });

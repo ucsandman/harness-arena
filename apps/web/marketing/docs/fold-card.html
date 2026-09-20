@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fold card: Harness Arena</title>
+<style>
+:root{
+  --bg: oklch(0.124 0 90);
+  --surface: oklch(0.207 0 90);
+  --ink: oklch(0.831 0 90);
+  --accent: oklch(0.800 0.150 75);
+  --muted: oklch(0.607 0 90);
+  --source-x: 5.4%;
+  --source-y: 14%;
+  --key-angle: 219deg;
+  --falloff: 3;
+  --lit: 0.18;
+  --grain: 0.055;
+  --plate-safe: 31.3% 0% 68.8% 100%;
+  --font-display: "Science Gothic", sans-serif;
+  --font-body: "Pathway Extreme", sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:40px 48px 64px;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55}
+h1{font-family:var(--font-display);font-size:34px;font-weight:400;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 36px;font-size:13px}
+section{margin:0 0 40px}
+h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 14px;
+   padding-bottom:6px;border-bottom:1px solid color-mix(in oklch, var(--muted) 30%, transparent)}
+.diagram{display:grid;grid-template-columns:repeat(24,20px);grid-auto-rows:20px;gap:0;width:480px;
+   background:var(--bg);outline:1px solid color-mix(in oklch, var(--muted) 30%, transparent)}
+.diagram i{display:block;width:20px;height:20px}
+.plate{position:relative;width:720px;max-width:100%}
+.plate img{width:100%;display:block}
+.safe{position:absolute;outline:2px solid var(--accent);outline-offset:-1px}
+.safe b{position:absolute;left:0;top:100%;margin-top:4px;font-size:11px;color:var(--accent);font-weight:500}
+.cross{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px}
+.cross:before,.cross:after{content:"";position:absolute;background:var(--accent)}
+.cross:before{left:0;right:0;top:16px;height:2px}
+.cross:after{top:0;bottom:0;left:16px;width:2px}
+.sw{display:grid;grid-template-columns:44px 96px 220px 1fr;gap:14px;align-items:center;padding:7px 0;
+   border-bottom:1px solid color-mix(in oklch, var(--muted) 22%, transparent)}
+.chip{display:block;width:44px;height:28px;border:1px solid color-mix(in oklch, var(--muted) 40%, transparent)}
+.sw b{font-weight:500;font-size:13px}
+.sw code{font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)}
+.sw em{font-style:normal;font-size:12px;color:var(--muted)}
+.ratios{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted)}
+.ratios b{color:var(--ink);font-weight:500}
+.specimen{font-family:var(--font-display);font-size:88px;line-height:1.05;margin:0;color:var(--ink)}
+.specimen img{max-width:100%;display:block}
+.states{display:grid;grid-template-columns:120px 1fr;gap:6px 18px;font-size:14px}
+.states dt{color:var(--muted);font-size:12px;padding-top:2px}
+.states dd{margin:0}
+.states dd.miss{color:var(--muted);font-style:italic}
+table{border-collapse:collapse;font-size:13px}
+td{padding:4px 22px 4px 0;font-variant-numeric:tabular-nums}
+td:first-child{color:var(--muted)}
+.note{color:var(--muted);font-size:13px;margin:0}
+</style></head>
+<body>
+<h1>Harness Arena</h1>
+<p class="sub">fold scoreboard &middot; plate plate-01.png provider=procedural &middot; roles 5/5 &middot; states 6/6</p>
+
+<section>
+  <h2>Blocking diagram, 24 x 14</h2>
+  <div class="diagram">
+<i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i><i style="background:var(--surface)" title="n"></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:var(--ink)" title="#"></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i><i style="background:transparent" title="."></i>
+<i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i>
+<i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:color-mix(in oklch, var(--muted) 40%, transparent)" title="|"></i><i style="background:var(--muted)" title="="></i><i style="background:var(--muted)" title="="></i><i style="background:var(--accent)" title="@"></i>
+</div>
+</section>
+
+<section>
+  <h2>Plate, safe box and key light</h2>
+  <div class="plate">
+    <img src="../assets/plate-01.png" alt="the plate this palette was sampled from">
+    <div class="safe" style="left:31.3%;top:0%;width:68.8%;height:100%"><b>--plate-safe 31.3% 0% 68.8% 100%</b></div>
+    <div class="cross" style="left:5.4%;top:14%"></div>
+  </div>
+  <p class="note">1536x1024px</p>
+</section>
+
+<section>
+  <h2>Five roles, sampled</h2>
+  <div class="sw"><span class="chip" style="background:oklch(0.124 0 90)"></span>
+  <b>--bg</b><code>oklch(0.124 0 90)</code><em>the room outside the lamp, plate luminance p06 to p20</em></div>
+<div class="sw"><span class="chip" style="background:oklch(0.207 0 90)"></span>
+  <b>--surface</b><code>oklch(0.207 0 90)</code><em>the lit body of the subject, plate p55 to p72</em></div>
+<div class="sw"><span class="chip" style="background:oklch(0.831 0 90)"></span>
+  <b>--ink</b><code>oklch(0.831 0 90)</code><em>the face of the light source itself, plate p98 and up</em></div>
+<div class="sw"><span class="chip" style="background:oklch(0.800 0.150 75)"></span>
+  <b>--accent</b><code>oklch(0.800 0.150 75)</code><em>the hottest chroma the lamp makes, top 1 percent</em></div>
+<div class="sw"><span class="chip" style="background:oklch(0.607 0 90)"></span>
+  <b>--muted</b><code>oklch(0.607 0 90)</code><em>62 percent of the way from bg to ink, on ink hue</em></div>
+  <div class="ratios"><span>ink/bg <b>12.02:1</b></span><span>ink/surface <b>10.60:1</b></span><span>accent/bg <b>10.61:1</b></span><span>muted/bg <b>5.27:1</b></span><span>muted/surface <b>4.65:1</b></span></div>
+</section>
+
+<section>
+  <h2>Display specimen</h2>
+  <p class="specimen"><img src="specimen.png" alt="rendered specimen"></p>
+</section>
+
+<section>
+  <h2>The six states</h2>
+  <dl class="states">
+  <dt>empty</dt><dd>Nothing has run yet. Your first heat will show here.</dd>
+  <dt>loading</dt><dd>Both sides are still working. The count will land when the last test does.</dd>
+  <dt>error</dt><dd>The run stopped at the build step. Open the log and it will start again.</dd>
+  <dt>offline</dt><dd>Nothing since 4:12. The next result will wait for you.</dd>
+  <dt>done</dt><dd>Both times are in. The sheet will not change.</dd>
+  <dt>first-run</dt><dd>This page stays empty until your first heat.</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>Envelope</h2>
+  <table><tr><td>topBand</td><td>&gt;= 0.8</td></tr><tr><td>foldInk</td><td>&lt;= 0.3</td></tr><tr><td>bandRatio</td><td>&lt;= 0.4</td></tr></table>
+</section>
+
+<section>
+  <h2>Light kit</h2>
+  <table><tr><td>--source-x</td><td>5.4%</td></tr><tr><td>--source-y</td><td>14%</td></tr><tr><td>--key-angle</td><td>219deg</td></tr><tr><td>--falloff</td><td>3</td></tr><tr><td>--lit</td><td>0.18</td></tr><tr><td>--grain</td><td>0.055</td></tr><tr><td>--plate-safe</td><td>31.3% 0% 68.8% 100%</td></tr></table>
+</section>
+</body></html>

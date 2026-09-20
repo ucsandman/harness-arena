@@ -1,0 +1,21 @@
+/* Foldlight: Harness Arena */
+/* fold: scoreboard */
+/* plate: assets/plate-01.png provider=procedural */
+:root {
+  --bg:          oklch(0.124 0 90); /* the room outside the lamp, plate luminance p06 to p20 */
+  --surface:     oklch(0.207 0 90); /* the lit body of the subject, plate p55 to p72 */
+  --ink:         oklch(0.831 0 90); /* the face of the light source itself, plate p98 and up */
+  --accent:      oklch(0.800 0.150 75); /* the hottest chroma the lamp makes, top 1 percent */ /* override: the scene's only chroma is the amber seven-segment fill in light.fill; the 5200K fog key is neutral */
+  --muted:       oklch(0.607 0 90); /* 62 percent of the way from bg to ink, on ink hue */
+
+  --source-x:    5.4%;
+  --source-y:    14%;
+  --key-angle:   219deg; /* every shadow falls along key-angle + 180deg */
+  --falloff:     3;
+  --lit:         0.18;
+  --grain:       0.055;
+  --plate-safe:  31.3% 0% 68.8% 100%; /* type goes here, no scrim */
+
+  --font-display: "Science Gothic", sans-serif; /* fonts.mjs rank=2 query=led/flat/wght,tnum */
+  --font-body:    "Pathway Extreme", sans-serif; /* fonts.mjs rank=1 query=screen/flat/wght */
+}

@@ -25,6 +25,11 @@ import type { RegressionFlags } from './commands/regression.js';
 import { cleanCommand } from './commands/clean.js';
 import type { CleanFlags } from './commands/clean.js';
 import { welcomeCommand } from './commands/welcome.js';
+import { registerBenchmarkCommands } from './commands/benchmark.js';
+import { registerExperimentCommands } from './commands/experiment.js';
+import { registerChallengeCommands } from './commands/challenge.js';
+import { registerTournamentCommands } from './commands/tournament.js';
+import { registerLeaderboardCommands } from './commands/leaderboard.js';
 
 /**
  * The command surface. `createProgram(deps)` builds it against injected dependencies so tests can
@@ -254,6 +259,13 @@ export function createProgram(partial: Partial<CliDeps> = {}): Command {
   withJson(regression).action(async (dir: string, _options: unknown, command: Command) => {
     await regressionCommand(deps, dir, flagsOf<RegressionFlags>(command));
   });
+
+  // ---- competitive layer (each file registers its own commands; every handler reads optsWithGlobals) --
+  registerBenchmarkCommands(program, deps);
+  registerExperimentCommands(program, deps);
+  registerChallengeCommands(program, deps);
+  registerTournamentCommands(program, deps);
+  registerLeaderboardCommands(program, deps);
 
   // ---- arena clean ----------------------------------------------------------------------------
   const clean = program

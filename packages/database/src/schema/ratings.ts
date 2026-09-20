@@ -10,7 +10,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { ratingCategoryEnum, ratingPoolEnum } from './enums.js';
-import { agents, harnesses } from './catalog.js';
+import { agents, harnessVersions, harnesses } from './catalog.js';
 import { battles } from './battles.js';
 
 /**
@@ -35,6 +35,10 @@ export const ratings = pgTable(
     losses: integer('losses').notNull().default(0),
     ties: integer('ties').notNull().default(0),
     provisional: boolean('provisional').notNull().default(true),
+    peakRating: real('peak_rating').notNull().default(1500),
+    /** last RATING_FORM_WINDOW outcomes, oldest first, as W/L/T characters */
+    form: text('form').notNull().default(''),
+    lastBattleAt: timestamp('last_battle_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -61,10 +65,20 @@ export const ratingEvents = pgTable(
     pool: ratingPoolEnum('pool').notNull(),
     ratingBefore: real('rating_before').notNull(),
     ratingAfter: real('rating_after').notNull(),
+    deviationBefore: real('deviation_before').notNull().default(350),
+    deviationAfter: real('deviation_after').notNull().default(350),
+    /** the exact harness commit that earned this change */
+    harnessVersionId: text('harness_version_id').references(() => harnessVersions.id, {
+      onDelete: 'set null',
+    }),
+    opponentHarnessId: text('opponent_harness_id').references(() => harnesses.id, { onDelete: 'set null' }),
+    opponentRating: real('opponent_rating').notNull().default(1500),
+    outcome: text('outcome').$type<'win' | 'loss' | 'tie'>().notNull().default('tie'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('rating_events_unique').on(t.battleId, t.harnessId, t.agentId, t.category, t.pool),
     index('rating_events_battle_idx').on(t.battleId),
+    index('rating_events_history_idx').on(t.harnessId, t.agentId, t.category, t.pool, t.createdAt),
   ],
 );

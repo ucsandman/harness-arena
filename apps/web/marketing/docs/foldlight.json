@@ -1,0 +1,98 @@
+{
+  "title": "Harness Arena",
+  "moment": "Saturday, 6:40am, a high-school track in October. Fog sits on the infield and lane one is still wet from the sprinklers. I am at the finish with a clipboard, a steel timer clipped to it, thumb resting on the button. Two runners are on the line, same distance, same heat, and nobody speaks. The scoreboard behind the stands is dark except one row. The number that counts is the one the watch prints, not what either of them says after.",
+  "register": "brand",
+  "surface": "landing",
+  "inventory": {
+    "light": {
+      "source": "low October sun behind fog, from the far end of the straight, left of camera",
+      "clock": 10,
+      "kelvin": 5200,
+      "litFraction": 0.18,
+      "fill": "one row of amber seven-segment digits glowing on a dark panel far behind the stands, 2000K, faint; a grey overcast skylight from above, 6500K, even"
+    },
+    "objects": [
+      "steel timer, brushed steel and black rubber",
+      "clipboard, tan masonite",
+      "wet red rubber track",
+      "white painted lane lines",
+      "two pairs of spikes, one orange one black",
+      "aluminium bleachers, cold grey",
+      "a timing sheet, cream paper, blue pen",
+      "chain-link fence, galvanised"
+    ],
+    "materials": [
+      "rubber track surface, wet",
+      "brushed steel",
+      "masonite",
+      "cream paper",
+      "galvanised steel",
+      "aluminium"
+    ],
+    "air": "cold, 44F, damp fog, still, thin",
+    "tempo": "held",
+    "sound": "a radio hiss on the official's belt, then the click of the button",
+    "gaze": "down",
+    "text": "lane numbers stencilled on the track in white paint; split times written in blue ballpoint on a ruled sheet",
+    "document": "split time",
+    "gesture": "thumb pressing the timer button at the mark",
+    "keepsake": "the sheet with both times written in the same hand",
+    "utterance": "Same line, same distance. The watch decides."
+  },
+  "never": [
+    "scoreboard",
+    "stopwatch",
+    "podium",
+    "trophy",
+    "medal",
+    "finish tape",
+    "starting pistol",
+    "confetti",
+    "stadium floodlights"
+  ],
+  "fold": {
+    "key": "scoreboard",
+    "gravity": "down",
+    "envelope": {
+      "topBand": 1,
+      "foldInk": 0.081,
+      "bandRatio": 0.039
+    }
+  },
+  "light": {
+    "clock": 10,
+    "kelvin": 5200,
+    "lit": 0.18,
+    "keyAngle": 219,
+    "plate": "assets/plate-01.png",
+    "provider": "procedural"
+  },
+  "type": {
+    "display": {
+      "family": "Science Gothic",
+      "rank": 2,
+      "query": "led/flat/wght,tnum"
+    },
+    "body": {
+      "family": "Pathway Extreme",
+      "rank": 1,
+      "query": "screen/flat/wght"
+    }
+  },
+  "voice": "docs/voice.json",
+  "motion": {
+    "verb": "settle",
+    "travelPx": 8,
+    "transientMs": 700,
+    "holdMs": 200,
+    "twin": "figure static under reduced motion"
+  },
+  "measured": {
+    "date": "2026-09-19",
+    "fold1440": "PASS findings=0",
+    "mobile": "FAIL SAAS_FOLD 3/6 (envelope passes)",
+    "craft": "PASS nodes=81 rules=15 states=6/6",
+    "tokens": "PASS roles=5 kit=yes",
+    "copy": "PASS strings=43 states=6/6"
+  }
+}

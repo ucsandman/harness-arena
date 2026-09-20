@@ -416,6 +416,7 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
       ? { kind: 'local', eligible: false, sandbox: null }
       : { kind: 'local', eligible: false, sandbox: null },
     demo,
+    integrity: null,
     createdAt: new Date(startedAtMs).toISOString(),
     startedAt: null,
     completedAt: null,
@@ -1094,10 +1095,14 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
           signal: opts.signal,
           ...(opts.judge ? { judge: opts.judge } : {}),
         });
-        record.verdict = decideVerdict(record.evaluation, {
-          a: { status: record.runs.a.status, metrics: record.runs.a.metrics },
-          b: { status: record.runs.b.status, metrics: record.runs.b.metrics },
-        });
+        record.verdict = decideVerdict(
+          record.evaluation,
+          {
+            a: { status: record.runs.a.status, metrics: record.runs.a.metrics },
+            b: { status: record.runs.b.status, metrics: record.runs.b.metrics },
+          },
+          { efficiency: record.spec.evaluation.efficiency },
+        );
       } catch (err) {
         both.error('evaluation failed', { reason: errorText(err) });
         record.error = 'evaluation failed: ' + errorText(err);

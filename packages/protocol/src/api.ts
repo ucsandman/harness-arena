@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { arenaEventSchema, battleStatusSchema, EVENT_LIMITS, sideSchema } from './events.js';
 import { battleIdSchema } from './ids.js';
 import { battleRecordSchema, battleSpecSchema, visibilitySchema } from './battle.js';
+import { benchmarkPackSchema } from './benchmarks.js';
+import { ratingCategorySchema, ratingPoolSchema } from './ratings.js';
 
 /**
  * HTTP contract between the CLI and the web app. All endpoints live under /api/v1.
@@ -125,3 +127,48 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 
 /** Server-sent event names on GET /api/v1/battles/:id/stream */
 export const SSE_EVENT_NAMES = ['event', 'record', 'heartbeat', 'end'] as const;
+
+// ---- arena ------------------------------------------------------------------------------------
+
+/** POST /api/v1/benchmarks: publish a pack version. Re-publishing identical content is a no-op. */
+export const uploadBenchmarkRequestSchema = z.object({ pack: benchmarkPackSchema });
+export const uploadBenchmarkResponseSchema = z.object({
+  versionId: z.string(),
+  slug: z.string(),
+  version: z.string(),
+  created: z.boolean(),
+  url: z.string(),
+});
+
+/** GET /api/v1/leaderboard */
+export const leaderboardEntrySchema = z.object({
+  rank: z.number().int().positive().nullable(),
+  harnessSlug: z.string(),
+  harnessName: z.string(),
+  agentId: z.string(),
+  rating: z.number(),
+  deviation: z.number(),
+  peakRating: z.number(),
+  battles: z.number().int().nonnegative(),
+  wins: z.number().int().nonnegative(),
+  losses: z.number().int().nonnegative(),
+  ties: z.number().int().nonnegative(),
+  provisional: z.boolean(),
+  form: z.string(),
+  lastBattleAt: z.string().nullable(),
+});
+export type LeaderboardEntry = z.infer<typeof leaderboardEntrySchema>;
+
+export const leaderboardResponseSchema = z.object({
+  category: ratingCategorySchema,
+  pool: ratingPoolSchema,
+  agentId: z.string().nullable(),
+  minSample: z.number().int(),
+  entries: z.array(leaderboardEntrySchema),
+  /** true when the pool holds nothing at all, so the page can say so instead of showing an empty table */
+  poolEmpty: z.boolean(),
+});
+export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
+
+/** POST /api/v1/experiments/:id/battles and friends: link an uploaded battle to an arena object. */
+export const linkBattleRequestSchema = z.object({ battleId: battleIdSchema });

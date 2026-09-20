@@ -26,7 +26,7 @@ function headline(record: BattleRecord, verdict: Verdict): { title: string; sub:
         sub: `Side B beat side A (${labelA}) on decisive, reproducible signals.`,
       };
     case 'tie':
-      return { title: 'Tie', sub: 'Neither side separated itself on the deterministic signals.' };
+      return { title: 'Tie', sub: 'Equally correct, and not far enough apart on efficiency to call.' };
     default:
       return {
         title: 'Inconclusive',
@@ -118,6 +118,27 @@ export function VerdictBanner({ record, className }: { record: BattleRecord; cla
               </li>
             ))}
           </ul>
+          {verdict.breakdown.length > 0 ? (
+            <ol
+              className="mt-3 grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-1 text-2xs"
+              aria-label="Verdict breakdown"
+            >
+              {verdict.breakdown.map((row) => (
+                <li key={row.factor} className="contents">
+                  <span className="font-mono uppercase tracking-wider text-fg-subtle">{row.factor}</span>
+                  <span
+                    className={cn(
+                      'font-mono font-semibold uppercase',
+                      row.result === 'a' || row.result === 'b' ? SIDE_TEXT[row.result] : 'text-fg-muted',
+                    )}
+                  >
+                    {row.result === 'a' || row.result === 'b' ? `side ${row.result}` : row.result}
+                  </span>
+                  <span className="text-fg-muted">{row.detail}</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
           {verdict.decisiveFactors.length > 0 ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-2xs text-fg-subtle">Decisive:</span>

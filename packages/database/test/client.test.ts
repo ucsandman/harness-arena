@@ -55,9 +55,23 @@ describe('createDb', () => {
         'sessions',
         'tasks',
         'users',
+        // 0001_arena
+        'battle_links',
+        'benchmark_tasks',
+        'benchmark_versions',
+        'benchmarks',
+        'bounties',
+        'bounty_submissions',
+        'challenges',
+        'components',
+        'experiments',
+        'harness_components',
+        'harness_lineage',
+        'tournament_matches',
+        'tournaments',
       ]),
     );
-    expect(tables).toHaveLength(17);
+    expect(tables).toHaveLength(30);
   });
 
   it('is idempotent: migrating twice applies nothing the second time', async () => {

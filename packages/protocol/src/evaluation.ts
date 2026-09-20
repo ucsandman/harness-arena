@@ -2,6 +2,29 @@ import { z } from 'zod';
 import { sideSchema } from './events.js';
 import { metricKeySchema, metricValueSchema } from './metrics.js';
 
+/** The efficiency metrics that may break a tie between equally correct sides, all lower-is-better. */
+export const EFFICIENCY_METRIC_KEYS = ['tokens_total', 'cost_usd', 'duration_ms'] as const;
+export type EfficiencyMetricKey = (typeof EFFICIENCY_METRIC_KEYS)[number];
+
+/**
+ * How efficiency breaks a clean tie. Weights are renormalised over the metrics both sides reported,
+ * so a missing metric contributes nothing rather than a silent zero. `minAdvantage` is the weighted
+ * relative advantage (0..1) a side needs before efficiency may name it the winner; below it the battle
+ * is a tie, because a smaller gap is noise on a single run.
+ */
+export const efficiencyConfigSchema = z.object({
+  weights: z
+    .object({
+      tokens_total: z.number().min(0).max(1).default(0.4),
+      cost_usd: z.number().min(0).max(1).default(0.35),
+      duration_ms: z.number().min(0).max(1).default(0.25),
+    })
+    .prefault({}),
+  minAdvantage: z.number().min(0).max(1).default(0.05),
+});
+export type EfficiencyConfig = z.infer<typeof efficiencyConfigSchema>;
+export const DEFAULT_EFFICIENCY_CONFIG: EfficiencyConfig = efficiencyConfigSchema.parse({});
+
 /** deterministic = reproducible from artifacts; subjective = an LLM opinion, always labeled as such */
 export const evaluatorKindSchema = z.enum(['deterministic', 'subjective']);
 
@@ -61,6 +84,38 @@ export const judgeOpinionSchema = z.object({
 });
 export type JudgeOpinion = z.infer<typeof judgeOpinionSchema>;
 
+/** One line of the verdict hierarchy: what each stage found, in the order it was consulted. */
+export const verdictBreakdownRowSchema = z.object({
+  factor: z.enum(['completion', 'tests', 'regressions', 'assertions', 'build', 'efficiency']),
+  /** `a`/`b`: this stage separated the sides; `tie`: it ran and found them equal; `n/a`: it could not run */
+  result: z.enum(['a', 'b', 'tie', 'n/a']),
+  detail: z.string(),
+});
+export type VerdictBreakdownRow = z.infer<typeof verdictBreakdownRowSchema>;
+
+/** The efficiency tie-breaker, metric by metric, with the configuration that produced it. */
+export const verdictEfficiencySchema = z.object({
+  /** `n/a`: no efficiency metric was reported by both sides, or the stage was not consulted */
+  winner: z.enum(['a', 'b', 'tie', 'n/a']),
+  /** signed weighted relative advantage, positive favours A; 0 when not consulted */
+  advantage: z.number(),
+  minAdvantage: z.number().min(0).max(1),
+  metrics: z.array(
+    z.object({
+      key: z.enum(EFFICIENCY_METRIC_KEYS),
+      a: z.number(),
+      b: z.number(),
+      /** the configured weight before renormalisation */
+      weight: z.number(),
+      /** relative advantage for this metric, positive favours A */
+      advantage: z.number(),
+    }),
+  ),
+  /** metrics left out, with the reason */
+  excluded: z.array(z.object({ key: z.enum(EFFICIENCY_METRIC_KEYS), reason: z.string() })),
+});
+export type VerdictEfficiency = z.infer<typeof verdictEfficiencySchema>;
+
 export const verdictSchema = z.object({
   winner: z.enum(['a', 'b', 'tie', 'inconclusive']),
   /** 0..1; derived from the number and strength of decisive signals, never invented */
@@ -70,6 +125,10 @@ export const verdictSchema = z.object({
   reasons: z.array(z.string()),
   decisiveFactors: z.array(z.string()),
   caveats: z.array(z.string()),
+  /** the hierarchy, stage by stage; correctness gates first, efficiency only breaks a clean tie */
+  breakdown: z.array(verdictBreakdownRowSchema).default([]),
+  /** the efficiency stage in full; null when the verdict predates it */
+  efficiency: verdictEfficiencySchema.nullable().default(null),
   judge: judgeOpinionSchema.nullable(),
 });
 export type Verdict = z.infer<typeof verdictSchema>;

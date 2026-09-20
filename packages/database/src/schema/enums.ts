@@ -2,6 +2,15 @@ import { pgEnum } from 'drizzle-orm/pg-core';
 import {
   artifactKindSchema,
   battleStatusSchema,
+  bountyStatusSchema,
+  challengeStatusSchema,
+  componentKindSchema,
+  experimentKindSchema,
+  experimentStatusSchema,
+  lineageEvidenceSchema,
+  lineageRelationSchema,
+  tournamentFormatSchema,
+  tournamentStatusSchema,
   eventConfidenceSchema,
   executionModeSchema,
   inspectionFrameworkSchema,
@@ -48,3 +57,13 @@ export const harnessSourceKindEnum = pgEnum('harness_source_kind', ['vanilla', '
 export const repositoryKindEnum = pgEnum('repository_kind', ['github', 'git', 'local', 'empty']);
 export const taskKindEnum = pgEnum('task_kind', ['prompt', 'issue', 'demo']);
 export const battleWinnerEnum = pgEnum('battle_winner', ['a', 'b', 'tie', 'inconclusive']);
+
+export const challengeStatusEnum = pgEnum('challenge_status', values(challengeStatusSchema.options));
+export const experimentKindEnum = pgEnum('experiment_kind', values(experimentKindSchema.options));
+export const experimentStatusEnum = pgEnum('experiment_status', values(experimentStatusSchema.options));
+export const tournamentFormatEnum = pgEnum('tournament_format', values(tournamentFormatSchema.options));
+export const tournamentStatusEnum = pgEnum('tournament_status', values(tournamentStatusSchema.options));
+export const bountyStatusEnum = pgEnum('bounty_status', values(bountyStatusSchema.options));
+export const lineageRelationEnum = pgEnum('lineage_relation', values(lineageRelationSchema.options));
+export const lineageEvidenceEnum = pgEnum('lineage_evidence', values(lineageEvidenceSchema.options));
+export const componentKindEnum = pgEnum('component_kind', values(componentKindSchema.options));

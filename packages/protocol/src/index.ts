@@ -9,5 +9,9 @@ export * from './inspection.js';
 export * from './environment.js';
 export * from './api.js';
 export * from './ratings.js';
+export * from './integrity.js';
+export * from './stats.js';
+export * from './benchmarks.js';
+export * from './arena.js';
 
 export const PROTOCOL_VERSION = 1 as const;

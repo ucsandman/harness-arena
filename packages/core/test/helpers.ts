@@ -236,6 +236,7 @@ export function fakeVerdict(winner: Verdict['winner'] = 'a'): Verdict {
     reasons: ['side a passed the suite in fewer turns'],
     decisiveFactors: ['tests_passed'],
     caveats: ['one machine, one run'],
+    breakdown: [],
     judge: null,
   };
 }
@@ -329,6 +330,7 @@ export function makeRecord(overrides: {
     insights: [],
     verification: { kind: 'local', eligible: false, sandbox: null },
     demo: false,
+    integrity: null,
     createdAt: new Date(0).toISOString(),
     startedAt: new Date(0).toISOString(),
     completedAt: new Date(2000).toISOString(),

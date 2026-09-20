@@ -9,6 +9,10 @@ import { registerListBattles } from './list-battles.js';
 import { registerListHarnesses } from './list-harnesses.js';
 import { registerRenderReport } from './render-report.js';
 import { registerStartBattle } from './start-battle.js';
+import { registerBenchmarksTools } from './benchmarks.js';
+import { registerExperimentsTools } from './experiments.js';
+import { registerChallengesTools } from './challenges.js';
+import { registerLeaderboardTools } from './leaderboard.js';
 
 /** Every tool this server exposes, in the order a client sees them. */
 export const TOOL_NAMES = [
@@ -35,6 +39,10 @@ export function registerTools(server: McpServer, ctx: ArenaContext): void {
   registerInspectHarness(server, ctx);
   registerStartBattle(server, ctx);
   registerRenderReport(server, ctx);
+  registerBenchmarksTools(server, ctx);
+  registerExperimentsTools(server, ctx);
+  registerChallengesTools(server, ctx);
+  registerLeaderboardTools(server, ctx);
 }
 
 export { EVENT_CAP, EVENT_DEFAULT_LIMIT } from './get-battle.js';

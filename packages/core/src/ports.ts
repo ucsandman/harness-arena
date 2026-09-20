@@ -1,6 +1,7 @@
 import type {
   AdapterEvent,
   AgentConfig,
+  EfficiencyConfig,
   EvaluationReport,
   HarnessInspection,
   HarnessManifest,
@@ -135,6 +136,7 @@ export type EvaluateBattleFn = (ctx: EvaluationContext) => Promise<EvaluationRep
 export type DecideVerdictFn = (
   report: EvaluationReport,
   sides: Record<Side, { status: RunStatus; metrics: RunMetrics }>,
+  options?: { efficiency?: EfficiencyConfig },
 ) => Verdict;
 
 // ---- issue port -------------------------------------------------------------------------------

@@ -54,6 +54,8 @@ export type { ArtifactKind, CreatedBattle, Uploader, UploaderOptions, UploadStat
 export { runBattle } from './engine.js';
 export type { RunBattleDeps, RunBattleOptions } from './engine.js';
 
+export * from './benchmarks.js';
+
 export { createDemoSpec, DEMO_PROMPT, runDemoBattle, ensureDemoRepository } from './demo.js';
 
 export { loadAdapters, loadEvaluator, loadHarness } from './deps.js';

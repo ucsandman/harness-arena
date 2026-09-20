@@ -17,7 +17,7 @@ describe('leaderboard data', () => {
 
     // the exported demo battle, re-identified and marked as a real (non-demo) result
     const record = demoRecord({ id: freshBattleId(), demo: false });
-    expect(record.verdict?.winner).toBe('tie');
+    expect(record.verdict?.winner).toBe('a');
     expect(record.spec.category).toBe('debugging');
 
     await upsertBattleFromRecord(dbh, { record, ownerUserId: user.id, visibility: 'public' });
@@ -30,7 +30,8 @@ describe('leaderboard data', () => {
     expect(overall).toHaveLength(2);
     for (const row of overall) {
       expect(row.battles).toBe(1);
-      expect(row.ties).toBe(1);
+      expect(row.ties).toBe(0);
+      expect(row.wins + row.losses).toBe(1);
       expect(row.provisional).toBe(true);
       expect(row.battles).toBeLessThan(RATING_MIN_SAMPLE);
       expect(row.pool).toBe('community');

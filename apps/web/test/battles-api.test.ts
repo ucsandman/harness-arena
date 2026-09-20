@@ -157,7 +157,7 @@ describe('battles API', () => {
       verification: { kind: 'cloud', eligible: true, sandbox: 'arena-cloud-1' },
     });
     expect(record.spec.visibility).toBe('private');
-    expect(record.verdict?.winner).toBe('tie');
+    expect(record.verdict?.winner).toBe('a');
 
     const totalBattles = (rows: LeaderboardRow[]): number => rows.reduce((sum, row) => sum + row.battles, 0);
     const before = await getLeaderboard(dbh, { category: 'overall', pool: 'community' });
