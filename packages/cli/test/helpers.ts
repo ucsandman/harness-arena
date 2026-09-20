@@ -202,6 +202,7 @@ export function fakeRecord(opts: RecordOptions = {}): BattleRecord {
             decisiveFactors: ['tests_passed'],
             caveats: [],
             breakdown: [],
+            efficiency: null,
             judge: null,
           },
     insights: [],

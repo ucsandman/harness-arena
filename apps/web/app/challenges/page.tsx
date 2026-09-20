@@ -39,11 +39,17 @@ function ChallengeCard({ challenge }: { challenge: Challenge }) {
         <span className="flex flex-wrap items-center gap-1.5">
           <Badge variant={CHALLENGE_STATUS_VARIANT[challenge.status]}>{challenge.status}</Badge>
           {challenge.ratingEligible ? (
-            <Badge variant="outline" title="a decided result may move community ratings if the battle passes the integrity checks">
+            <Badge
+              variant="outline"
+              title="a decided result may move community ratings if the battle passes the integrity checks"
+            >
               rating eligible
             </Badge>
           ) : (
-            <Badge variant="neutral" title="this challenge is a demonstration; its result never moves ratings">
+            <Badge
+              variant="neutral"
+              title="this challenge is a demonstration; its result never moves ratings"
+            >
               not rated
             </Badge>
           )}
@@ -61,9 +67,7 @@ function ChallengeCard({ challenge }: { challenge: Challenge }) {
           <span>created {relativeTime(challenge.createdAt)}</span>
           {challenge.expiresAt ? <span>expires {formatUtcDate(challenge.expiresAt)}</span> : null}
           {challenge.acceptedBy ? <span>accepted by {challenge.acceptedBy.login}</span> : null}
-          <span className="font-mono">
-            {challenge.battleIds.length} linked battle(s)
-          </span>
+          <span className="font-mono">{challenge.battleIds.length} linked battle(s)</span>
         </div>
       </CardBody>
     </Card>

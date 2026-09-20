@@ -89,11 +89,7 @@ export default async function BountyDetailPage({ params }: PageProps) {
 
   return (
     <Container className="py-10">
-      <SectionHeading
-        eyebrow="bounty"
-        title={bounty.title}
-        description={bounty.description ?? undefined}
-      />
+      <SectionHeading eyebrow="bounty" title={bounty.title} description={bounty.description ?? undefined} />
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge variant={BOUNTY_STATUS_VARIANT[bounty.status]}>{bounty.status}</Badge>
@@ -120,8 +116,8 @@ export default async function BountyDetailPage({ params }: PageProps) {
           <CardBody className="flex flex-col gap-2">
             <CompetitorLine competitor={bounty.baseline} />
             <p className="text-2xs text-fg-subtle">
-              Every ratio compares your side to the baseline&apos;s side of the same battle, so machine
-              speed and model pricing cancel out.
+              Every ratio compares your side to the baseline&apos;s side of the same battle, so machine speed
+              and model pricing cancel out.
             </p>
           </CardBody>
         </Card>
@@ -153,8 +149,8 @@ export default async function BountyDetailPage({ params }: PageProps) {
               ))}
             </ul>
             <p className="mt-3 text-2xs text-fg-subtle">
-              A check that cannot be evaluated — nobody reported cost on both sides — is not met, and says
-              so with the count. Missing evidence is never a pass.
+              A check that cannot be evaluated — nobody reported cost on both sides — is not met, and says so
+              with the count. Missing evidence is never a pass.
             </p>
           </CardBody>
         </Card>

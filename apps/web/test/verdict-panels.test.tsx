@@ -18,7 +18,9 @@ describe('IntegrityPanel', () => {
     const record = demoRecord({
       integrity: {
         eligible: false,
-        flags: [{ code: 'demo', severity: 'block', detail: 'Demo data: deterministic fixtures.', side: null }],
+        flags: [
+          { code: 'demo', severity: 'block', detail: 'Demo data: deterministic fixtures.', side: null },
+        ],
         fingerprint: null,
         checkedWith: 'test-suite',
       },

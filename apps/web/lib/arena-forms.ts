@@ -62,7 +62,10 @@ function isoDate(form: FormData, key: string): string | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
 }
 
-function competitor(form: FormData, prefix: string): { label?: string; harness: { source: string; commit?: string } } {
+function competitor(
+  form: FormData,
+  prefix: string,
+): { label?: string; harness: { source: string; commit?: string } } {
   const label = optional(form, `${prefix}Label`);
   const commit = optional(form, `${prefix}Commit`);
   return {

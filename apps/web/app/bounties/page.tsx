@@ -28,10 +28,7 @@ export const metadata: Metadata = {
 };
 
 function conditionLine(bounty: Bounty): string {
-  const parts = [
-    `must win ${bounty.condition.mustWin}`,
-    `at least ${bounty.condition.minBattles} battle(s)`,
-  ];
+  const parts = [`must win ${bounty.condition.mustWin}`, `at least ${bounty.condition.minBattles} battle(s)`];
   if (bounty.condition.maxTokensRatio !== undefined) {
     parts.push(`tokens <= ${bounty.condition.maxTokensRatio} x baseline`);
   }
@@ -111,8 +108,8 @@ export default async function BountiesPage() {
 
       <ExecutionNote className="mt-6" />
       <p className="mt-3 rounded-card border border-border bg-surface px-4 py-3 text-[0.8125rem] text-fg-muted">
-        Arena moves no money. A reward is either reputation or something the poster settles somewhere else,
-        on their own terms, and Arena is not a party to it.
+        Arena moves no money. A reward is either reputation or something the poster settles somewhere else, on
+        their own terms, and Arena is not a party to it.
       </p>
 
       <div className="mt-6">

@@ -22,7 +22,7 @@ function fakeServer(routes: Record<string, { status?: number; body: unknown }>):
   calls: Call[];
 } {
   const calls: Call[] = [];
-  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input);
     calls.push({
       url,
@@ -32,10 +32,10 @@ function fakeServer(routes: Record<string, { status?: number; body: unknown }>):
     const path = url.slice(SERVER.length);
     const answer = routes[path] ?? routes[path.split('?')[0] ?? ''];
     if (!answer) {
-      return new Response(
-        JSON.stringify({ error: { code: 'not_found', message: 'no route ' + path } }),
-        { status: 404, headers: { 'content-type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ error: { code: 'not_found', message: 'no route ' + path } }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      });
     }
     return new Response(JSON.stringify(answer.body), {
       status: answer.status ?? 200,

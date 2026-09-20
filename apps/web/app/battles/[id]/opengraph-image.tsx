@@ -125,7 +125,13 @@ function pill(label: string, color: string): ReactElement {
 function winnerLine(record: BattleRecord, labelA: string, labelB: string): string {
   const winner = record.verdict?.winner;
   const base =
-    winner === 'a' ? `${labelA} wins` : winner === 'b' ? `${labelB} wins` : winner === 'tie' ? 'Tie' : 'Inconclusive';
+    winner === 'a'
+      ? `${labelA} wins`
+      : winner === 'b'
+        ? `${labelB} wins`
+        : winner === 'tie'
+          ? 'Tie'
+          : 'Inconclusive';
   return record.demo ? `${base} — demo data` : base;
 }
 
@@ -174,7 +180,9 @@ function sidePanel(color: string, name: string, gatesText: string, run: RunRecor
 
 /** `4/5 gates`-style correctness tally per side: non-efficiency gates the side won or tied. */
 function gatesText(record: BattleRecord, side: 'a' | 'b'): string {
-  const gates = (record.verdict?.breakdown ?? []).filter((row) => row.factor !== 'efficiency' && row.result !== 'n/a');
+  const gates = (record.verdict?.breakdown ?? []).filter(
+    (row) => row.factor !== 'efficiency' && row.result !== 'n/a',
+  );
   if (gates.length === 0) return 'n/a';
   const won = gates.filter((row) => row.result === side || row.result === 'tie').length;
   return `${won}/${gates.length} gates`;
@@ -205,7 +213,14 @@ function battleCard(record: BattleRecord): ReactElement {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" strokeWidth="2.25" strokeLinecap="round">
+          <svg
+            width="34"
+            height="34"
+            viewBox="0 0 24 24"
+            fill="none"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+          >
             <path d="M4 6l5 6-5 6" stroke={COLOR.sideA} />
             <path d="M20 6l-5 6 5 6" stroke={COLOR.sideB} />
             <path d="M12 3.5v17" stroke={COLOR.border} strokeWidth="1.5" />

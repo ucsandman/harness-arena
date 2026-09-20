@@ -111,8 +111,8 @@ export default async function BenchmarkDetailPage({ params, searchParams }: Page
 
       <h2 className="mt-8 text-sm font-semibold">Versions</h2>
       <p className="mt-1 text-2xs text-fg-subtle">
-        A version id is the sha256 of the pack content. Editing a prompt, an assertion or a commit makes a
-        new version, so a stored result can never point at a definition that changed.
+        A version id is the sha256 of the pack content. Editing a prompt, an assertion or a commit makes a new
+        version, so a stored result can never point at a definition that changed.
       </p>
       <div className="mt-3">
         <TableWrap>
@@ -263,9 +263,11 @@ export default async function BenchmarkDetailPage({ params, searchParams }: Page
 
       <p className="mt-4 text-2xs text-fg-subtle">
         {results.battles} public battle(s) read for this version
-        {results.capped ? ', capped at the most recent 500' : ''}. A pack run is a sample, not a ranking:
-        see <Link href="/docs/experiments" className="text-accent hover:underline">how many battles a claim
-        needs</Link>.
+        {results.capped ? ', capped at the most recent 500' : ''}. A pack run is a sample, not a ranking: see{' '}
+        <Link href="/docs/experiments" className="text-accent hover:underline">
+          how many battles a claim needs
+        </Link>
+        .
       </p>
     </Container>
   );

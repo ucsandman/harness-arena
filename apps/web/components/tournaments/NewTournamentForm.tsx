@@ -88,7 +88,11 @@ export function NewTournamentForm({
               <legend className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
                 Entrant {index + 1}
               </legend>
-              <Field label="Source" htmlFor={`entrantSource-${index}`} hint="vanilla, a GitHub URL, or a path.">
+              <Field
+                label="Source"
+                htmlFor={`entrantSource-${index}`}
+                hint="vanilla, a GitHub URL, or a path."
+              >
                 <input
                   id={`entrantSource-${index}`}
                   name="entrantSource"

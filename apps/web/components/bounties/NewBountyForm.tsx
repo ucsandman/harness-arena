@@ -95,11 +95,7 @@ export function NewBountyForm({
                 <option value="majority">more than half of the decided battles</option>
               </select>
             </Field>
-            <Field
-              label="Minimum battles"
-              htmlFor="minBattles"
-              hint="One trial on one task is an anecdote."
-            >
+            <Field label="Minimum battles" htmlFor="minBattles" hint="One trial on one task is an anecdote.">
               <input
                 id="minBattles"
                 name="minBattles"

@@ -301,8 +301,8 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
             <h2 className="text-sm font-semibold">Think your harness is better? Prove it.</h2>
             <p className="mt-1 max-w-2xl text-[0.8125rem] text-fg-muted">
               Open a challenge against any harness on this table. You or whoever accepts runs it locally with
-              the <span className="font-mono">{BRAND.cli.bin}</span> CLI and uploads the battle; Arena hosts no
-              runner, so every result here is community-reported.
+              the <span className="font-mono">{BRAND.cli.bin}</span> CLI and uploads the battle; Arena hosts
+              no runner, so every result here is community-reported.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

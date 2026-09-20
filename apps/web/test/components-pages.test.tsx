@@ -46,9 +46,7 @@ describe('/components', () => {
   it('lists a declared component and says plainly that nobody has measured it', async () => {
     await seedComponent('component-owner', 9851);
 
-    const html = renderToStaticMarkup(
-      await ComponentsPage({ searchParams: Promise.resolve({}) }),
-    );
+    const html = renderToStaticMarkup(await ComponentsPage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('code-review');
     expect(html).toContain('Skill');
     expect(html).toContain('1 harness(es)');

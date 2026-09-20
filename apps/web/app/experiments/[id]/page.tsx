@@ -68,9 +68,7 @@ function reproduceCommand(experiment: Experiment): string {
     lines.push('  --spec-dir ./specs \\');
   }
   if (experiment.changedComponent) {
-    lines.push(
-      `  --component ${experiment.changedComponent.kind}:${experiment.changedComponent.name} \\`,
-    );
+    lines.push(`  --component ${experiment.changedComponent.kind}:${experiment.changedComponent.name} \\`);
   }
   lines.push(`  --agent ${experiment.agent.id} \\`);
   lines.push(`  --trials ${experiment.trials}`);
@@ -115,7 +113,7 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
   if (!experiment) notFound();
 
   const summary = experiment.summary;
-  const thin = summary === null;
+  const thin = summary === null || summary.comparable < STATS_LOW_SAMPLE;
 
   const linked = await Promise.all(
     experiment.battleIds.slice(0, 50).map(async (battleId) => ({
@@ -140,9 +138,7 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
           {experiment.trials} trial(s) per task
         </Badge>
         {summary ? <EvidenceBadge evidence={summary.evidence} /> : null}
-        {experiment.visibility !== 'public' ? (
-          <Badge variant="outline">{experiment.visibility}</Badge>
-        ) : null}
+        {experiment.visibility !== 'public' ? <Badge variant="outline">{experiment.visibility}</Badge> : null}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -153,7 +149,10 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
           <CardBody className="flex flex-col gap-2">
             <CompetitorLine competitor={experiment.control} side="control" />
             <span className="font-mono text-2xs text-fg-subtle">
-              commit {experiment.control.harness.commit ? shortCommit(experiment.control.harness.commit, 12) : 'not pinned'}
+              commit{' '}
+              {experiment.control.harness.commit
+                ? shortCommit(experiment.control.harness.commit, 12)
+                : 'not pinned'}
             </span>
           </CardBody>
         </Card>
@@ -164,7 +163,10 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
           <CardBody className="flex flex-col gap-2">
             <CompetitorLine competitor={experiment.treatment} side="treatment" />
             <span className="font-mono text-2xs text-fg-subtle">
-              commit {experiment.treatment.harness.commit ? shortCommit(experiment.treatment.harness.commit, 12) : 'not pinned'}
+              commit{' '}
+              {experiment.treatment.harness.commit
+                ? shortCommit(experiment.treatment.harness.commit, 12)
+                : 'not pinned'}
             </span>
           </CardBody>
         </Card>
@@ -179,9 +181,7 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
             {experiment.changedComponent ? (
               <>
                 <span className="flex flex-wrap items-center gap-2">
-                  <Badge variant="neutral">
-                    {COMPONENT_KIND_LABELS[experiment.changedComponent.kind]}
-                  </Badge>
+                  <Badge variant="neutral">{COMPONENT_KIND_LABELS[experiment.changedComponent.kind]}</Badge>
                   <Link
                     href={`/components/${experiment.changedComponent.kind}/${experiment.changedComponent.name.toLowerCase()}`}
                     className="font-mono text-[0.8125rem] hover:text-accent"
@@ -200,8 +200,8 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
               </>
             ) : (
               <p className="text-2xs text-fg-muted">
-                No single component is named. A {experiment.kind} does not require one; only an ablation
-                does, and that is what lets the component catalogue carry evidence.
+                No single component is named. A {experiment.kind} does not require one; only an ablation does,
+                and that is what lets the component catalogue carry evidence.
               </p>
             )}
           </CardBody>
@@ -273,8 +273,8 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
           <h2 className="mt-8 text-sm font-semibold">Correctness</h2>
           <p className="mt-1 max-w-3xl text-2xs text-fg-subtle">
             A side is correct on a battle when it passed every correctness gate that actually ran. The rate
-            carries a Wilson interval, which stays honest on a small sample instead of collapsing to a
-            point. Efficiency is deliberately not part of this.
+            carries a Wilson interval, which stays honest on a small sample instead of collapsing to a point.
+            Efficiency is deliberately not part of this.
           </p>
           <div className="mt-3">
             <TableWrap>
@@ -386,8 +386,8 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
               </ul>
             ) : (
               <p className="mt-3 text-2xs text-fg-subtle">
-                No conclusion was generated: the numbers above did not clear the sample the generator
-                requires for a sentence.
+                No conclusion was generated: the numbers above did not clear the sample the generator requires
+                for a sentence.
               </p>
             )}
           </div>
@@ -443,8 +443,8 @@ export default async function ExperimentDetailPage({ params }: PageProps) {
       </div>
 
       <p className="mt-6 text-2xs text-fg-subtle">
-        Ratings move only on public, completed, non-demo battles that pass the integrity checks. An
-        experiment is evidence, not a score.{' '}
+        Ratings move only on public, completed, non-demo battles that pass the integrity checks. An experiment
+        is evidence, not a score.{' '}
         <Link href="/docs/experiments" className="text-accent hover:underline">
           One run proves nothing
         </Link>

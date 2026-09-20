@@ -163,7 +163,7 @@ describe('bounty DB flow', () => {
     const submissionOutcome = await submitToBounty(
       handle.db,
       bounty.id,
-      { harness: { harness: { source: 'https://github.com/acme/challenger' } } },
+      { harness: { harness: { source: 'https://github.com/acme/challenger', trusted: false } } },
       { userId: creator.id },
     );
     if (!submissionOutcome.ok) throw new Error('submitToBounty failed');
@@ -211,7 +211,7 @@ describe('bounty DB flow', () => {
     const submissionOutcome = await submitToBounty(
       handle.db,
       bounty.id,
-      { harness: { harness: { source: 'https://github.com/acme/loser' } } },
+      { harness: { harness: { source: 'https://github.com/acme/loser', trusted: false } } },
       { userId: creator.id },
     );
     if (!submissionOutcome.ok) throw new Error('submitToBounty failed');

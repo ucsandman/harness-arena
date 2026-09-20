@@ -73,7 +73,10 @@ const VERIFIED_EMPTY_NOTE =
 // ---- flag parsing -------------------------------------------------------------------------------
 
 function parseCategory(value: string): RatingCategory {
-  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
   const parsed = ratingCategorySchema.safeParse(normalized);
   if (!parsed.success) {
     throw new CliError('--category must be one of: ' + ratingCategorySchema.options.join(', '));
@@ -141,17 +144,7 @@ function leaderboardRow(deps: CliDeps, entry: LeaderboardEntry, minSample: numbe
   ];
 }
 
-const LEADERBOARD_HEAD = [
-  'Rank',
-  'Harness',
-  'Agent',
-  'Rating',
-  'Peak',
-  'Battles',
-  'W/L/T',
-  'Form',
-  'Sample',
-];
+const LEADERBOARD_HEAD = ['Rank', 'Harness', 'Agent', 'Rating', 'Peak', 'Battles', 'W/L/T', 'Form', 'Sample'];
 
 // ---- server reads -------------------------------------------------------------------------------
 
@@ -209,12 +202,7 @@ async function leaderboardCommand(deps: CliDeps, flags: LeaderboardFlags): Promi
   if (flags.agent) query.set('agent', flags.agent);
   if (flags.limit) query.set('limit', parseLimit(flags.limit));
 
-  const json = await readOrThrow(
-    deps,
-    access,
-    '/api/v1/leaderboard' + querySuffix(query),
-    'the leaderboard',
-  );
+  const json = await readOrThrow(deps, access, '/api/v1/leaderboard' + querySuffix(query), 'the leaderboard');
   const parsed = leaderboardResponseSchema.safeParse(json);
   if (!parsed.success) {
     throw new CliError(
@@ -242,9 +230,8 @@ async function leaderboardCommand(deps: CliDeps, flags: LeaderboardFlags): Promi
   }
 
   ui.line(
-    ui.c.bold(
-      RATING_CATEGORY_LABELS[board.category] + ' - ' + RATING_POOL_LABELS[board.pool] + ' pool',
-    ) + (board.agentId ? ui.c.dim('  agent ' + board.agentId) : ''),
+    ui.c.bold(RATING_CATEGORY_LABELS[board.category] + ' - ' + RATING_POOL_LABELS[board.pool] + ' pool') +
+      (board.agentId ? ui.c.dim('  agent ' + board.agentId) : ''),
   );
   if (board.poolEmpty) {
     ui.line();
@@ -484,9 +471,7 @@ async function profileCommand(deps: CliDeps, slug: string, flags: LeaderboardFla
         entry.category,
         String(entry.battles),
         recordText(entry),
-        entry.correctnessRate === null
-          ? 'n/a'
-          : String(Math.round(entry.correctnessRate * 100)) + '%',
+        entry.correctnessRate === null ? 'n/a' : String(Math.round(entry.correctnessRate * 100)) + '%',
         String(entry.correctnessBattles),
       ]),
       ['Category', 'Battles', 'W/L/T', 'Correctness', 'Sample'],
@@ -577,11 +562,7 @@ async function headToHeadCommand(
   const json = await readOrThrow(
     deps,
     access,
-    '/api/v1/harnesses/' +
-      encodeURIComponent(slug) +
-      '/vs/' +
-      encodeURIComponent(other) +
-      querySuffix(query),
+    '/api/v1/harnesses/' + encodeURIComponent(slug) + '/vs/' + encodeURIComponent(other) + querySuffix(query),
     slug + ' against ' + other,
   );
   // The route may wrap the record or return it bare; both are accepted so a wrapper key cannot

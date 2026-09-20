@@ -121,10 +121,7 @@ async function read(
   return { ok: true, access, json: result.json };
 }
 
-const categoryArg = z
-  .enum(RATING_CATEGORIES)
-  .optional()
-  .describe('rating category; overall is the default');
+const categoryArg = z.enum(RATING_CATEGORIES).optional().describe('rating category; overall is the default');
 const poolArg = z
   .enum(['community', 'verified'])
   .optional()
@@ -211,11 +208,7 @@ export function registerLeaderboardTools(server: McpServer, ctx: ArenaContext): 
       inputSchema: { slug: z.string().min(1).describe('harness slug as the server catalogues it') },
     },
     async ({ slug }) => {
-      const result = await read(
-        ctx,
-        '/api/v1/harnesses/' + encodeURIComponent(slug),
-        'harness ' + slug,
-      );
+      const result = await read(ctx, '/api/v1/harnesses/' + encodeURIComponent(slug), 'harness ' + slug);
       if (!result.ok) return errorResult(result.message);
       const profile = profileOf(result.json, result.access.serverUrl);
       if (typeof profile === 'string') return errorResult(profile);
@@ -407,11 +400,7 @@ export function registerLeaderboardTools(server: McpServer, ctx: ArenaContext): 
       inputSchema: { slug: z.string().min(1).describe('harness slug as the server catalogues it') },
     },
     async ({ slug }) => {
-      const result = await read(
-        ctx,
-        '/api/v1/harnesses/' + encodeURIComponent(slug),
-        'harness ' + slug,
-      );
+      const result = await read(ctx, '/api/v1/harnesses/' + encodeURIComponent(slug), 'harness ' + slug);
       if (!result.ok) return errorResult(result.message);
       const profile = profileOf(result.json, result.access.serverUrl);
       if (typeof profile === 'string') return errorResult(profile);

@@ -192,7 +192,10 @@ export function StatsCell({
   return (
     <span className="font-mono text-xs tabular-nums">
       {format(stats.mean)}
-      <span className="text-fg-subtle"> med {format(stats.median)} · n={stats.n}</span>
+      <span className="text-fg-subtle">
+        {' '}
+        med {format(stats.median)} · n={stats.n}
+      </span>
     </span>
   );
 }

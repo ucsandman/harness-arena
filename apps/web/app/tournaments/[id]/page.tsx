@@ -58,10 +58,7 @@ const SETTLED_LABEL: Record<NonNullable<TournamentMatch['settledBy']>, string> =
   forfeit: 'forfeit',
 };
 
-function entrantAt(
-  entrants: readonly TournamentEntrant[],
-  index: number | null,
-): TournamentEntrant | null {
+function entrantAt(entrants: readonly TournamentEntrant[], index: number | null): TournamentEntrant | null {
   if (index === null) return null;
   return entrants.find((entrant) => entrant.index === index) ?? null;
 }
@@ -119,9 +116,7 @@ function MatchCard({ match, entrants }: { match: TournamentMatch; entrants: read
       <div className="divide-y divide-border">
         <Slot entrant={a} isWinner={decided && match.winner === match.a} decided={decided} />
         {match.bye ? (
-          <span className="flex items-center gap-2 px-2 py-1 text-2xs text-fg-subtle">
-            awaiting an opponent
-          </span>
+          <span className="flex items-center gap-2 px-2 py-1 text-2xs text-fg-subtle">no opponent: bye</span>
         ) : (
           <Slot entrant={b} isWinner={decided && match.winner === match.b} decided={decided} />
         )}
@@ -258,9 +253,7 @@ export default async function TournamentDetailPage({ params }: PageProps) {
         {pending.length === 0 ? (
           <EmptyPanel
             title={
-              tournament.status === 'completed'
-                ? 'Nothing left to run'
-                : 'No match has both slots filled yet'
+              tournament.status === 'completed' ? 'Nothing left to run' : 'No match has both slots filled yet'
             }
             note={
               tournament.status === 'completed'
@@ -304,9 +297,9 @@ export default async function TournamentDetailPage({ params }: PageProps) {
                 code={`${BRAND.cli.bin} login\n${BRAND.cli.bin} tournament play ${tournament.id}`}
               />
               <p className="mt-2 text-2xs text-fg-subtle">
-                That runs every match whose two slots are filled and which has no winner yet, on your
-                machine, uploads each one, re-fetches the bracket and repeats. Any number of people can do
-                this at once; a match is settled once, by the first verified battle.
+                That runs every match whose two slots are filled and which has no winner yet, on your machine,
+                uploads each one, re-fetches the bracket and repeats. Any number of people can do this at
+                once; a match is settled once, by the first verified battle.
               </p>
             </div>
           </>

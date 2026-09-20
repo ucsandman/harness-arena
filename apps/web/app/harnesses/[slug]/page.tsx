@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = profile.harness.name;
   const description =
     profile.harness.description ??
-    `${profile.harness.name}: a ${profile.harness.framework} harness, with its ratings, per-category record, versions and public battles.`;
+    `${profile.harness.name}: ${/^[aeiou]/i.test(profile.harness.framework) ? 'an' : 'a'} ${profile.harness.framework} harness, with its ratings, per-category record, versions and public battles.`;
   const image = `/harnesses/${slug}/opengraph-image?v=1`;
   return {
     title,
@@ -197,8 +197,8 @@ export default async function HarnessProfilePage({ params, searchParams }: PageP
           </CardHeader>
           {communityOverall.length === 0 ? (
             <CardBody className="text-[0.8125rem] text-fg-muted">
-              No decided battles yet, so this harness has no community rating. A rating moves only on a
-              public battle with a decided winner that passed the integrity checks.
+              No decided battles yet, so this harness has no community rating. A rating moves only on a public
+              battle with a decided winner that passed the integrity checks.
             </CardBody>
           ) : (
             <CardBody className="flex flex-col gap-4">
@@ -209,7 +209,11 @@ export default async function HarnessProfilePage({ params, searchParams }: PageP
                     value={<RatingValue rating={rating.rating} deviation={rating.deviation} />}
                     hint={`peak ${Math.round(rating.peakRating)}`}
                   />
-                  <Stat label="Battles" value={rating.battles} hint={`W/L/T ${rating.wins}/${rating.losses}/${rating.ties}`} />
+                  <Stat
+                    label="Battles"
+                    value={rating.battles}
+                    hint={`W/L/T ${rating.wins}/${rating.losses}/${rating.ties}`}
+                  />
                   <Stat
                     label="Win rate"
                     value={rating.battles === 0 ? 'n/a' : formatPercent(rating.wins / rating.battles)}
@@ -345,8 +349,8 @@ export default async function HarnessProfilePage({ params, searchParams }: PageP
           })}
         </CardBody>
         <p className="border-t border-border px-4 py-2.5 text-2xs text-fg-subtle">
-          Only battles where both sides reported the metric count, so a ratio never compares a measured
-          number against a missing one. Below 1.00x is cheaper than the opponent.
+          Only battles where both sides reported the metric count, so a ratio never compares a measured number
+          against a missing one. Below 1.00x is cheaper than the opponent.
         </p>
       </Card>
 
@@ -571,8 +575,8 @@ export default async function HarnessProfilePage({ params, searchParams }: PageP
         <CardBody className="flex flex-col gap-3 text-[0.8125rem]">
           {!lineage || (lineage.ancestors.length === 0 && lineage.descendants.length === 0) ? (
             <p className="text-fg-muted">
-              No ancestry is declared for this harness. Arena never infers one: an edge comes from GitHub
-              fork metadata, from the harness&apos;s own arena.yaml, or from a person saying so.
+              No ancestry is declared for this harness. Arena never infers one: an edge comes from GitHub fork
+              metadata, from the harness&apos;s own arena.yaml, or from a person saying so.
             </p>
           ) : (
             <>

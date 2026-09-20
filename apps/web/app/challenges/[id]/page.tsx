@@ -91,8 +91,7 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
   );
 
   const isCreator = user !== null && challenge.createdBy?.id === user.id;
-  const cancellable =
-    isCreator && challenge.status !== 'completed' && challenge.status !== 'cancelled';
+  const cancellable = isCreator && challenge.status !== 'completed' && challenge.status !== 'cancelled';
 
   return (
     <Container className="py-10">
@@ -115,9 +114,7 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
         ) : (
           <Badge variant="neutral">not rated</Badge>
         )}
-        {challenge.visibility !== 'public' ? (
-          <Badge variant="outline">{challenge.visibility}</Badge>
-        ) : null}
+        {challenge.visibility !== 'public' ? <Badge variant="outline">{challenge.visibility}</Badge> : null}
       </div>
 
       <ExecutionNote className="mt-6" />
@@ -131,8 +128,8 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
             <CompetitorLine competitor={challenge.sides.a} side="a" />
             <CompetitorLine competitor={challenge.sides.b} side="b" />
             <p className="text-2xs text-fg-subtle">
-              Slot order does not matter: a battle that ran side B first still counts, as long as it ran
-              these two harnesses on agent {challenge.agent.id}.
+              Slot order does not matter: a battle that ran side B first still counts, as long as it ran these
+              two harnesses on agent {challenge.agent.id}.
             </p>
           </CardBody>
         </Card>
@@ -158,7 +155,10 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
           <span className="text-2xs text-fg-subtle">runs on your machine, with your own CLIs</span>
         </CardHeader>
         <CardBody className="flex flex-col gap-2">
-          <CodeBlock terminal code={`${BRAND.cli.bin} login\n${BRAND.cli.bin} challenge run ${challenge.id}`} />
+          <CodeBlock
+            terminal
+            code={`${BRAND.cli.bin} login\n${BRAND.cli.bin} challenge run ${challenge.id}`}
+          />
           <p className="text-2xs text-fg-subtle">
             That fetches the definition, accepts the challenge on your account, builds the battle spec from
             the challenge&apos;s own target, runs it, and uploads it at the privacy level above.

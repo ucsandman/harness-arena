@@ -1,4 +1,9 @@
-import type { BattleRecord, EfficiencyMetricKey, Verdict, VerdictBreakdownRow } from '@harness-arena/protocol';
+import type {
+  BattleRecord,
+  EfficiencyMetricKey,
+  Verdict,
+  VerdictBreakdownRow,
+} from '@harness-arena/protocol';
 import { CircleSlash, Equal, Info, TriangleAlert, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TBody, TD, TH, THead, TR, TableWrap } from '@/components/ui/Table';
@@ -308,8 +313,8 @@ export function VerdictBanner({ record, className }: { record: BattleRecord; cla
                 {verdict.efficiency.advantage !== 0
                   ? ` favoring side ${verdict.efficiency.advantage > 0 ? 'A' : 'B'}`
                   : ''}{' '}
-                against the {formatPercent(verdict.efficiency.minAdvantage)} needed before efficiency may name a
-                winner:{' '}
+                against the {formatPercent(verdict.efficiency.minAdvantage)} needed before efficiency may name
+                a winner:{' '}
                 {Math.abs(verdict.efficiency.advantage) >= verdict.efficiency.minAdvantage
                   ? 'cleared it.'
                   : 'did not clear it.'}

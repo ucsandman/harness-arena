@@ -71,17 +71,21 @@ export function registerGetBattle(server: McpServer, ctx: ArenaContext): void {
       }
 
       const handle = ctx.runner.get(id);
+      const running = ctx.runner.runningId === id;
       const data: Record<string, unknown> = {
         id: record.id,
-        status: record.status,
-        running: ctx.runner.runningId === id,
+        // While this server still owns the battle the runner's view wins: the record on disk turns
+        // terminal before the report, upload and workspace cleanup finish, and the next battle can only
+        // start once the runner has let go.
+        status: running && handle ? handle.status : record.status,
+        running,
         startedInThisServer: handle !== undefined,
         record,
       };
 
       if (!includeEvents) {
         data.events = { included: false, hint: 'call again with includeEvents true for the timeline' };
-        return jsonResult(summarize(record), data);
+        return jsonResult(summarize({ ...record, status: String(data.status) }), data);
       }
 
       const all = await ctx.store.readEvents(id, afterSeq === undefined ? {} : { afterSeq });
@@ -116,7 +120,7 @@ export function registerGetBattle(server: McpServer, ctx: ArenaContext): void {
             nextAfterSeq +
             ' for the next page.'
           : ' Returned all ' + returned.length + ' matching events.';
-      return jsonResult(summarize(record) + truncatedNote, data);
+      return jsonResult(summarize({ ...record, status: String(data.status) }) + truncatedNote, data);
     },
   );
 }

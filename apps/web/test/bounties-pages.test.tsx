@@ -49,9 +49,7 @@ describe('/bounties/[id]', () => {
     const user = await makeUser('bounty-author-2', 9842);
     const bounty = await createBounty(dbh, bountyRequest(), { createdByUserId: user.id });
 
-    const html = renderToStaticMarkup(
-      await BountyDetailPage({ params: Promise.resolve({ id: bounty.id }) }),
-    );
+    const html = renderToStaticMarkup(await BountyDetailPage({ params: Promise.resolve({ id: bounty.id }) }));
 
     expect(html).toContain('The submission won EVERY battle linked to it.');
     expect(html).toContain('At least 3 battle(s) are linked to the submission.');

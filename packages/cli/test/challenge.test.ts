@@ -53,7 +53,7 @@ function fakeServer(routes: Record<string, (call: Call) => { status?: number; bo
   calls: Call[];
 } {
   const calls: Call[] = [];
-  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input);
     const call: Call = {
       url,

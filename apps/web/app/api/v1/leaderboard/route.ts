@@ -1,4 +1,9 @@
-import { RATING_MIN_SAMPLE, leaderboardResponseSchema, ratingCategorySchema, ratingPoolSchema } from '@harness-arena/protocol';
+import {
+  RATING_MIN_SAMPLE,
+  leaderboardResponseSchema,
+  ratingCategorySchema,
+  ratingPoolSchema,
+} from '@harness-arena/protocol';
 import { getLeaderboard } from '@harness-arena/database';
 import { apiJson } from '@/lib/api';
 import { db } from '@/lib/db';
@@ -8,7 +13,8 @@ export const dynamic = 'force-dynamic';
 /** GET /api/v1/leaderboard?category&pool&agent&limit — public read, no auth. */
 export async function GET(request: Request): Promise<Response> {
   const searchParams = new URL(request.url).searchParams;
-  const category = ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
+  const category =
+    ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
   const pool = ratingPoolSchema.safeParse(searchParams.get('pool') ?? undefined).data ?? 'community';
   const agentId = searchParams.get('agent');
 

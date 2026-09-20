@@ -1,6 +1,8 @@
 import type { ArenaEvent, BattleRecord, BattleStatus } from '@harness-arena/protocol';
 import { errorText } from './result.js';
 
+const TERMINAL: ReadonlySet<BattleStatus> = new Set(['completed', 'failed', 'cancelled']);
+
 /**
  * Tracks battles started through the MCP server, in memory, for this process only.
  *
@@ -104,6 +106,10 @@ export class BattleRunner {
           idSeen();
         },
         onStatus: (status) => {
+          // A terminal status arrives before the engine has written the report, uploaded and cleaned
+          // the workspaces; the handle only turns terminal when the run promise settles below, so a
+          // caller that sees a finished status can start the next battle at once.
+          if (TERMINAL.has(status)) return;
           const handle = active.id === null ? undefined : this.battles.get(active.id);
           if (handle && handle.completedAt === null) handle.status = status;
         },

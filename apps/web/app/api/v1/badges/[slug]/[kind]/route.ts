@@ -24,7 +24,9 @@ const BADGE_LABEL = 'Harness Arena';
 
 /** The agent behind the harness's biggest community `overall` sample, or `'unknown'` when it has none. */
 function defaultAgentId(profile: HarnessProfileResponse): string {
-  const communityOverall = profile.ratings.filter((row) => row.pool === 'community' && row.category === 'overall');
+  const communityOverall = profile.ratings.filter(
+    (row) => row.pool === 'community' && row.category === 'overall',
+  );
   if (communityOverall.length === 0) return 'unknown';
   return communityOverall.reduce((best, row) => (row.battles > best.battles ? row : best)).agentId;
 }
@@ -36,7 +38,9 @@ function ratingValue(
   category: RatingCategory,
   fallback: 'default' | 'no_verified',
 ): string {
-  const row = profile.ratings.find((r) => r.pool === pool && r.agentId === agentId && r.category === category);
+  const row = profile.ratings.find(
+    (r) => r.pool === pool && r.agentId === agentId && r.category === category,
+  );
   if (!row) {
     if (fallback === 'no_verified') return 'no verified battles';
     return `provisional ${RATING_DEFAULT} ±${RATING_DEFAULT_DEVIATION} · 0 battles`;
@@ -124,7 +128,8 @@ export async function GET(request: Request, ctx: Context): Promise<Response> {
   if (!profile) return apiError('not_found', 'no harness with that slug');
 
   const searchParams = new URL(request.url).searchParams;
-  const category = ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
+  const category =
+    ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
   const agentId = searchParams.get('agent') ?? defaultAgentId(profile);
 
   const value = await valueFor(dbh, kind, profile, agentId, category);

@@ -40,7 +40,9 @@ export function RatingChart({ points, label }: { points: RatingHistoryPoint[]; l
   const y = (value: number): number => PAD.top + plotH - ((value - base) / span) * plotH;
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.rating).toFixed(1)}`);
-  const bandTop = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(highs[i] as number).toFixed(1)}`);
+  const bandTop = points.map(
+    (p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(highs[i] as number).toFixed(1)}`,
+  );
   const bandBottom = [...points]
     .map((p, i) => ({ i, value: lows[i] as number }))
     .reverse()
@@ -104,11 +106,7 @@ export function RatingChart({ points, label }: { points: RatingHistoryPoint[]; l
           </circle>
         ))}
 
-        <text
-          x={PAD.left}
-          y={HEIGHT - 6}
-          className="fill-current font-mono text-[9px] text-fg-subtle"
-        >
+        <text x={PAD.left} y={HEIGHT - 6} className="fill-current font-mono text-[9px] text-fg-subtle">
           {first.at.slice(0, 10)}
         </text>
         <text

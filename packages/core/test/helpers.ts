@@ -237,6 +237,7 @@ export function fakeVerdict(winner: Verdict['winner'] = 'a'): Verdict {
     decisiveFactors: ['tests_passed'],
     caveats: ['one machine, one run'],
     breakdown: [],
+    efficiency: null,
     judge: null,
   };
 }

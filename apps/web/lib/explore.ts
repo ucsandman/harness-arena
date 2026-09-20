@@ -1,9 +1,10 @@
+import { RATING_MIN_SAMPLE, type RatingCategory, type RatingPool } from '@harness-arena/protocol';
 import {
-  RATING_MIN_SAMPLE,
-  type RatingCategory,
-  type RatingPool,
-} from '@harness-arena/protocol';
-import { getLeaderboard, getRatingHistory, type ArenaDatabase, type LeaderboardRow } from '@harness-arena/database';
+  getLeaderboard,
+  getRatingHistory,
+  type ArenaDatabase,
+  type LeaderboardRow,
+} from '@harness-arena/database';
 
 /**
  * The numbers behind /explore.
@@ -77,9 +78,7 @@ export async function exploreRankings(
     const current = bySlug.get(row.harnessSlug);
     if (!current || row.rating > current.rating) bySlug.set(row.harnessSlug, row);
   }
-  const candidates = [...bySlug.values()]
-    .sort((a, b) => b.battles - a.battles)
-    .slice(0, EXPLORE_RISING_SCAN);
+  const candidates = [...bySlug.values()].sort((a, b) => b.battles - a.battles).slice(0, EXPLORE_RISING_SCAN);
 
   const since = Date.now() - EXPLORE_RISING_DAYS * 86_400_000;
   const rising: RisingHarness[] = [];

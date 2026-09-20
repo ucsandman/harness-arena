@@ -252,8 +252,8 @@ export default async function ExplorePage({ searchParams }: PageProps) {
                       +{entry.delta}
                     </span>
                     <span className="font-mono text-2xs text-fg-subtle">
-                      over {entry.events} rating event(s) · now {Math.round(entry.rating)} ·{' '}
-                      {entry.battles} battle(s)
+                      over {entry.events} rating event(s) · now {Math.round(entry.rating)} · {entry.battles}{' '}
+                      battle(s)
                     </span>
                     {entry.provisional ? <Badge variant="warn">provisional</Badge> : null}
                   </li>
@@ -373,8 +373,8 @@ export default async function ExplorePage({ searchParams }: PageProps) {
           <CardBody>
             {tournaments.length === 0 ? (
               <p className="text-2xs text-fg-subtle">
-                No bracket has been built. A tournament needs 2 to 64 entrants and contributors willing to
-                run the matches locally.
+                No bracket has been built. A tournament needs 2 to 64 entrants and contributors willing to run
+                the matches locally.
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-border">

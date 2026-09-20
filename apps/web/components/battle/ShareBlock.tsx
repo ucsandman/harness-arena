@@ -4,13 +4,7 @@ import { CodeBlock } from '@/components/ui/CodeBlock';
 import { absoluteUrl } from '@/lib/env';
 
 /** Copy-pasteable links for a public battle: the page URL, its OG image, and a README badge. */
-export function ShareBlock({
-  record,
-  winnerSlug,
-}: {
-  record: BattleRecord;
-  winnerSlug: string | null;
-}) {
+export function ShareBlock({ record, winnerSlug }: { record: BattleRecord; winnerSlug: string | null }) {
   return (
     <Card>
       <CardHeader>

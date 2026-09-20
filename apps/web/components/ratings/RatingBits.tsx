@@ -96,8 +96,8 @@ export function GlickoFootnote({ className }: { className?: string }) {
       Glicko-1 on the battle verdict: start {RATING_DEFAULT} ±{RATING_DEFAULT_DEVIATION}, deviation floor{' '}
       {RATING_MIN_DEVIATION}, idle inflation c={RATING_DEVIATION_GROWTH_C} per day (
       <span className="font-mono">RD&apos; = min({RATING_DEFAULT_DEVIATION}, sqrt(RD² + c²·days))</span>),
-      provisional below {RATING_MIN_SAMPLE} decided battles or above deviation{' '}
-      {RATING_MAX_RANKED_DEVIATION}, form window {RATING_FORM_WINDOW}.{' '}
+      provisional below {RATING_MIN_SAMPLE} decided battles or above deviation {RATING_MAX_RANKED_DEVIATION},
+      form window {RATING_FORM_WINDOW}.{' '}
       <Link href="/docs/ratings" className="text-accent hover:underline">
         The full arithmetic is in the ratings doc
       </Link>

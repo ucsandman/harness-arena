@@ -190,7 +190,9 @@ export default async function HarnessOpengraphImage({
     return new ImageResponse(genericCard(), size);
   }
 
-  const communityOverall = profile.ratings.filter((row) => row.pool === 'community' && row.category === 'overall');
+  const communityOverall = profile.ratings.filter(
+    (row) => row.pool === 'community' && row.category === 'overall',
+  );
   const bestRating =
     communityOverall.length > 0
       ? communityOverall.reduce((best, row) => (row.battles > best.battles ? row : best))

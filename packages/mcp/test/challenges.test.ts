@@ -23,7 +23,7 @@ function fakeServer(answer: (call: Call) => { status?: number; body: unknown }):
   calls: Call[];
 } {
   const calls: Call[] = [];
-  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const call: Call = {
       url: String(input),
       method: init?.method ?? 'GET',

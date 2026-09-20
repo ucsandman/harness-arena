@@ -8,9 +8,7 @@ import { EXPLORE_RISING_DAYS } from '@/lib/explore';
 import { freshBattleId, makeUser, ratableRecord, testDb } from './helpers';
 
 function render(query: Record<string, string> = {}): Promise<string> {
-  return Promise.resolve(ExplorePage({ searchParams: Promise.resolve(query) })).then(
-    renderToStaticMarkup,
-  );
+  return Promise.resolve(ExplorePage({ searchParams: Promise.resolve(query) })).then(renderToStaticMarkup);
 }
 
 describe('/explore', () => {

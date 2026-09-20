@@ -66,12 +66,7 @@ export function NewChallengeForm({
             <CardTitle>Side A</CardTitle>
           </CardHeader>
           <CardBody>
-            <HarnessField
-              prefix="a"
-              legend="Harness A"
-              harnesses={harnesses}
-              defaultSource={defaultA}
-            />
+            <HarnessField prefix="a" legend="Harness A" harnesses={harnesses} defaultSource={defaultA} />
           </CardBody>
         </Card>
         <Card>
@@ -79,12 +74,7 @@ export function NewChallengeForm({
             <CardTitle>Side B</CardTitle>
           </CardHeader>
           <CardBody>
-            <HarnessField
-              prefix="b"
-              legend="Harness B"
-              harnesses={harnesses}
-              defaultSource={defaultB}
-            />
+            <HarnessField prefix="b" legend="Harness B" harnesses={harnesses} defaultSource={defaultB} />
           </CardBody>
         </Card>
       </div>
@@ -125,11 +115,7 @@ export function NewChallengeForm({
                 <option value="public">public (listed)</option>
               </select>
             </Field>
-            <Field
-              label="Deadline"
-              htmlFor="expiresAt"
-              hint="Optional. Past it, the challenge expires."
-            >
+            <Field label="Deadline" htmlFor="expiresAt" hint="Optional. Past it, the challenge expires.">
               <input id="expiresAt" name="expiresAt" type="datetime-local" className={INPUT} />
             </Field>
           </div>

@@ -80,8 +80,7 @@ export default async function BattlePage({ params }: PageProps) {
   const live = LIVE_STATUSES.has(record.status);
   const links = battleLinks(id);
   const winner = record.verdict?.winner;
-  const winnerSlug =
-    winner === 'a' || winner === 'b' ? harnessSlug(record.runs[winner].harness) : null;
+  const winnerSlug = winner === 'a' || winner === 'b' ? harnessSlug(record.runs[winner].harness) : null;
 
   return (
     <Container className="py-8" size="wide">

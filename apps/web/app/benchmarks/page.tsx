@@ -110,10 +110,7 @@ export default async function BenchmarksPage({ searchParams }: PageProps) {
                 {packs.map((pack) => (
                   <TR key={pack.versionId}>
                     <TD>
-                      <Link
-                        href={`/benchmarks/${pack.slug}`}
-                        className="font-medium hover:text-accent"
-                      >
+                      <Link href={`/benchmarks/${pack.slug}`} className="font-medium hover:text-accent">
                         {pack.name}
                       </Link>
                       <span className="mt-0.5 block font-mono text-2xs text-fg-subtle">{pack.slug}</span>

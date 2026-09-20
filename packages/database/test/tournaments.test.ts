@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CreateTournamentRequest } from '@harness-arena/protocol';
 import { createTournamentRequestSchema } from '@harness-arena/protocol';
 import type { ArenaDb } from '../src/client.js';
 import { ratings } from '../src/schema/index.js';
@@ -79,9 +78,9 @@ describe('createTournament + settleMatch', () => {
     await handle.close();
   });
 
-  const target: CreateTournamentRequest['target'] = {
-    kind: 'task',
-    task: { kind: 'prompt', prompt: 'Do the thing' },
+  const target = {
+    kind: 'task' as const,
+    task: { kind: 'prompt' as const, prompt: 'Do the thing' },
     repository: { source: 'https://github.com/acme/widget' },
   };
 

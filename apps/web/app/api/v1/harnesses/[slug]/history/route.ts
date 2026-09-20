@@ -18,7 +18,8 @@ export async function GET(request: Request, ctx: Context): Promise<Response> {
   if (!harness) return apiError('not_found', 'no harness with that slug');
 
   const searchParams = new URL(request.url).searchParams;
-  const category = ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
+  const category =
+    ratingCategorySchema.safeParse(searchParams.get('category') ?? undefined).data ?? 'overall';
   const pool = ratingPoolSchema.safeParse(searchParams.get('pool') ?? undefined).data ?? 'community';
   const agentId = searchParams.get('agent');
 

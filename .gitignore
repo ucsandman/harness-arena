@@ -17,3 +17,4 @@ Thumbs.db
 .agents/
 .vitest/
 .playwright-mcp/
+.offlocal/

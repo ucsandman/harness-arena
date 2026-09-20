@@ -72,7 +72,10 @@ describe('GET /api/v1/harnesses/:slug', () => {
 
 describe('GET /api/v1/harnesses/:slug/history', () => {
   it('returns a valid points array for a harness with rating events', async () => {
-    const response = await getHistory(getRequest(`/api/v1/harnesses/${SLUG}/history`), params({ slug: SLUG }));
+    const response = await getHistory(
+      getRequest(`/api/v1/harnesses/${SLUG}/history`),
+      params({ slug: SLUG }),
+    );
     expect(response.status).toBe(200);
     const body = ratingHistoryResponseSchema.parse(await jsonOf(response));
     expect(Array.isArray(body.points)).toBe(true);
@@ -116,7 +119,10 @@ describe('GET /api/v1/harnesses/:slug/vs/:other', () => {
 
 describe('GET /api/v1/harnesses/:slug/insights', () => {
   it('returns an insights array', async () => {
-    const response = await getInsights(getRequest(`/api/v1/harnesses/${SLUG}/insights`), params({ slug: SLUG }));
+    const response = await getInsights(
+      getRequest(`/api/v1/harnesses/${SLUG}/insights`),
+      params({ slug: SLUG }),
+    );
     expect(response.status).toBe(200);
     const body = await jsonOf<{ slug: string; insights: HarnessInsightEntry[]; note: string }>(response);
     expect(Array.isArray(body.insights)).toBe(true);

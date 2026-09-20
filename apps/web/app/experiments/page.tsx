@@ -65,9 +65,7 @@ export default async function ExperimentsPage() {
                   </CardTitle>
                   <span className="flex flex-wrap items-center gap-1.5">
                     <Badge variant="outline">{experiment.kind}</Badge>
-                    <Badge variant={EXPERIMENT_STATUS_VARIANT[experiment.status]}>
-                      {experiment.status}
-                    </Badge>
+                    <Badge variant={EXPERIMENT_STATUS_VARIANT[experiment.status]}>{experiment.status}</Badge>
                     {experiment.summary ? (
                       <EvidenceBadge evidence={experiment.summary.evidence} />
                     ) : (

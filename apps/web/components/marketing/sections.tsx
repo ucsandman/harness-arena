@@ -774,7 +774,10 @@ export function HeroMatchup({ record }: { record: BattleRecord }) {
           ) : null}
         </p>
         {verdict && verdict.breakdown.length > 0 ? (
-          <ol className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-1 text-2xs" aria-label="Score breakdown">
+          <ol
+            className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-1 text-2xs"
+            aria-label="Score breakdown"
+          >
             {verdict.breakdown.map((row) => {
               const result = stageResult(row, record);
               return (
@@ -944,8 +947,8 @@ export function ProveIt() {
             <CardBody className="text-xs leading-relaxed text-fg-muted">
               A verified battle would be one Arena executed itself in an identical sandbox, with the same
               agent version, limits, repository commit and pinned harness commit for every entrant. The
-              schema, the pool separation and the API accept them today; no hosted runner exists, so that
-              pool is empty and every number on this site is community-reported.{' '}
+              schema, the pool separation and the API accept them today; no hosted runner exists, so that pool
+              is empty and every number on this site is community-reported.{' '}
               <a href="/leaderboard?pool=verified" className="text-accent hover:underline">
                 See the requirements
               </a>

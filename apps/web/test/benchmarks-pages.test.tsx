@@ -53,9 +53,7 @@ async function publish(): Promise<{ versionId: string }> {
 }
 
 function list(query: { category?: string } = {}): Promise<string> {
-  return Promise.resolve(BenchmarksPage({ searchParams: Promise.resolve(query) })).then(
-    renderToStaticMarkup,
-  );
+  return Promise.resolve(BenchmarksPage({ searchParams: Promise.resolve(query) })).then(renderToStaticMarkup);
 }
 
 describe('/benchmarks', () => {

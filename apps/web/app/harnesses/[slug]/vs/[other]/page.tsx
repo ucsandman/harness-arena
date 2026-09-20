@@ -181,11 +181,7 @@ export default async function HeadToHeadPage({ params, searchParams }: PageProps
             hint={record.battles === 0 ? 'no decided battles' : `of ${record.battles} decided`}
           />
           <Stat label="Decided battles" value={record.battles} hint="a winner or an explicit tie" />
-          <Stat
-            label="Inconclusive"
-            value={record.inconclusive}
-            hint="counted, never dropped"
-          />
+          <Stat label="Inconclusive" value={record.inconclusive} hint="counted, never dropped" />
           <Stat
             label="Last battle"
             value={record.lastBattleAt ? formatUtcDate(record.lastBattleAt) : '—'}
@@ -376,8 +372,8 @@ export default async function HeadToHeadPage({ params, searchParams }: PageProps
           <p className="text-[0.8125rem] text-fg-muted">
             Point <span className="font-mono">--task</span> at a task file and{' '}
             <span className="font-mono">--repo</span> at the repository both sides work in, then run the
-            challenge yourself or wait for someone to accept it. The uploaded battle is labelled community
-            and joins the counts above.
+            challenge yourself or wait for someone to accept it. The uploaded battle is labelled community and
+            joins the counts above.
           </p>
           <CodeBlock terminal code={command} />
           <p className="text-2xs text-fg-subtle">

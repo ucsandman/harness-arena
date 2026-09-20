@@ -149,12 +149,7 @@ export function HarnessField({
           htmlFor={`${prefix}Commit`}
           hint="Optional 7-40 hex characters. A rated result needs one; without it the run takes whatever the branch says that day."
         >
-          <input
-            id={`${prefix}Commit`}
-            name={`${prefix}Commit`}
-            className={INPUT}
-            placeholder="a1b2c3d"
-          />
+          <input id={`${prefix}Commit`} name={`${prefix}Commit`} className={INPUT} placeholder="a1b2c3d" />
         </Field>
       </div>
     </fieldset>
@@ -230,8 +225,8 @@ export function TargetFields({ benchmarks }: { benchmarks: readonly BenchmarkOpt
               <select id="benchmarkVersion" name="benchmarkVersion" className={INPUT}>
                 {benchmarks.map((pack) => (
                   <option key={pack.versionId} value={`${pack.slug}:${pack.versionId}`}>
-                    {pack.name} v{pack.version} — {pack.taskCount} task(s), {pack.battlesPerRun} battle(s)
-                    per run
+                    {pack.name} v{pack.version} — {pack.taskCount} task(s), {pack.battlesPerRun} battle(s) per
+                    run
                   </option>
                 ))}
               </select>
@@ -241,7 +236,12 @@ export function TargetFields({ benchmarks }: { benchmarks: readonly BenchmarkOpt
               htmlFor="benchmarkTaskId"
               hint="Optional. Blank runs the whole pack."
             >
-              <input id="benchmarkTaskId" name="benchmarkTaskId" className={INPUT} placeholder="fix-null-deref" />
+              <input
+                id="benchmarkTaskId"
+                name="benchmarkTaskId"
+                className={INPUT}
+                placeholder="fix-null-deref"
+              />
             </Field>
           </div>
         ) : (
@@ -272,12 +272,7 @@ export function TargetFields({ benchmarks }: { benchmarks: readonly BenchmarkOpt
             </Field>
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="Repository" htmlFor="repositorySource" hint="URL, path, or empty.">
-                <input
-                  id="repositorySource"
-                  name="repositorySource"
-                  className={INPUT}
-                  defaultValue="empty"
-                />
+                <input id="repositorySource" name="repositorySource" className={INPUT} defaultValue="empty" />
               </Field>
               <Field label="Ref" htmlFor="repositoryRef" hint="Branch, tag or commit.">
                 <input id="repositoryRef" name="repositoryRef" className={INPUT} placeholder="main" />

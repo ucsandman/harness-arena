@@ -69,7 +69,10 @@ describe('badge route', () => {
     await upsertBattleFromRecord(dbh, { record, ownerUserId: user.id, visibility: 'public' });
     await applyBattleToRatings(dbh, record);
 
-    const rating = await getBadge(getRequest(`/api/v1/badges/${SLUG}/rating`), params({ slug: SLUG, kind: 'rating' }));
+    const rating = await getBadge(
+      getRequest(`/api/v1/badges/${SLUG}/rating`),
+      params({ slug: SLUG, kind: 'rating' }),
+    );
     expect(rating.status).toBe(200);
     expect(rating.headers.get('content-type')).toContain('image/svg+xml');
     expect(await rating.text()).toContain('provisional');

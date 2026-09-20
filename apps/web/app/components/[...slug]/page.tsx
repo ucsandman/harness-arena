@@ -83,9 +83,8 @@ export default async function ComponentDetailPage({ params }: PageProps) {
         <CardBody>
           {component.evidence.summarized === 0 ? (
             <p className="text-[0.8125rem] text-fg-muted">
-              Nobody has measured this component yet. An ablation that names it as the one thing that
-              changed is what puts a number here; until then there is nothing to report, and a zero would be
-              a lie.
+              Nobody has measured this component yet. An ablation that names it as the one thing that changed
+              is what puts a number here; until then there is nothing to report, and a zero would be a lie.
             </p>
           ) : (
             <div className="flex flex-wrap items-center gap-x-8 gap-y-2">

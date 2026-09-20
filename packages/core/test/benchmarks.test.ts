@@ -21,8 +21,14 @@ import { removeDir, tempDir } from './helpers.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SMOKE_PACK_PATH = path.join(here, '../../../examples/benchmarks/arena-smoke/pack.yaml');
 
-const competitorA: CompetitorSpec = { agent: { id: 'claude-code' }, harness: { source: 'vanilla' } };
-const competitorB: CompetitorSpec = { agent: { id: 'codex' }, harness: { source: 'vanilla' } };
+const competitorA: CompetitorSpec = {
+  agent: { id: 'claude-code' },
+  harness: { source: 'vanilla', trusted: false },
+};
+const competitorB: CompetitorSpec = {
+  agent: { id: 'codex' },
+  harness: { source: 'vanilla', trusted: false },
+};
 
 describe('loadBenchmarkPack', () => {
   it('loads the committed smoke pack from disk', async () => {
@@ -88,7 +94,7 @@ describe('benchmarkVersionId stability', () => {
           ...pack.tasks[0]!,
           task: {
             ...pack.tasks[0]!.task,
-            prompt: pack.tasks[0]!.task.prompt + '!',
+            prompt: (pack.tasks[0]!.task as { prompt: string }).prompt + '!',
           } as BenchmarkPack['tasks'][0]['task'],
         },
       ],
