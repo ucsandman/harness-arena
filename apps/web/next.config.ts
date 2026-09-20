@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
   transpilePackages: ['@harness-arena/protocol', '@harness-arena/database', '@harness-arena/harness'],
+  // the migrations are read from disk at runtime (client.ts walks packages/database/drizzle), so the
+  // serverless bundle must carry them; static tracing only sees files that are imported
+  outputFileTracingIncludes: { '/**/*': ['../../packages/database/drizzle/**/*'] },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
