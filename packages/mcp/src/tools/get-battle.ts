@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { eventTypeSchema } from '@harness-arena/protocol';
-import type { ArenaEvent } from '@harness-arena/protocol';
+import {
+  BATTLE_STATUSES,
+  TERMINAL_BATTLE_STATUSES,
+  eventTypeSchema,
+  isTerminalBattleStatus,
+  nextBattleStatuses,
+} from '@harness-arena/protocol';
+import type { ArenaEvent, BattleStatus } from '@harness-arena/protocol';
 import type { ArenaContext } from '../context.js';
 import { errorResult, jsonResult } from '../result.js';
 
@@ -21,8 +27,13 @@ const DESCRIPTION = [
   'the list; narrow with eventTypes to get the ones you need. Page forward with afterSeq: pass the',
   'events.nextAfterSeq of the previous answer and only events after that seq come back, so the live tail',
   'of a battle with thousands of events is reachable (events.total and events.matched then count from that',
-  'cursor). Poll this tool to follow a battle started with arena_start_battle: status moves through',
-  'preparing, running and evaluating to completed or failed.',
+  'cursor). Poll this tool to follow a battle started with arena_start_battle: status moves forward',
+  'through ' +
+    BATTLE_STATUSES.filter((s) => !isTerminalBattleStatus(s)).join(', ') +
+    ' (steps may be skipped) and ends at ' +
+    TERMINAL_BATTLE_STATUSES.join(', ') +
+    ', which are final. terminal says the battle is finished; allowedNext lists the statuses it can',
+  'still move to.',
 ].join(' ');
 
 function summarize(record: { id: string; status: string; verdict: { winner: string } | null }): string {
@@ -72,12 +83,15 @@ export function registerGetBattle(server: McpServer, ctx: ArenaContext): void {
 
       const handle = ctx.runner.get(id);
       const running = ctx.runner.runningId === id;
+      // While this server still owns the battle the runner's view wins: the record on disk turns
+      // terminal before the report, upload and workspace cleanup finish, and the next battle can only
+      // start once the runner has let go.
+      const status: BattleStatus = running && handle ? handle.status : record.status;
       const data: Record<string, unknown> = {
         id: record.id,
-        // While this server still owns the battle the runner's view wins: the record on disk turns
-        // terminal before the report, upload and workspace cleanup finish, and the next battle can only
-        // start once the runner has let go.
-        status: running && handle ? handle.status : record.status,
+        status,
+        terminal: isTerminalBattleStatus(status),
+        allowedNext: nextBattleStatuses(status),
         running,
         startedInThisServer: handle !== undefined,
         record,

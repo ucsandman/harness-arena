@@ -1,5 +1,5 @@
 import type { ZodType } from 'zod';
-import { API_LIMITS, apiErrorSchema } from '@harness-arena/protocol';
+import { API_LIMITS, apiErrorSchema, type IllegalTransitionError } from '@harness-arena/protocol';
 import { getDeviceByTokenHash, type Device, type User } from '@harness-arena/database';
 import { getRequestUser, sha256 } from './auth';
 import { db } from './db';
@@ -18,6 +18,7 @@ export type ApiErrorCode =
   | 'not_found'
   | 'payload_too_large'
   | 'rate_limited'
+  | 'illegal_transition'
   | 'server_error';
 
 const STATUS: Record<ApiErrorCode, number> = {
@@ -27,6 +28,7 @@ const STATUS: Record<ApiErrorCode, number> = {
   not_found: 404,
   payload_too_large: 413,
   rate_limited: 429,
+  illegal_transition: 409,
   server_error: 500,
 };
 
@@ -35,6 +37,23 @@ const MAX_MESSAGE_LENGTH = 400;
 export function apiError(code: ApiErrorCode, message: string, headers?: HeadersInit): Response {
   const body = apiErrorSchema.parse({ error: { code, message: message.slice(0, MAX_MESSAGE_LENGTH) } });
   return Response.json(body, { status: STATUS[code], headers });
+}
+
+/**
+ * 409 for a status change BATTLE_TRANSITIONS does not allow. The envelope is the usual one, plus the
+ * stored status, the refused one, and the statuses that are still allowed (empty once finished).
+ */
+export function apiTransitionError(err: IllegalTransitionError): Response {
+  const body = apiErrorSchema.parse({
+    error: {
+      code: err.code,
+      message: err.message.slice(0, MAX_MESSAGE_LENGTH),
+      current: err.current,
+      requested: err.requested,
+      allowed: [...err.allowed],
+    },
+  });
+  return Response.json(body, { status: STATUS.illegal_transition });
 }
 
 export function apiJson(data: unknown, status = 200, headers?: HeadersInit): Response {

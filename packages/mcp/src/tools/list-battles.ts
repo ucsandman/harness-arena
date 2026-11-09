@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { BATTLE_STATUSES, nextBattleStatuses } from '@harness-arena/protocol';
 import type { ArenaContext } from '../context.js';
 import { errorText, jsonResult } from '../result.js';
 
 const DESCRIPTION = [
   "Lists battles stored under this machine's ARENA_HOME, newest first. Each row carries the battle id",
   '(pass it to arena_get_battle, arena_get_results, arena_compare_runs or arena_render_report), the',
-  'title, the status (pending, preparing, running, evaluating, completed, failed, cancelled), the',
-  'winner when a verdict exists, both competitors with their agent and harness, whether the battle is',
+  'title, the status (' + BATTLE_STATUSES.join(', ') + '), allowedNext (the statuses it can still move',
+  'to; empty once finished), the winner when a verdict exists, both competitors with their agent and harness, whether the battle is',
   'demo data, and its timestamps. Demo battles are deterministic fake replays and must never be mixed',
   'with real results. Use this first when the user talks about "the last battle" instead of guessing an id.',
 ].join(' ');
@@ -52,7 +53,12 @@ export function registerListBattles(server: McpServer, ctx: ArenaContext): void 
             ')' +
             (running ? ', ' + running + ' is running in this server' : '') +
             '.';
-      return jsonResult(summary, { home: ctx.home, count: battles.length, running, battles });
+      return jsonResult(summary, {
+        home: ctx.home,
+        count: battles.length,
+        running,
+        battles: battles.map((battle) => ({ ...battle, allowedNext: nextBattleStatuses(battle.status) })),
+      });
     },
   );
 }

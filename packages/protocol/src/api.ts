@@ -118,11 +118,20 @@ export const battleDetailResponseSchema = z.object({
   truncated: z.boolean().optional(),
   /** stored events that no longer parse against the current protocol and were left out */
   invalid: z.number().int().nonnegative().optional(),
+  /** statuses the battle may still move to (BATTLE_TRANSITIONS); empty once it is finished */
+  allowedNext: z.array(battleStatusSchema).optional(),
 });
 export type BattleDetailResponse = z.infer<typeof battleDetailResponseSchema>;
 
 export const apiErrorSchema = z.object({
-  error: z.object({ code: z.string(), message: z.string() }),
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    /** illegal_transition only: the stored status, the refused one, and the statuses still allowed */
+    current: battleStatusSchema.optional(),
+    requested: battleStatusSchema.optional(),
+    allowed: z.array(battleStatusSchema).optional(),
+  }),
 });
 export type ApiError = z.infer<typeof apiErrorSchema>;
 

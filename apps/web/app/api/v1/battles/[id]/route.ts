@@ -1,5 +1,7 @@
 import {
+  IllegalTransitionError,
   battleRecordSchema,
+  nextBattleStatuses,
   patchBattleRequestSchema,
   type BattleRecord,
   battleDetailResponseSchema,
@@ -12,7 +14,15 @@ import {
   setBattleVisibility,
   upsertBattleFromRecord,
 } from '@harness-arena/database';
-import { apiError, apiJson, optionalViewer, parseWith, readJsonBody, requireDevice } from '@/lib/api';
+import {
+  apiError,
+  apiJson,
+  apiTransitionError,
+  optionalViewer,
+  parseWith,
+  readJsonBody,
+  requireDevice,
+} from '@/lib/api';
 import { MAX_PAGE_EVENTS, clampSelfReported, loadEvents, ownedBattle } from '@/lib/battles';
 import { db } from '@/lib/db';
 import { battleLinks } from '@/lib/links';
@@ -56,6 +66,7 @@ export async function GET(request: Request, ctx: Context): Promise<Response> {
         record,
         eventCount: total,
         eventsCapped: found.battle.eventsCapped,
+        allowedNext: nextBattleStatuses(record.status),
       }),
     );
   }
@@ -76,6 +87,7 @@ export async function GET(request: Request, ctx: Context): Promise<Response> {
       eventsCapped: found.battle.eventsCapped,
       truncated: loaded.capped,
       invalid: loaded.invalid,
+      allowedNext: nextBattleStatuses(record.status),
     }),
   );
 }
@@ -112,12 +124,19 @@ export async function PATCH(request: Request, ctx: Context): Promise<Response> {
     : base;
   const visibility = patch.visibility ?? owned.battle.visibility;
 
-  const upserted = await upsertBattleFromRecord(dbh, {
-    record: next,
-    ownerUserId: auth.auth.user.id,
-    deviceId: auth.auth.device.id,
-    visibility,
-  });
+  // a refused status change writes nothing, and links, visibility and ratings do not run
+  let upserted: Awaited<ReturnType<typeof upsertBattleFromRecord>>;
+  try {
+    upserted = await upsertBattleFromRecord(dbh, {
+      record: next,
+      ownerUserId: auth.auth.user.id,
+      deviceId: auth.auth.device.id,
+      visibility,
+    });
+  } catch (err) {
+    if (err instanceof IllegalTransitionError) return apiTransitionError(err);
+    throw err;
+  }
   await afterBattleUpsert(
     dbh,
     next,
@@ -130,5 +149,10 @@ export async function PATCH(request: Request, ctx: Context): Promise<Response> {
     await applyBattleToRatings(dbh, next);
   }
 
-  return apiJson({ ...battleLinks(id), status: next.status, visibility });
+  return apiJson({
+    ...battleLinks(id),
+    status: next.status,
+    visibility,
+    allowedNext: nextBattleStatuses(next.status),
+  });
 }

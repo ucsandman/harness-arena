@@ -2,6 +2,14 @@
 
 Durable architecture, product and stack decisions. Newest first. The competitive-platform design (Glicko, commit pinning, integrity gates, local execution of challenges) is in `docs/RATINGS.md`, `docs/CHALLENGES.md` and `docs/HARNESS-PROTOCOL.md`.
 
+## 2026-11-08 Battle lifecycle is an explicit, forward-only table
+
+- `BATTLE_TRANSITIONS` (`packages/protocol/src/battle-lifecycle.ts`) is the one source for battle status changes. Before it, `PATCH /api/v1/battles/:id` overwrote any status, so `failed -> completed` and `completed -> running` went through and could settle ratings on a rewritten result.
+- Forward only, with skips: the engine registers a battle as `pending` and uploads once at the end, so the server sees `pending -> completed` from every CLI in the field. A strict one-step table would refuse that.
+- Terminal is final; writing the same status again is a no-op (visibility PATCH, retry after a lost response, re-seed). A refusal is a 409 `illegal_transition` in the usual error envelope plus `current`, `requested`, `allowed`.
+- A re-run is a new battle: `arena run --battle` refuses a finished id. An older CLI can still re-upload `completed -> completed` over the same id; freezing a terminal record needs record-equality rules and is out of scope.
+- Deferred: the server learning `preparing`/`running`/`evaluating` (the engine PATCHing each status). It would break the single-PATCH upload the engine tests pin, a status-only terminal PATCH would settle links and ratings on a record with no verdict, and a crashed run would stay `running` on the server with no way to re-run it.
+
 ## 2026-09-20 Hosting: Vercel (apps/web) + Neon Postgres
 
 - One Vercel project, root directory `apps/web`, build `pnpm -w run build` so the workspace packages compile before `next build`. Git-linked to `ucsandman/harness-arena`, production = `main`.

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { BattleListItem, BattleStatus } from '@harness-arena/protocol';
+import { BATTLE_STATUS_LABELS, type BattleListItem, type BattleStatus } from '@harness-arena/protocol';
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CodeBlock } from '@/components/ui/CodeBlock';
@@ -19,7 +19,7 @@ const STATUS_VARIANT: Record<BattleStatus, BadgeVariant> = {
 };
 
 export function BattleStatusBadge({ status }: { status: BattleStatus }) {
-  return <Badge variant={STATUS_VARIANT[status]}>{status}</Badge>;
+  return <Badge variant={STATUS_VARIANT[status]}>{BATTLE_STATUS_LABELS[status]}</Badge>;
 }
 
 export function WinnerBadge({ winner }: { winner: BattleListItem['winner'] }) {

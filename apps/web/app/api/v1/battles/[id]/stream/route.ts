@@ -1,4 +1,4 @@
-import { EVENT_LIMITS, type BattleStatus } from '@harness-arena/protocol';
+import { EVENT_LIMITS, isTerminalBattleStatus } from '@harness-arena/protocol';
 import { getBattle, getBattleForViewer, listEvents } from '@harness-arena/database';
 import { apiError, optionalViewer } from '@/lib/api';
 import { eventRowToEvent } from '@/lib/battles';
@@ -18,8 +18,6 @@ const HEARTBEAT_MS = 15_000;
 const EVENTS_PER_POLL = EVENT_LIMITS.maxBatchEvents;
 /** polls with no new events after a terminal status before the stream says goodbye */
 const IDLE_POLLS_BEFORE_END = 2;
-
-const TERMINAL: ReadonlySet<BattleStatus> = new Set<BattleStatus>(['completed', 'failed', 'cancelled']);
 
 function frame(name: string, data: unknown): string {
   return `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -106,7 +104,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
             }
 
             idlePolls = rows.length === 0 ? idlePolls + 1 : 0;
-            if (TERMINAL.has(current.battle.status) && idlePolls >= IDLE_POLLS_BEFORE_END) {
+            if (isTerminalBattleStatus(current.battle.status) && idlePolls >= IDLE_POLLS_BEFORE_END) {
               send(frame('end', { status: current.battle.status }));
               break;
             }

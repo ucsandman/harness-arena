@@ -1,4 +1,5 @@
 import {
+  IllegalTransitionError,
   createBattleRequestSchema,
   createBattleResponseSchema,
   type BattleRecord,
@@ -11,7 +12,7 @@ import {
   listUserBattles,
   upsertBattleFromRecord,
 } from '@harness-arena/database';
-import { apiError, apiJson, parseWith, readJsonBody, requireDevice } from '@/lib/api';
+import { apiError, apiJson, apiTransitionError, parseWith, readJsonBody, requireDevice } from '@/lib/api';
 import { clampSelfReported } from '@/lib/battles';
 import { db } from '@/lib/db';
 import { battleLinks } from '@/lib/links';
@@ -61,12 +62,19 @@ export async function POST(request: Request): Promise<Response> {
     return apiError('forbidden', 'that battle id belongs to another account');
   }
 
-  const upserted = await upsertBattleFromRecord(dbh, {
-    record,
-    ownerUserId: auth.auth.user.id,
-    deviceId: auth.auth.device.id,
-    visibility,
-  });
+  // replacing a battle must follow BATTLE_TRANSITIONS; a refusal writes nothing and skips ratings
+  let upserted: Awaited<ReturnType<typeof upsertBattleFromRecord>>;
+  try {
+    upserted = await upsertBattleFromRecord(dbh, {
+      record,
+      ownerUserId: auth.auth.user.id,
+      deviceId: auth.auth.device.id,
+      visibility,
+    });
+  } catch (err) {
+    if (err instanceof IllegalTransitionError) return apiTransitionError(err);
+    throw err;
+  }
   await afterBattleUpsert(
     dbh,
     record,

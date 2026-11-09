@@ -48,6 +48,32 @@ pending ─▶ preparing ─▶ running ─▶ evaluating ─▶ completed
                  └────────┴──────────┴──────────▶ failed | cancelled
 ```
 
+The table is `BATTLE_TRANSITIONS` in `packages/protocol/src/battle-lifecycle.ts`; the engine, the database upsert, the REST routes, the MCP handle and `arena doctor --fix` all check it, and every "is it finished" or "is it live" read derives from it.
+
+| from                               | may become                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `pending`                          | `preparing`, `running`, `evaluating`, `completed`, `failed`, `cancelled` |
+| `preparing`                        | `running`, `evaluating`, `completed`, `failed`, `cancelled`              |
+| `running`                          | `evaluating`, `completed`, `failed`, `cancelled`                         |
+| `evaluating`                       | `completed`, `failed`, `cancelled`                                       |
+| `completed`, `failed`, `cancelled` | nothing: terminal                                                        |
+
+The rule: forward only, skips allowed (the server is a lossy mirror that usually sees `pending` and then the final upload), terminal is final, and writing the current status again is an accepted no-op (a visibility PATCH, a retry, a re-seed). A finished battle never runs again under the same id; a re-run is a new battle. `GET /api/v1/battles/:id`, the PATCH answer, `arena_get_battle` and `arena_list_battles` carry `allowedNext`. A refused change on `POST /api/v1/battles` or `PATCH /api/v1/battles/:id` is a 409 that writes nothing (links, visibility and ratings do not run):
+
+```json
+{
+  "error": {
+    "code": "illegal_transition",
+    "message": "battle btl_x: completed cannot become running; completed is final",
+    "current": "completed",
+    "requested": "running",
+    "allowed": []
+  }
+}
+```
+
+The CLI uploader logs a 409 as `upload rejected` and does not retry; the local record and report stay.
+
 1. **Resolve.** Task (prompt or GitHub issue → prompt), repository (URL or local path → exact commit), harnesses (URL/path/`vanilla` → checkout + commit + manifest or auto-detected files), agents (detect + validate).
 2. **Prepare workspaces.** Arena keeps a bare mirror per repository under `ARENA_HOME/repos/`. Each run gets its own detached `git worktree` of the mirror at the resolved commit. The user's checkout is only ever _read_ (fetched from). Git hooks are disabled for every git invocation Arena makes (`core.hooksPath` pointed at an empty directory).
 3. **Apply harness.** Files declared by `arena.yaml` (or auto-detected: `CLAUDE.md`, `.claude/`, `AGENTS.md`, `.codex/`, `GEMINI.md`, `.gemini/`, `opencode.json`, `.opencode/`, `.mcp.json`) are copied into the workspace with path-containment and symlink checks. `install`/`prepare` commands run only after the user has trusted the harness (interactive prompt or `--trust`).

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Download, Terminal } from 'lucide-react';
-import type { BattleStatus } from '@harness-arena/protocol';
+import { BATTLE_INITIAL_STATUS, isLiveBattleStatus } from '@harness-arena/protocol';
 import { getBattleForViewer, harnessSlug } from '@harness-arena/database';
 import { BattleReport } from '@/components/battle/BattleReport';
 import { IntegrityPanel } from '@/components/battle/IntegrityPanel';
@@ -22,13 +22,6 @@ import { battleLinks } from '@/lib/links';
 import { updateVisibilityAction } from './actions';
 
 export const dynamic = 'force-dynamic';
-
-/** Statuses worth holding a stream open for. A pending battle has nothing to stream yet. */
-const LIVE_STATUSES: ReadonlySet<BattleStatus> = new Set<BattleStatus>([
-  'preparing',
-  'running',
-  'evaluating',
-]);
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -77,7 +70,8 @@ export default async function BattlePage({ params }: PageProps) {
   const record = found.battle.record;
   const loaded = await loadEvents(dbh, id, { cap: MAX_PAGE_EVENTS });
   const isOwner = Boolean(user && found.battle.ownerUserId === user.id);
-  const live = LIVE_STATUSES.has(record.status);
+  // worth holding a stream open for (LIVE_BATTLE_STATUSES); a pending battle has nothing to stream yet
+  const live = isLiveBattleStatus(record.status);
   const links = battleLinks(id);
   const winner = record.verdict?.winner;
   const winnerSlug = winner === 'a' || winner === 'b' ? harnessSlug(record.runs[winner].harness) : null;
@@ -136,7 +130,7 @@ export default async function BattlePage({ params }: PageProps) {
         </Card>
       ) : null}
 
-      {record.status === 'pending' ? (
+      {record.status === BATTLE_INITIAL_STATUS ? (
         <Card className="mt-3">
           <CardHeader>
             <CardTitle>

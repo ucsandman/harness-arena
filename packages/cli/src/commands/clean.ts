@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { isTerminalBattleStatus } from '@harness-arena/protocol';
 import type { CliDeps } from '../deps.js';
 import { createUi, shortDate } from '../ui.js';
 import { resolveHome } from '../config.js';
@@ -14,7 +15,6 @@ export interface CleanFlags {
 }
 
 const DEFAULT_DAYS = 30;
-const TERMINAL_STATUS = new Set(['completed', 'failed', 'cancelled']);
 
 export interface CleanCandidate {
   id: string;
@@ -36,7 +36,7 @@ export async function cleanCommand(deps: CliDeps, flags: CleanFlags): Promise<vo
   const battles = await store.listBattles();
   const candidates: CleanCandidate[] = [];
   for (const battle of battles) {
-    if (!TERMINAL_STATUS.has(battle.status)) continue;
+    if (!isTerminalBattleStatus(battle.status)) continue;
     const created = Date.parse(battle.createdAt);
     if (!Number.isFinite(created) || created > cutoff) continue;
     const dir = store.paths(battle.id).dir;

@@ -1,6 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { battleSpecSchema, emptyMetrics, isId, makeId, PROTOCOL_VERSION } from '@harness-arena/protocol';
+import {
+  assertBattleTransition,
+  battleSpecSchema,
+  canTransitionBattle,
+  emptyMetrics,
+  isId,
+  makeId,
+  PROTOCOL_VERSION,
+} from '@harness-arena/protocol';
 import type {
   AdapterEvent,
   AgentConfig,
@@ -444,6 +452,8 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
   };
 
   const setStatus = async (status: BattleStatus, detail?: string): Promise<void> => {
+    // BATTLE_TRANSITIONS: forward only, terminal is final; a refusal is a programmer error
+    assertBattleTransition(record.status, status, `battle ${battleId}`);
     record.status = status;
     opts.onStatus?.(status, detail);
     both.info('battle status', { status, ...(detail ? { detail } : {}) });
@@ -1148,7 +1158,9 @@ export async function runBattle(input: BattleSpecInput, opts: RunBattleOptions =
     });
     record.insights = computeInsights(record, allEvents);
     cancelled = aborted;
-    record.status = aborted ? 'cancelled' : 'failed';
+    // a terminal status already set (its save() threw) is final: keep it, record.error says what broke
+    const target: BattleStatus = aborted ? 'cancelled' : 'failed';
+    if (canTransitionBattle(record.status, target)) record.status = target;
     opts.onStatus?.(record.status, record.error);
   } finally {
     const battleEndMs = Math.max(

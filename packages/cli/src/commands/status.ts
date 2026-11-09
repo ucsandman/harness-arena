@@ -1,4 +1,4 @@
-import type { Side } from '@harness-arena/protocol';
+import { isTerminalBattleStatus, type Side } from '@harness-arena/protocol';
 import type { StateStore } from '@harness-arena/core';
 import type { CliDeps } from '../deps.js';
 import { createUi, shortDate } from '../ui.js';
@@ -12,7 +12,6 @@ export interface StatusFlags {
   home?: string;
 }
 
-const TERMINAL_STATUS = new Set(['completed', 'failed', 'cancelled']);
 const WATCH_INTERVAL_MS = 500;
 
 /** The newest battle, or the one the user named. */
@@ -48,7 +47,7 @@ async function tail(deps: CliDeps, ui: Ui, store: StateStore, battleId: string):
       else ui.line(String(event.seq).padStart(5) + '  ' + (event.side ?? '-') + '  ' + event.type);
     }
     const record = await store.loadRecord(battleId);
-    if (record && TERMINAL_STATUS.has(record.status)) return collected;
+    if (record && isTerminalBattleStatus(record.status)) return collected;
     if (deps.signal?.aborted) return collected;
     await deps.sleep(WATCH_INTERVAL_MS);
   }

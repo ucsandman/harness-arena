@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { LOCK_STALE_MS, gitVersion, removeWorktree } from '@harness-arena/core';
+import { canTransitionBattle, isTerminalBattleStatus } from '@harness-arena/protocol';
 import type { CliDeps } from '../deps.js';
 import { createUi } from '../ui.js';
 import { resolveHome } from '../config.js';
@@ -13,7 +14,6 @@ export interface DoctorFlags {
   home?: string;
 }
 
-const TERMINAL_STATUS = new Set(['completed', 'failed', 'cancelled']);
 const MAX_WALK_ENTRIES = 200_000;
 
 export interface OrphanWorkspace {
@@ -133,7 +133,7 @@ async function findOrphans(
 
     const record = await store.loadRecord(id);
     const status = record?.status ?? 'unknown';
-    if (record && TERMINAL_STATUS.has(status)) continue;
+    if (record && isTerminalBattleStatus(status)) continue;
     if (lockActive) continue;
     for (const side of ['a', 'b'] as const) {
       const dir = paths.workspaces[side];
@@ -166,7 +166,7 @@ export async function doctorCommand(deps: CliDeps, flags: DoctorFlags): Promise<
     for (const id of new Set([...orphans.map((o) => o.battleId), ...locks.map((l) => l.battleId)])) {
       try {
         const record = await store.loadRecord(id);
-        if (!record || TERMINAL_STATUS.has(record.status)) continue;
+        if (!record || !canTransitionBattle(record.status, 'cancelled')) continue;
         const endedAt = new Date(deps.now()).toISOString();
         record.status = 'cancelled';
         record.error = 'the arena process ended before this battle completed; closed by arena doctor --fix';

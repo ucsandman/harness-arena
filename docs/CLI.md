@@ -130,7 +130,10 @@ arena run --battle btl_7x0d9m2q4k8v1n3p        # a pending battle created in the
 `--battle <id>` needs `arena login`; the spec is fetched with the device token and the battle runs
 locally **under that same id**, so the pending battle you created in the web app is the one that
 completes, and no second battle is created. `--local-only` still fetches the spec (that one request
-needs the token) and then uploads nothing.
+needs the token) and then uploads nothing. A battle the server reports as finished (`completed`,
+`failed` or `cancelled`) is refused with exit 1 before anything runs: a finished battle never runs
+again under the same id, so a re-run is a new battle (`arena run battle.json`, or New battle in the
+web app).
 
 ### `arena demo`
 

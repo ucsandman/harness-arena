@@ -1,7 +1,6 @@
 import type { ArenaEvent, BattleRecord, BattleStatus } from '@harness-arena/protocol';
+import { BATTLE_INITIAL_STATUS, canTransitionBattle, isTerminalBattleStatus } from '@harness-arena/protocol';
 import { errorText } from './result.js';
-
-const TERMINAL: ReadonlySet<BattleStatus> = new Set(['completed', 'failed', 'cancelled']);
 
 /**
  * Tracks battles started through the MCP server, in memory, for this process only.
@@ -10,6 +9,10 @@ const TERMINAL: ReadonlySet<BattleStatus> = new Set(['completed', 'failed', 'can
  * make both sides' timings meaningless. A second start is refused and names the running battle so
  * the client can poll it instead. The battle record on disk is always the source of truth; this map
  * only carries what disk cannot answer yet (a battle that has not saved its final state).
+ *
+ * A handle's status follows BATTLE_TRANSITIONS: it starts at the initial status and only moves
+ * forward. An update the table does not allow is dropped, never thrown: onStatus runs inside the
+ * engine's own status change, and a throw there would fail the battle.
  */
 
 export interface BattleHandle {
@@ -51,6 +54,11 @@ function delay(ms: number): { promise: Promise<void>; cancel: () => void } {
     timer = setTimeout(resolve, ms);
   });
   return { promise, cancel: () => clearTimeout(timer) };
+}
+
+/** Applies a status update only when the table allows it; an illegal update is dropped. */
+function moveHandle(handle: BattleHandle, status: BattleStatus): void {
+  if (canTransitionBattle(handle.status, status)) handle.status = status;
 }
 
 export class BattleRunner {
@@ -109,9 +117,9 @@ export class BattleRunner {
           // A terminal status arrives before the engine has written the report, uploaded and cleaned
           // the workspaces; the handle only turns terminal when the run promise settles below, so a
           // caller that sees a finished status can start the next battle at once.
-          if (TERMINAL.has(status)) return;
+          if (isTerminalBattleStatus(status)) return;
           const handle = active.id === null ? undefined : this.battles.get(active.id);
-          if (handle && handle.completedAt === null) handle.status = status;
+          if (handle && handle.completedAt === null) moveHandle(handle, status);
         },
       })
       .then((record) => {
@@ -121,7 +129,7 @@ export class BattleRunner {
         }
         const handle = this.battles.get(record.id);
         if (handle) {
-          handle.status = record.status;
+          moveHandle(handle, record.status);
           handle.completedAt = record.completedAt ?? new Date().toISOString();
           handle.error = record.error;
         }
@@ -131,7 +139,7 @@ export class BattleRunner {
         active.error = message;
         const handle = active.id === null ? undefined : this.battles.get(active.id);
         if (handle) {
-          handle.status = 'failed';
+          moveHandle(handle, 'failed');
           handle.completedAt = new Date().toISOString();
           handle.error = message;
         }
@@ -172,7 +180,7 @@ export class BattleRunner {
     if (existing) return existing;
     const handle: BattleHandle = {
       id,
-      status: 'running',
+      status: BATTLE_INITIAL_STATUS,
       trusted,
       startedAt: new Date().toISOString(),
       completedAt: null,

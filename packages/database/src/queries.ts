@@ -12,7 +12,14 @@ import type {
   Verdict,
   Visibility,
 } from '@harness-arena/protocol';
-import { EVENT_LIMITS, battleIdSchema, makeId } from '@harness-arena/protocol';
+import {
+  EVENT_LIMITS,
+  IllegalTransitionError,
+  assertBattleTransition,
+  battleIdSchema,
+  makeId,
+  priorBattleStatuses,
+} from '@harness-arena/protocol';
 import type { ArenaDatabase } from './client.js';
 import { extractRows } from './client.js';
 import type {
@@ -398,6 +405,9 @@ function metricRowsFor(
  * Write a BattleRecord and everything derived from it in one transaction: task, repository, agents,
  * harnesses, harness versions, the two runs, the denormalized metrics, and the evaluation. Safe to
  * call repeatedly with an evolving record (the CLI patches a battle as it progresses).
+ *
+ * The status change must follow BATTLE_TRANSITIONS: a terminal rewrite or a backward move throws
+ * IllegalTransitionError and the whole transaction rolls back. Re-writing the same status is allowed.
  */
 export async function upsertBattleFromRecord(
   db: ArenaDatabase,
@@ -408,11 +418,12 @@ export async function upsertBattleFromRecord(
 
   return db.transaction(async (tx) => {
     const existing = await tx
-      .select({ id: battles.id })
+      .select({ id: battles.id, status: battles.status })
       .from(battles)
       .where(eq(battles.id, record.id))
       .limit(1);
     const created = existing.length === 0;
+    if (existing[0]) assertBattleTransition(existing[0].status, record.status, `battle ${record.id}`);
 
     const taskId = taskIdFor(record.task);
     await tx
@@ -516,11 +527,13 @@ export async function upsertBattleFromRecord(
       completedAt: toDate(record.completedAt),
       updatedAt: new Date(),
     };
-    await tx
+    const written = await tx
       .insert(battles)
       .values(battleValues)
       .onConflictDoUpdate({
         target: battles.id,
+        // atomic guard: a concurrent writer may have moved the row since the check above
+        setWhere: inArray(battles.status, [...priorBattleStatuses(record.status)]),
         set: {
           ownerUserId: battleValues.ownerUserId,
           deviceId: battleValues.deviceId,
@@ -550,7 +563,16 @@ export async function upsertBattleFromRecord(
           completedAt: battleValues.completedAt,
           updatedAt: battleValues.updatedAt,
         },
-      });
+      })
+      .returning({ id: battles.id });
+    if (written.length === 0) {
+      const [now] = await tx
+        .select({ status: battles.status })
+        .from(battles)
+        .where(eq(battles.id, record.id))
+        .limit(1);
+      throw new IllegalTransitionError(now?.status ?? record.status, record.status, `battle ${record.id}`);
+    }
 
     for (const side of ['a', 'b'] as const) {
       const run = record.runs[side];
