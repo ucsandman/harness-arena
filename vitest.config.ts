@@ -1,3 +1,5 @@
+import { generateDocs } from './apps/web/scripts/generate-docs.mjs';
+generateDocs();
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
 

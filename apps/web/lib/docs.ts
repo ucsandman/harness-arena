@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import bundledDocs from './generated/docs.json';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 
@@ -174,17 +174,11 @@ export async function loadDocPage(slug?: readonly string[] | string): Promise<Lo
 }
 
 export async function readDocFile(page: DocPage): Promise<string | null> {
-  const root = findRepoRoot();
-  if (!root) return null;
-  const file = safeDocFilePath(root, page.file);
-  if (!file) return null;
-  try {
-    return await readFile(file, 'utf8');
-  } catch {
-    return null;
-  }
+  // Only registered public docs are exposed. Content is bundled at build time, so serverless
+  // working directories, symlinks, and absent workspace markers cannot hide published docs.
+  if (!DOC_PAGES.some((entry) => entry.file === page.file)) return null;
+  return (bundledDocs as Record<string, string>)[page.file] ?? null;
 }
-
 /** GitHub-style heading anchor. */
 export function slugifyHeading(text: string): string {
   return text

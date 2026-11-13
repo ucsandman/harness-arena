@@ -1,7 +1,7 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
   DOC_PAGES,
   docHref,
@@ -138,4 +138,32 @@ describe('headings', () => {
       { depth: 3, text: 'Nested', id: 'nested' },
     ]);
   });
+});
+
+describe('deployed documentation layout', () => {
+  it('loads every registered document without a checkout or workspace marker', async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'arena-serverless-'));
+    tempRoots.push(root);
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(root);
+    try {
+      expect(findRepoRoot()).toBeNull();
+      for (const page of DOC_PAGES) {
+        expect((await loadDocPage(page.slug))?.markdown, page.file).toMatch(/^# /);
+      }
+    } finally {
+      cwd.mockRestore();
+    }
+  });
+
+  it('never exposes unregistered files from the generated bundle', async () => {
+    expect(await readDocFile({ ...DOC_PAGES[0]!, file: 'docs/DECISIONS.md' })).toBeNull();
+    expect(await readDocFile({ ...DOC_PAGES[0]!, file: '../../.env' })).toBeNull();
+  });
+});
+
+it('bundles the exact current source of every published document', async () => {
+  const root = findRepoRoot()!;
+  for (const page of DOC_PAGES) {
+    expect(await readDocFile(page), page.file).toBe(readFileSync(path.join(root, page.file), 'utf8'));
+  }
 });

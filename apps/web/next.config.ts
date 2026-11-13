@@ -1,3 +1,5 @@
+import { generateDocs } from './scripts/generate-docs.mjs';
+generateDocs();
 import type { NextConfig } from 'next';
 
 const securityHeaders = [

@@ -18,3 +18,4 @@ Thumbs.db
 .vitest/
 .playwright-mcp/
 .offlocal/
+apps/web/lib/generated/

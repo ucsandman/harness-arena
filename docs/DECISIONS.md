@@ -22,3 +22,7 @@ Durable architecture, product and stack decisions. Newest first. The competitive
 ## 2026-09-19 MCP runner owns "done"
 
 `arena_get_battle` reports the runner's status while this server still owns the battle. The record on disk turns terminal before the report, upload and worktree cleanup finish, and "completed" must always mean the next battle can start.
+
+## 2026-11-13 Serverless documentation assets
+
+Documentation is bundled as generated JSON at build time from the repository Markdown. Runtime reads no longer require a checkout, workspace marker, or symlink-sensitive external file traces. Next config generates the bundle for builds/dev, package builds generate it before typechecking, and Vitest config generates it before tests. The bundle is ignored, deterministic, and rewritten only when source content changes; the URL registry still limits which documents can be read. An initial explicit external tracing approach built successfully but Vercel rejected its serverless package, so it was not merged.
