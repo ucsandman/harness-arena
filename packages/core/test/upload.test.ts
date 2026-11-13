@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EVENT_LIMITS, battleSpecSchema, privacySettingsSchema } from '@harness-arena/protocol';
 import type { ArenaEvent, BattleRecord, PrivacySettings } from '@harness-arena/protocol';
 import { createEventBus } from '../src/events.js';
@@ -344,5 +344,77 @@ describe('privacy filtering', () => {
     await uploader.flush();
     expect(calls).toHaveLength(0);
     expect(uploader.stats().skipped).toBe(1);
+  });
+});
+
+describe('bounded network requests', () => {
+  it.each(['headers', 'body'])('finishes when the server stalls its %s', async (stage) => {
+    vi.useFakeTimers();
+    try {
+      const signals: AbortSignal[] = [];
+      const fetchImpl = vi.fn((_url: unknown, init?: RequestInit) => {
+        signals.push(init!.signal!);
+        const pending = new Promise<never>(() => {});
+        return stage === 'headers'
+          ? pending
+          : Promise.resolve({ ok: true, status: 200, json: () => pending } as unknown as Response);
+      }) as unknown as typeof fetch;
+      const uploader = createUploader({
+        serverUrl: 'https://arena.test',
+        token: 't',
+        privacy: privacy({ upload: 'events' }),
+        logger: silentLogger(),
+        fetchImpl,
+        retryBaseMs: 0,
+        requestTimeoutMs: 100,
+      });
+      let settled = false;
+      const pending = uploader.pushEvents('btl_0000000000000abc', validEvents(1)).then(() => {
+        settled = true;
+      });
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(settled).toBe(true);
+      await pending;
+      await uploader.flush();
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+      expect(signals.every((signal) => signal.aborted)).toBe(true);
+      expect(uploader.stats().failures).toBe(1);
+      expect(uploader.stats().events).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('upload deadline cleanup', () => {
+  it('allows later queued work after an exhausted deadline and clears successful timers', async () => {
+    vi.useFakeTimers();
+    try {
+      let attempts = 0;
+      const fetchImpl = vi.fn(() => {
+        attempts += 1;
+        if (attempts <= 3) return new Promise<never>(() => {});
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
+      }) as unknown as typeof fetch;
+      const uploader = createUploader({
+        serverUrl: 'https://arena.test',
+        token: 't',
+        privacy: privacy({ upload: 'events' }),
+        logger: silentLogger(),
+        fetchImpl,
+        retryBaseMs: 0,
+        requestTimeoutMs: 100,
+      });
+      const first = uploader.pushEvents('btl_0000000000000abc', validEvents(1));
+      const second = uploader.pushEvents('btl_0000000000000abc', validEvents(2));
+      await vi.advanceTimersByTimeAsync(1000);
+      await Promise.all([first, second, uploader.flush()]);
+      expect(fetchImpl).toHaveBeenCalledTimes(4);
+      expect(uploader.stats().failures).toBe(1);
+      expect(uploader.stats().events).toBe(2);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
