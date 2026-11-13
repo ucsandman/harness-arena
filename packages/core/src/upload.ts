@@ -57,6 +57,8 @@ export interface UploaderOptions {
   /** base delay for the retry backoff; three attempts total */
   retryBaseMs?: number;
   arenaVersion?: string;
+  /** Deadline per attempt, including response JSON; defaults to 30 seconds. */
+  requestTimeoutMs?: number;
 }
 
 const MAX_ATTEMPTS = 3;
@@ -136,6 +138,8 @@ export function createUploader(opts: UploaderOptions): Uploader {
   const base = opts.serverUrl.replace(/\/+$/, '');
   const version = opts.arenaVersion ?? ARENA_VERSION;
   const retryBaseMs = opts.retryBaseMs ?? 200;
+  const requestTimeoutMs =
+    Number.isFinite(opts.requestTimeoutMs) && opts.requestTimeoutMs! > 0 ? opts.requestTimeoutMs! : 30_000;
   const stats = emptyStats();
   const log = opts.logger;
   let chain: Promise<void> = Promise.resolve();
@@ -159,17 +163,42 @@ export function createUploader(opts: UploaderOptions): Uploader {
     let lastError = '';
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const response = await fetchImpl(url, { method, headers: headers(), body: JSON.stringify(body) });
-        lastStatus = response.status;
-        if (response.ok) {
-          let json: unknown = null;
-          try {
-            json = await response.json();
-          } catch {
-            json = null;
-          }
-          return { ok: true, status: response.status, json };
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let result: { response: Response; json: unknown };
+        try {
+          const deadline = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              reject(new Error('upload request timed out'));
+              controller.abort();
+            }, requestTimeoutMs);
+          });
+          result = await Promise.race([
+            (async () => {
+              const response = await fetchImpl(url, {
+                method,
+                headers: headers(),
+                body: JSON.stringify(body),
+                signal: controller.signal,
+              });
+              let json: unknown = null;
+              if (response.ok) {
+                try {
+                  json = await response.json();
+                } catch {
+                  json = null;
+                }
+              }
+              return { response, json };
+            })(),
+            deadline,
+          ]);
+        } finally {
+          clearTimeout(timer);
         }
+        const { response, json } = result;
+        lastStatus = response.status;
+        if (response.ok) return { ok: true, status: response.status, json };
         const retryable = response.status === 429 || response.status >= 500;
         if (!retryable) {
           log.warn('upload rejected', { path, status: response.status });

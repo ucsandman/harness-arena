@@ -47,6 +47,8 @@ Exclusions apply on top of any level (`--exclude a,b,c` or `privacy.exclude`):
 | `diffs`          | never uploads the patch                                                                                            |
 | `paths`          | strips workspace paths, cwd values, changed-file paths, and absolute paths in the invocation disclosure (`<path>`) |
 
+Uploads are best-effort: each network attempt has a 30-second deadline, including reading a successful response body. A stalled attempt is aborted and retried up to three times; after that Arena records an upload failure and keeps the local battle results rather than waiting indefinitely.
+
 ## Redaction
 
 Whether or not you upload, every event and artifact passes through the redactor before it is written:
