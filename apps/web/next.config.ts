@@ -27,7 +27,14 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@harness-arena/protocol', '@harness-arena/database', '@harness-arena/harness'],
   // the migrations are read from disk at runtime (client.ts walks packages/database/drizzle), so the
   // serverless bundle must carry them; static tracing only sees files that are imported
-  outputFileTracingIncludes: { '/**/*': ['../../packages/database/drizzle/**/*'] },
+  outputFileTracingIncludes: {
+    '/**/*': [
+      '../../packages/database/drizzle/**/*',
+      // Docs are read relative to the workspace marker, not the deployed app directory.
+      '../../pnpm-workspace.yaml',
+      '../../docs/*.md',
+    ],
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },

@@ -22,3 +22,7 @@ Durable architecture, product and stack decisions. Newest first. The competitive
 ## 2026-09-19 MCP runner owns "done"
 
 `arena_get_battle` reports the runner's status while this server still owns the battle. The record on disk turns terminal before the report, upload and worktree cleanup finish, and "completed" must always mean the next battle can start.
+
+## 2026-11-13 Serverless documentation assets
+
+The documentation reader finds the workspace through `pnpm-workspace.yaml` and reads the registered Markdown files under `docs/`. Both the marker and the Markdown must be explicitly included in serverless file traces; a successful build alone previously deployed pages that showed a missing-document placeholder. The web build now checks the actual trace manifests for docs, privacy, security, and sitemap routes. It verifies all repository Markdown files and the marker are packaged, without changing document URLs or broadening the tracing root.

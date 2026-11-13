@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
   DOC_PAGES,
   docHref,
@@ -137,5 +137,30 @@ describe('headings', () => {
       { depth: 2, text: 'First', id: 'first' },
       { depth: 3, text: 'Nested', id: 'nested' },
     ]);
+  });
+});
+
+describe('deployed documentation layout', () => {
+  it('loads every registered document from a packaged workspace outside the checkout', async () => {
+    const root = makeFakeRepo();
+    const appRoot = path.join(root, 'apps', 'web');
+    mkdirSync(appRoot, { recursive: true });
+    for (const page of DOC_PAGES) {
+      writeFileSync(path.join(root, page.file), `# Packaged ${page.title}\n`, 'utf8');
+    }
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(appRoot);
+    try {
+      for (const page of DOC_PAGES) {
+        expect((await loadDocPage(page.slug))?.markdown).toBe(`# Packaged ${page.title}\n`);
+      }
+    } finally {
+      cwd.mockRestore();
+    }
+  });
+
+  it('requires real content for every current registered document', async () => {
+    for (const page of DOC_PAGES) {
+      expect((await loadDocPage(page.slug))?.markdown, page.file).toMatch(/^# /);
+    }
   });
 });
