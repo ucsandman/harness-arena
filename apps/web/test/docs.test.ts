@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -141,26 +141,29 @@ describe('headings', () => {
 });
 
 describe('deployed documentation layout', () => {
-  it('loads every registered document from a packaged workspace outside the checkout', async () => {
-    const root = makeFakeRepo();
-    const appRoot = path.join(root, 'apps', 'web');
-    mkdirSync(appRoot, { recursive: true });
-    for (const page of DOC_PAGES) {
-      writeFileSync(path.join(root, page.file), `# Packaged ${page.title}\n`, 'utf8');
-    }
-    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(appRoot);
+  it('loads every registered document without a checkout or workspace marker', async () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'arena-serverless-'));
+    tempRoots.push(root);
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(root);
     try {
+      expect(findRepoRoot()).toBeNull();
       for (const page of DOC_PAGES) {
-        expect((await loadDocPage(page.slug))?.markdown).toBe(`# Packaged ${page.title}\n`);
+        expect((await loadDocPage(page.slug))?.markdown, page.file).toMatch(/^# /);
       }
     } finally {
       cwd.mockRestore();
     }
   });
 
-  it('requires real content for every current registered document', async () => {
-    for (const page of DOC_PAGES) {
-      expect((await loadDocPage(page.slug))?.markdown, page.file).toMatch(/^# /);
-    }
+  it('never exposes unregistered files from the generated bundle', async () => {
+    expect(await readDocFile({ ...DOC_PAGES[0]!, file: 'docs/DECISIONS.md' })).toBeNull();
+    expect(await readDocFile({ ...DOC_PAGES[0]!, file: '../../.env' })).toBeNull();
   });
+});
+
+it('bundles the exact current source of every published document', async () => {
+  const root = findRepoRoot()!;
+  for (const page of DOC_PAGES) {
+    expect(await readDocFile(page), page.file).toBe(readFileSync(path.join(root, page.file), 'utf8'));
+  }
 });

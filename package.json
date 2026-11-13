@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "pnpm build:packages && pnpm --filter @harness-arena/web run build",
-    "build:packages": "pnpm -r --filter \"./packages/*\" run build",
+    "build:packages": "node apps/web/scripts/prepare-docs.mjs && pnpm -r --filter \"./packages/*\" run build",
     "dev": "pnpm build:packages && pnpm --filter @harness-arena/web run dev",
     "test": "vitest run",
     "test:watch": "vitest",
